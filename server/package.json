@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@colyseus/schema": "^3.0.0",
+    "@colyseus/ws-transport": "^0.16.5",
     "@twodverm/shared": "*",
     "colyseus": "^0.16.0",
     "tsx": "^4.19.0"

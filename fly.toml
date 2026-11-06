@@ -1,0 +1,33 @@
+# Fly.io settings. `fly launch` will offer to change the app name to one that is free.
+app = "twodverm"
+primary_region = "syd"
+
+[build]
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # The machine sleeps when nobody is connected and wakes on the first visit (a few seconds).
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Rooms live in memory, so everyone must reach the same machine: deploy with `fly deploy --ha=false`.
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -9,6 +9,10 @@
   ],
   "scripts": {
     "dev": "concurrently -n server,client -c yellow,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:lag": "concurrently -n server,client -c yellow,cyan \"npm run dev -w server -- --latency=100\" \"npm run dev -w client\"",
+    "bot": "tsx scripts/bot-friend.ts",
+    "bot-test": "tsx scripts/bot-test.ts",
+    "check:level": "tsx scripts/check-level.ts",
     "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client --noEmit",
     "build": "npm run build -w client",
     "start": "npm run start -w server"

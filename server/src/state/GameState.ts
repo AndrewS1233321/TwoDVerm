@@ -1,3 +1,102 @@
-import { Schema } from "@colyseus/schema";
+import { MapSchema, Schema, type } from "@colyseus/schema";
 
-export class GameState extends Schema {}
+export class PlayerState extends Schema {
+  @type("string") id = "";
+  @type("string") name = "";
+  @type("string") heroId = "";
+  @type("boolean") connected = true;
+
+  @type("float32") x = 0;
+  @type("float32") y = 0;
+  @type("float32") facing = 0;
+  @type("string") state = "idle";
+  /** Current attack id (from shared data) or "" when not attacking. */
+  @type("string") action = "";
+  /** 0 none, 1 windup or charging, 2 active, 3 recovery. */
+  @type("uint8") phase = 0;
+  /** Increments every time a new attack or action starts, so clients can restart animations. */
+  @type("uint16") actionSeq = 0;
+  /** 0 to 1 heavy charge progress while charging. */
+  @type("float32") charge = 0;
+
+  @type("float32") hp = 0;
+  @type("float32") maxHp = 0;
+  @type("float32") downHp = 0;
+  @type("float32") stamina = 0;
+  @type("float32") maxStamina = 0;
+  @type("boolean") guardBroken = false;
+  @type("uint8") dodgeCharges = 0;
+  @type("uint8") maxDodges = 0;
+  @type("uint16") ammo = 0;
+  @type("uint16") maxAmmo = 0;
+  @type("float32") ultCooldown = 0;
+  @type("float32") ultActive = 0;
+  @type("float32") reviveProgress = 0;
+  @type("float32") respawnIn = 0;
+  @type("string") grabbedBy = "";
+
+  /** Movement values for client-side prediction. */
+  @type("float32") moveSpeed = 0;
+  @type("float32") turnRate = 0;
+  @type("boolean") canDodge = false;
+  @type("float32") dodgeT = 0;
+  @type("float32") dodgeDx = 0;
+  @type("float32") dodgeDy = 0;
+  @type("float32") dodgeSpeed = 0;
+  @type("uint32") ackSeq = 0;
+
+  @type("uint16") kills = 0;
+  @type("uint32") damageDealt = 0;
+}
+
+export class EnemyState extends Schema {
+  @type("string") id = "";
+  @type("string") type = "";
+  @type("float32") x = 0;
+  @type("float32") y = 0;
+  @type("float32") facing = 0;
+  @type("string") state = "idle";
+  @type("string") action = "";
+  @type("uint8") phase = 0;
+  @type("uint16") actionSeq = 0;
+  @type("float32") hp = 0;
+  @type("float32") maxHp = 0;
+}
+
+export class PickupState extends Schema {
+  @type("string") id = "";
+  @type("string") kind = "";
+  @type("float32") x = 0;
+  @type("float32") y = 0;
+  @type("boolean") used = false;
+}
+
+export class HazardState extends Schema {
+  @type("string") id = "";
+  /** "globe" (flying gas globe) or "gas" (poison cloud). */
+  @type("string") kind = "";
+  @type("float32") x = 0;
+  @type("float32") y = 0;
+  @type("float32") fromX = 0;
+  @type("float32") fromY = 0;
+  @type("float32") radius = 0;
+  @type("float32") timeLeft = 0;
+  @type("float32") duration = 0;
+}
+
+export class GameState extends Schema {
+  @type("string") phase = "lobby";
+  @type("string") hostId = "";
+  @type("string") code = "";
+  @type("boolean") gateOpen = false;
+  @type("boolean") eventActive = false;
+  @type("boolean") eventDone = false;
+  @type("float32") eventTimeLeft = 0;
+  @type("boolean") bossActive = false;
+  @type("float32") missionTime = 0;
+  @type("uint16") totalKills = 0;
+  @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
+  @type({ map: EnemyState }) enemies = new MapSchema<EnemyState>();
+  @type({ map: PickupState }) pickups = new MapSchema<PickupState>();
+  @type({ map: HazardState }) hazards = new MapSchema<HazardState>();
+}

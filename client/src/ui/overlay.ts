@@ -1,0 +1,243 @@
+import { HERO_IDS, HEROES, MAX_PLAYERS, isHeroId, type HeroId } from "@twodverm/shared";
+import type { GameStateView } from "../net/types";
+import { getSettings, updateSettings } from "../settings";
+
+export interface OverlayHandlers {
+  onCreate(name: string): void;
+  onJoin(code: string, name: string): void;
+  onPickHero(heroId: HeroId): void;
+  onStart(): void;
+  onReturnToLobby(): void;
+  onLeave(): void;
+  onPauseChange(paused: boolean): void;
+}
+
+type ScreenId = "menu" | "lobby" | "results" | "pause" | "settings";
+
+function el<T extends HTMLElement = HTMLElement>(id: string): T {
+  const e = document.getElementById(id);
+  if (!e) throw new Error(`Missing #${id}`);
+  return e as T;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+export class Overlay {
+  private inRoom = false;
+  private paused = false;
+  private busy = false;
+  private signature = "";
+  private toastTimer = 0;
+  private readonly nameInput = el<HTMLInputElement>("name-input");
+  private readonly codeInput = el<HTMLInputElement>("code-input");
+
+  constructor(private readonly h: OverlayHandlers) {
+    const s = getSettings();
+    this.nameInput.value = s.name;
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
+    if (code) this.codeInput.value = code.toUpperCase().slice(0, 4);
+
+    el("create-btn").onclick = () => this.submit(() => this.h.onCreate(this.name()));
+    el("join-btn").onclick = () => this.join();
+    this.codeInput.onkeydown = (e) => {
+      if (e.key === "Enter") this.join();
+    };
+    this.codeInput.oninput = () => (this.codeInput.value = this.codeInput.value.toUpperCase().replace(/[^A-Z]/g, ""));
+    this.nameInput.onchange = () => updateSettings({ name: this.nameInput.value.trim() });
+
+    el("copy-link-btn").onclick = () => this.copyLink();
+    el("start-btn").onclick = () => this.h.onStart();
+    el("lobby-leave-btn").onclick = () => this.h.onLeave();
+    el("results-leave-btn").onclick = () => this.h.onLeave();
+    el("return-btn").onclick = () => this.h.onReturnToLobby();
+    el("resume-btn").onclick = () => this.setPaused(false);
+    el("pause-leave-btn").onclick = () => {
+      this.setPaused(false);
+      this.h.onLeave();
+    };
+    el("menu-settings-btn").onclick = () => this.openSettings();
+    el("pause-settings-btn").onclick = () => this.openSettings();
+    el("settings-close-btn").onclick = () => el("settings").classList.remove("show");
+    this.bindSettings();
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (el("settings").classList.contains("show")) el("settings").classList.remove("show");
+      else if (this.inRoom && this.currentPhase === "playing") this.setPaused(!this.paused);
+    });
+  }
+
+  private currentPhase = "";
+  private code = "";
+
+  private name(): string {
+    const n = this.nameInput.value.trim();
+    updateSettings({ name: n });
+    return n || "Hero";
+  }
+
+  private join(): void {
+    const code = this.codeInput.value.trim().toUpperCase();
+    if (code.length !== 4) {
+      this.error("Room codes are 4 letters.");
+      return;
+    }
+    this.submit(() => this.h.onJoin(code, this.name()));
+  }
+
+  private submit(fn: () => void): void {
+    if (this.busy) return;
+    this.error("");
+    fn();
+  }
+
+  setBusy(busy: boolean): void {
+    this.busy = busy;
+    (el("create-btn") as HTMLButtonElement).disabled = busy;
+    (el("join-btn") as HTMLButtonElement).disabled = busy;
+  }
+
+  error(msg: string): void {
+    el("menu-error").textContent = msg;
+  }
+
+  toast(msg: string, ms = 2500): void {
+    const t = el("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => (t.style.display = "none"), ms);
+  }
+
+  private show(id: ScreenId | null): void {
+    for (const s of ["menu", "lobby", "results", "pause"] as const) el(s).classList.toggle("show", s === id);
+  }
+
+  showMenu(error = ""): void {
+    this.inRoom = false;
+    this.paused = false;
+    this.signature = "";
+    this.currentPhase = "";
+    this.setBusy(false);
+    this.error(error);
+    this.show("menu");
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  private setPaused(p: boolean): void {
+    this.paused = p;
+    this.h.onPauseChange(p);
+    this.show(p ? "pause" : null);
+  }
+
+  /** Called on every state patch; only rebuilds the DOM when something visible changed. */
+  render(state: GameStateView, localId: string): void {
+    this.inRoom = true;
+    this.code = state.code;
+    if (state.phase !== this.currentPhase) {
+      if (this.paused && state.phase !== "playing") this.setPaused(false);
+      this.currentPhase = state.phase;
+    }
+    const players = [...state.players.values()];
+    const sig = [state.phase, state.hostId, state.code, ...players.map((p) => `${p.id}:${p.name}:${p.heroId}:${p.connected}:${state.phase === "lobby" ? "" : `${p.kills}:${p.damageDealt}`}`)].join("|");
+    if (sig === this.signature) return;
+    this.signature = sig;
+
+    if (state.phase === "lobby") this.renderLobby(state, localId);
+    else if (state.phase === "victory" || state.phase === "defeat") this.renderResults(state, localId);
+    else if (!this.paused) this.show(null);
+  }
+
+  private renderLobby(state: GameStateView, localId: string): void {
+    this.show("lobby");
+    el("lobby-code").textContent = state.code;
+    const players = [...state.players.values()];
+    const me = state.players.get(localId);
+    el("lobby-players").innerHTML = players
+      .map((p) => {
+        const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "choosing...";
+        const host = p.id === state.hostId ? " (host)" : "";
+        const off = p.connected ? "" : " - reconnecting";
+        return `<span class="player-chip${p.id === localId ? " me" : ""}">${escapeHtml(p.name)}${host}: ${hero}${off}</span>`;
+      })
+      .join("") + `<span class="muted" style="align-self:center">${players.length}/${MAX_PLAYERS}</span>`;
+
+    const heroes = el("lobby-heroes");
+    heroes.innerHTML = "";
+    for (const id of HERO_IDS) {
+      const def = HEROES[id];
+      const owner = players.find((p) => p.heroId === id);
+      const mine = owner?.id === localId;
+      const btn = document.createElement("button");
+      btn.className = `hero-card${mine ? " selected" : ""}`;
+      btn.style.borderLeftColor = def.color;
+      btn.disabled = !!owner && !mine;
+      btn.innerHTML = `<span class="name">${def.name}</span><span class="title">${def.title}</span>
+        <span class="desc">${def.description}</span>
+        <span class="desc"><b>${def.weapon.name}</b> + ${def.ranged.name}<br/>Ultimate: ${def.ultName}</span>
+        ${owner && !mine ? `<span class="taken">Taken by ${escapeHtml(owner.name)}</span>` : ""}`;
+      btn.onclick = () => this.h.onPickHero(id);
+      heroes.appendChild(btn);
+    }
+
+    const isHost = state.hostId === localId;
+    const allPicked = players.every((p) => isHeroId(p.heroId));
+    const start = el<HTMLButtonElement>("start-btn");
+    start.style.display = isHost ? "" : "none";
+    start.disabled = !allPicked;
+    el("lobby-status").textContent = !me?.heroId
+      ? "Pick a hero"
+      : isHost
+        ? allPicked
+          ? "Everyone is ready"
+          : "Waiting for everyone to pick a hero"
+        : "Waiting for the host to start";
+  }
+
+  private renderResults(state: GameStateView, localId: string): void {
+    this.show("results");
+    const win = state.phase === "victory";
+    el("results-title").textContent = win ? "Victory" : "Defeat";
+    el("results-title").style.color = win ? "var(--accent)" : "#ff8a70";
+    el("results-subtitle").textContent = win ? "You escaped the city. The rats will remember this." : "The horde overwhelmed you.";
+    el("results-body").innerHTML = [...state.players.values()]
+      .map((p) => {
+        const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "-";
+        return `<tr><td>${escapeHtml(p.name)}${p.id === localId ? " (you)" : ""}</td><td>${hero}</td><td>${p.kills}</td><td>${Math.round(p.damageDealt)}</td></tr>`;
+      })
+      .join("");
+    const isHost = state.hostId === localId;
+    el("return-btn").style.display = isHost ? "" : "none";
+    el("results-status").textContent = isHost ? "" : "Waiting for the host";
+  }
+
+  private copyLink(): void {
+    const url = `${location.origin}${location.pathname}?code=${this.code}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => this.toast("Invite link copied. Send it to your friends!"))
+      .catch(() => this.toast(url, 6000));
+  }
+
+  private openSettings(): void {
+    const s = getSettings();
+    el<HTMLInputElement>("set-master").value = String(s.masterVolume);
+    el<HTMLInputElement>("set-music").value = String(s.musicVolume);
+    el<HTMLInputElement>("set-numbers").checked = s.damageNumbers;
+    el<HTMLInputElement>("set-shake").checked = s.screenShake;
+    el("settings").classList.add("show");
+  }
+
+  private bindSettings(): void {
+    el<HTMLInputElement>("set-master").oninput = (e) => updateSettings({ masterVolume: Number((e.target as HTMLInputElement).value) });
+    el<HTMLInputElement>("set-music").oninput = (e) => updateSettings({ musicVolume: Number((e.target as HTMLInputElement).value) });
+    el<HTMLInputElement>("set-numbers").onchange = (e) => updateSettings({ damageNumbers: (e.target as HTMLInputElement).checked });
+    el<HTMLInputElement>("set-shake").onchange = (e) => updateSettings({ screenShake: (e.target as HTMLInputElement).checked });
+  }
+}

@@ -1,0 +1,83 @@
+import type { HeroDef, HeroId } from "./types";
+import { DUAL_DAGGERS, GREATSWORD, HANDGUN, LONGBOW, PISTOLS, RAPIER, REPEATER, WAR_HAMMER } from "./weapons";
+
+export const HEROES: Record<HeroId, HeroDef> = {
+  soldier: {
+    id: "soldier",
+    name: "Markus",
+    title: "Mercenary",
+    color: "#3d6fb6",
+    radius: 14,
+    hp: 150,
+    stamina: 4,
+    dodges: 2,
+    speed: 170,
+    staggerResist: 2,
+    weapon: GREATSWORD,
+    ranged: REPEATER,
+    ult: "rally",
+    ultName: "Rallying Cry",
+    ultCooldown: 50,
+    description: "Wide cleaving sword sweeps. Ult staggers nearby rats and heals allies.",
+  },
+  ranger: {
+    id: "ranger",
+    name: "Kerri",
+    title: "Waystalker",
+    color: "#4f9a4a",
+    radius: 13,
+    hp: 110,
+    stamina: 3,
+    dodges: 4,
+    speed: 185,
+    staggerResist: 2,
+    weapon: DUAL_DAGGERS,
+    ranged: LONGBOW,
+    ult: "volley",
+    ultName: "Trueflight Volley",
+    ultCooldown: 40,
+    description: "Fast daggers with deadly backstabs, a piercing bow, and extra dodges.",
+  },
+  dwarf: {
+    id: "dwarf",
+    name: "Bardin",
+    title: "Ironbreaker",
+    color: "#c4782f",
+    radius: 15,
+    hp: 180,
+    stamina: 6,
+    dodges: 2,
+    speed: 155,
+    staggerResist: 3,
+    weapon: WAR_HAMMER,
+    ranged: HANDGUN,
+    ult: "impenetrable",
+    ultName: "Impenetrable",
+    ultCooldown: 55,
+    description: "Tough and slow. Huge block stamina. Ult blocks everything from every side.",
+  },
+  hunter: {
+    id: "hunter",
+    name: "Viktor",
+    title: "Witch Hunter",
+    color: "#8a3fa0",
+    radius: 14,
+    hp: 130,
+    stamina: 4,
+    dodges: 3,
+    speed: 175,
+    staggerResist: 2,
+    weapon: RAPIER,
+    ranged: PISTOLS,
+    ult: "dash",
+    ultName: "Animosity",
+    ultCooldown: 40,
+    description: "Precise armour-piercing rapier lunges. Ult dashes through the horde.",
+  },
+};
+
+export const HERO_IDS: HeroId[] = ["soldier", "ranger", "dwarf", "hunter"];
+
+export function isHeroId(v: unknown): v is HeroId {
+  return typeof v === "string" && (HERO_IDS as string[]).includes(v);
+}

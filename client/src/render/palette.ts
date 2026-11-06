@@ -17,8 +17,31 @@ export const palette = {
   heroRanger: "#4f9a4a",
   heroDwarf: "#c4782f",
   heroHunter: "#8a3fa0",
+  ratFurNum: 0x6b5a48,
 } as const;
 
 export function toColorNumber(hex: string): number {
   return Number.parseInt(hex.slice(1), 16);
+}
+
+export const colors = {
+  floor: toColorNumber(palette.floor),
+  wall: toColorNumber(palette.wall),
+  accent: toColorNumber(palette.accent),
+  health: toColorNumber(palette.health),
+  stamina: toColorNumber(palette.stamina),
+  dodge: toColorNumber(palette.dodge),
+  telegraph: toColorNumber(palette.telegraph),
+  warp: toColorNumber(palette.warp),
+  success: toColorNumber(palette.success),
+  textPrimary: toColorNumber(palette.textPrimary),
+  textMuted: toColorNumber(palette.textMuted),
+};
+
+/** Multiplies each RGB channel by k (k < 1 darkens, k > 1 lightens). */
+export function shade(color: number, k: number): number {
+  const r = Math.min(255, Math.round(((color >> 16) & 0xff) * k));
+  const g = Math.min(255, Math.round(((color >> 8) & 0xff) * k));
+  const b = Math.min(255, Math.round((color & 0xff) * k));
+  return (r << 16) | (g << 8) | b;
 }
