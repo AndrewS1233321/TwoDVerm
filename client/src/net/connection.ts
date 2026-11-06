@@ -4,6 +4,11 @@ import type { GameStateView } from "./types";
 
 export type GameRoom = Room<GameStateView>;
 
+/** The room's state is empty until the first patch arrives, which can be a while on a slow link. */
+export function hasState(room: GameRoom | null): room is GameRoom {
+  return !!room?.state?.players;
+}
+
 const RECONNECT_KEY = "twodverm.reconnect";
 
 function serverUrl(): string {

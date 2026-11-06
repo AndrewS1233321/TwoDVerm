@@ -16,7 +16,7 @@ import {
 import { Music } from "../audio/music";
 import { playSfx, type SfxName } from "../audio/sfx";
 import { Controls } from "../input/controls";
-import type { GameRoom } from "../net/connection";
+import { hasState, type GameRoom } from "../net/connection";
 import { SnapshotBuffer } from "../net/interpolation";
 import { Predictor } from "../net/prediction";
 import type { EnemyView, PlayerView } from "../net/types";
@@ -110,7 +110,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   get localPlayer(): PlayerView | undefined {
-    return this.room?.state.players.get(this.localId);
+    return hasState(this.room) ? this.room.state.players.get(this.localId) : undefined;
   }
 
   /** Where the local hero is drawn (predicted), for the HUD and sound distance. */
@@ -139,7 +139,7 @@ export class GameScene extends Phaser.Scene {
 
   private onPatch(): void {
     const room = this.room;
-    if (!room) return;
+    if (!hasState(room)) return;
     const state = room.state;
     const now = performance.now();
     if (state.phase !== this.lastPhase) {
@@ -169,7 +169,7 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.music.update(delta / 1000);
     const room = this.room;
-    if (!room) {
+    if (!hasState(room)) {
       this.backdrop(delta);
       return;
     }

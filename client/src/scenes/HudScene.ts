@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { clamp, dist, DOWNED, ENEMIES, HEROES, INTERACT_RANGE, isHeroId } from "@twodverm/shared";
+import { hasState } from "../net/connection";
 import type { PlayerView } from "../net/types";
 import { colors, palette, toColorNumber } from "../render/palette";
 import type { Announcement, GameScene } from "./GameScene";
@@ -76,7 +77,7 @@ export class HudScene extends Phaser.Scene {
     const H = this.scale.height;
     this.g.clear();
     this.vignette.setDisplaySize(W, H);
-    const playing = !!room && room.state.phase === "playing";
+    const playing = hasState(room) && room.state.phase === "playing";
     const me = this.game_.localPlayer;
     for (const t of Object.values(this.texts)) t.setVisible(playing);
     for (const t of this.teamTexts) t.setVisible(false);

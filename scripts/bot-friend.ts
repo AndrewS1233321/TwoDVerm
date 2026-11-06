@@ -90,6 +90,7 @@ async function runBot(index: number): Promise<void> {
   let seq = 0;
   let picked = false;
   setInterval(() => {
+    if (!room.state?.players) return;
     if (room.state.phase === "lobby" && !picked) {
       const me = room.state.players.get(room.sessionId);
       const taken = new Set([...room.state.players.values()].map((p) => p.heroId));
