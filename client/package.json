@@ -1,0 +1,19 @@
+{
+  "name": "@twodverm/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@twodverm/shared": "*",
+    "colyseus.js": "^0.16.0",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0"
+  }
+}
