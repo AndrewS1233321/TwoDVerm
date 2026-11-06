@@ -8,17 +8,18 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Unit 02: project skeleton (see `context/specs/02-skeleton.md`)
+- Unit 03: join by room code, server-moved players, deploy to Fly.io
 
 ## Completed
 
 - Unit 01: context files and build plan written.
+- Unit 02: skeleton. `npm run dev` starts Colyseus (port 2567) and Vite
+  (port 5173); browser shows floor and title and joins the `game` room;
+  typecheck passes. Installed: Colyseus 0.16, Phaser 3, Vite 6.
 
 ## In Progress
 
-- Unit 02: source files written; dependencies not yet installed
-  (waiting for a good internet connection). Run `npm install` then
-  `npm run dev` to verify.
+- None.
 
 ## Next Up
 
