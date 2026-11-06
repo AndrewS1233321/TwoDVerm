@@ -23,7 +23,7 @@ import type { EnemyView, PlayerView } from "../net/types";
 import { Effects } from "../render/effects";
 import { LevelRenderer } from "../render/levelRenderer";
 import { colors } from "../render/palette";
-import { enemyTextureKey, enemyWeaponStyle, generateTextures, heroTextureKey } from "../render/textures";
+import { enemyTextureKey, enemyWeaponStyle, generateTextures, heroTextureKey, rangedWeaponStyle } from "../render/textures";
 import { CreatureView, type PoseInfo } from "../render/views";
 import { getSettings } from "../settings";
 
@@ -212,6 +212,7 @@ export class GameScene extends Phaser.Scene {
     const body = this.predictor.body;
     const input: InputMessage = { seq: this.predictor.nextSeq(), aim: angleTo(body.x, body.y, pointer.worldX, pointer.worldY), ...s };
     if (this.inputBlocked) input.aim = body.facing;
+    if (s.fire && !this.inputBlocked) playSfx("click", { volume: 0.6 });
     this.sendTimes.set(input.seq, performance.now());
     if (this.lagMs > 0) setTimeout(() => room.send(MSG.input, input), this.lagMs);
     else room.send(MSG.input, input);
@@ -256,6 +257,7 @@ export class GameScene extends Phaser.Scene {
       reviveProgress: p.reviveProgress,
       dodging,
       connected: p.connected,
+      rangedMode: p.rangedMode,
     };
   }
 
@@ -278,6 +280,7 @@ export class GameScene extends Phaser.Scene {
           radius: def.radius,
           texture: heroTextureKey(p.heroId),
           weaponStyle: def.weapon.style,
+          rangedStyle: rangedWeaponStyle(p.heroId),
           name: p.name,
           isLocal: p.id === this.localId,
           onSwing: (heavy) => this.sfxAt(heavy ? "heavySwing" : "swing", view!.position, p.id === this.localId ? 0.8 : 0.5),

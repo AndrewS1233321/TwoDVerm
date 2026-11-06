@@ -184,6 +184,20 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   check("Dodge charges refill", hero.dodgeCharges === charges0, `${hero.dodgeCharges}/${charges0}`);
 }
 
+// Q toggles to the ranged weapon; left click then fires instead of swinging.
+{
+  const { world, hero } = setup("soldier");
+  run(world, hero, DT, { fire: true });
+  check("Q draws the ranged weapon", hero.rangedMode);
+  const ammo0 = hero.ammo;
+  run(world, hero, DT, { attack: true });
+  check("Left click fires while ranged is drawn", hero.ammo === ammo0 - 1 && hero.state === "shooting", `ammo ${ammo0} -> ${hero.ammo}`);
+  run(world, hero, DT, { fire: true });
+  check("Q a second time puts the melee weapon back", !hero.rangedMode);
+  const ids = attackIds(world, hero, [{ hold: DT, wait: 0.4 }]);
+  check("Left click is a melee swing again after holstering", ids[0] === HEROES.soldier.weapon.light[0]!.id, ids.join(" > "));
+}
+
 // A rat telegraphs (windup) before its swing lands, so there is time to react.
 {
   const { world, hero } = setup("soldier");

@@ -12,8 +12,8 @@ export interface ControlSample {
 }
 
 /**
- * Keyboard and mouse reader. Held buttons are read when sampled; presses (dodge, fire, ult)
- * are remembered until the next sample so a quick tap between samples is never lost.
+ * Keyboard and mouse reader. Held buttons are read when sampled; presses (dodge, fire=toggle
+ * ranged, ult) are remembered until the next sample so a quick tap between samples is never lost.
  */
 export class Controls {
   enabled = true;

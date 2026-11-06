@@ -32,6 +32,7 @@ export interface PlayerView {
   maxDodges: number;
   ammo: number;
   maxAmmo: number;
+  rangedMode: boolean;
   ultCooldown: number;
   ultActive: number;
   reviveProgress: number;

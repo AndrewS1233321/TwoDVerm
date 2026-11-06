@@ -71,6 +71,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     iframesT: 0,
     ammo: def.ranged.ammo,
     shotCd: 0,
+    rangedMode: false,
     ultCd: 0,
     ultActiveT: 0,
     dashHit: new Set(),
@@ -132,14 +133,17 @@ export function processHeroInputs(world: World, hero: Hero): void {
     n++;
     if (input.attack) {
       if (!hero.prevAttackHeld) hero.edges.attackPressed = true;
-      hero.attackHeldT += DT;
+      if (!hero.rangedMode) hero.attackHeldT += DT;
     } else if (hero.prevAttackHeld) {
-      if (hero.attackHeldT < MELEE.heavyHoldThreshold) hero.lightBufferT = MELEE.lightBufferTime;
+      if (!hero.rangedMode && hero.attackHeldT < MELEE.heavyHoldThreshold) hero.lightBufferT = MELEE.lightBufferTime;
       hero.edges.attackReleased = true;
       hero.attackHeldT = 0;
     }
     hero.prevAttackHeld = input.attack;
-    if (input.fire) hero.edges.fire = true;
+    if (input.fire) {
+      hero.edges.fire = true;
+      toggleRanged(hero);
+    }
     if (input.ult) hero.edges.ult = true;
     if (input.interact && !hero.held.interact) hero.edges.interact = true;
     hero.held = { attack: input.attack, block: input.block, interact: input.interact };
@@ -199,7 +203,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       break;
     case "blocking":
       if (!hero.held.block) hero.state = "idle";
-      else if (hero.edges.attackPressed) tryPush(world, hero);
+      else if (hero.edges.attackPressed && !hero.rangedMode) tryPush(world, hero);
       break;
     case "pushing":
       hero.stateT -= dt;
@@ -207,7 +211,8 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       break;
     case "shooting":
       hero.stateT -= dt;
-      if (hero.stateT <= 0) hero.state = "idle";
+      if (hero.rangedMode && hero.held.attack) shoot(world, hero);
+      else if (hero.stateT <= 0) hero.state = "idle";
       break;
     case "idle":
       updateIdle(world, hero);
@@ -338,15 +343,32 @@ function updateCharging(hero: Hero, dt: number): void {
   if (hero.heavyQueued && hero.chargeT >= hero.def.weapon.heavyCharge) startHeavy(hero);
 }
 
+function toggleRanged(hero: Hero): void {
+  hero.rangedMode = !hero.rangedMode;
+  hero.lightBufferT = 0;
+  hero.attackHeldT = 0;
+  hero.heavyQueued = false;
+  if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting") {
+    hero.attack = null;
+    hero.state = "idle";
+    hero.actionSeq++;
+  }
+}
+
 function updateIdle(world: World, hero: Hero): void {
   if (hero.held.block && hero.guardBrokenT <= 0) {
     hero.state = "blocking";
     hero.actionSeq++;
     return;
   }
-  if (tryStartAttack(hero)) return;
-  if (hero.edges.fire) {
-    shoot(world, hero);
+  if (hero.rangedMode) {
+    hero.lightBufferT = 0;
+    // Held left click keeps firing whenever the weapon is ready.
+    if (hero.held.attack) {
+      shoot(world, hero);
+      return;
+    }
+  } else if (tryStartAttack(hero)) {
     return;
   }
   if (hero.held.interact) tryInteract(world, hero);

@@ -30,7 +30,7 @@ interface S {
   enemies: Map<string, E>;
 }
 
-function think(room: Room<S>, seq: number): InputMessage {
+function think(room: Room<S>, seq: number, mode: { ranged: boolean }): InputMessage {
   const input: InputMessage = { seq, mx: 0, my: 0, aim: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false };
   const me = room.state.players.get(room.sessionId);
   if (!me || room.state.phase !== "playing") return input;
@@ -48,6 +48,10 @@ function think(room: Room<S>, seq: number): InputMessage {
 
   const downed = others.find((p) => p.state === "downed");
   if (downed && (!nearest || nd > 70)) {
+    if (mode.ranged) {
+      input.fire = true;
+      mode.ranged = false;
+    }
     const d = dist(me.x, me.y, downed.x, downed.y);
     if (d > 40) {
       input.mx = (downed.x - me.x) / d;
@@ -64,13 +68,22 @@ function think(room: Room<S>, seq: number): InputMessage {
       input.mx = (nearest.x - me.x) / nd;
       input.my = (nearest.y - me.y) / nd;
     }
-    const threatened = nearest.state === "attack" && nearest.phase === 1 && nd < 70;
+    const wantRanged = nd > 120;
+    if (wantRanged !== mode.ranged) {
+      input.fire = true;
+      mode.ranged = wantRanged;
+    }
+    const threatened = !mode.ranged && nearest.state === "attack" && nearest.phase === 1 && nd < 70;
     if (threatened) input.block = true;
+    else if (mode.ranged) input.attack = true;
     else input.attack = nd < 70 && seq % 12 < 2;
-    if (nd > 150 && seq % 45 === 0) input.fire = true;
     return input;
   }
 
+  if (mode.ranged) {
+    input.fire = true;
+    mode.ranged = false;
+  }
   const leader = others.sort((a, b) => dist(me.x, me.y, a.x, a.y) - dist(me.x, me.y, b.x, b.y))[0];
   if (leader) {
     const d = dist(me.x, me.y, leader.x, leader.y);
@@ -89,6 +102,7 @@ async function runBot(index: number): Promise<void> {
   console.log(`Bot ${index + 1} joined ${code}`);
   let seq = 0;
   let picked = false;
+  const mode = { ranged: false };
   setInterval(() => {
     if (!room.state?.players) return;
     if (room.state.phase === "lobby" && !picked) {
@@ -98,9 +112,12 @@ async function runBot(index: number): Promise<void> {
       if (me && !me.heroId && free) room.send(MSG.selectHero, { heroId: free });
       if (me?.heroId) picked = true;
     }
-    if (room.state.phase === "lobby") picked = !!room.state.players.get(room.sessionId)?.heroId;
+    if (room.state.phase === "lobby") {
+      picked = !!room.state.players.get(room.sessionId)?.heroId;
+      mode.ranged = false;
+    }
     seq++;
-    room.send(MSG.input, think(room, seq));
+    room.send(MSG.input, think(room, seq, mode));
   }, 1000 / 30);
   room.onLeave(() => {
     console.log(`Bot ${index + 1} left`);

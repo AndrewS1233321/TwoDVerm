@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { clamp, DIRECTION, GUNNER, getAttack, lerp } from "@twodverm/shared";
 import { colors } from "./palette";
-import { handOffset, TEX_SCALE, WEAPON_INFO, weaponTextureKey } from "./textures";
+import { handOffset, TEX_SCALE, WEAPON_INFO, weaponTextureKey, type DrawnWeaponStyle } from "./textures";
 
 export interface PoseInfo {
   x: number;
@@ -22,6 +22,7 @@ export interface PoseInfo {
   reviveProgress?: number;
   dodging?: boolean;
   connected?: boolean;
+  rangedMode?: boolean;
 }
 
 export interface ViewOptions {
@@ -29,7 +30,8 @@ export interface ViewOptions {
   typeId: string;
   radius: number;
   texture: string;
-  weaponStyle: keyof typeof WEAPON_INFO | null;
+  weaponStyle: DrawnWeaponStyle | null;
+  rangedStyle?: DrawnWeaponStyle | null;
   name?: string;
   isLocal?: boolean;
   showHpAlways?: boolean;
@@ -56,6 +58,7 @@ export class CreatureView {
   private pauseUntil = 0;
   private flashUntil = 0;
   private lastInfo: PoseInfo | null = null;
+  private showingRanged = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -163,8 +166,18 @@ export class CreatureView {
     this.drawOverlays(info, now, ground, top);
   }
 
+  private setWeaponStyle(style: DrawnWeaponStyle, dual: boolean): void {
+    if (!this.weapon) return;
+    const info = WEAPON_INFO[style];
+    this.weapon.setTexture(weaponTextureKey(style)).setOrigin(info.handle / (info.length + 4), 0.5);
+    if (this.weapon2) {
+      this.weapon2.setVisible(dual);
+      if (dual) this.weapon2.setTexture(weaponTextureKey(style)).setOrigin(info.handle / (info.length + 4), 0.5);
+    }
+  }
+
   private animateWeapon(info: PoseInfo, now: number): void {
-    const key = `${info.actionSeq}:${info.phase}:${info.state}:${info.action}`;
+    const key = `${info.actionSeq}:${info.phase}:${info.state}:${info.action}:${!!info.rangedMode}`;
     if (key !== this.animKey) {
       this.animKey = key;
       this.animStart = this.clock;
@@ -174,6 +187,12 @@ export class CreatureView {
       this.animateBodyLunge(info);
       return;
     }
+    const wantRanged = !!info.rangedMode && !!this.opts.rangedStyle;
+    if (wantRanged !== this.showingRanged) {
+      this.showingRanged = wantRanged;
+      if (wantRanged) this.setWeaponStyle(this.opts.rangedStyle!, this.opts.rangedStyle === "pistols");
+      else this.setWeaponStyle(this.opts.weaponStyle!, this.opts.weaponStyle === "daggers");
+    }
     const r = this.opts.radius;
     const hand = handOffset(r);
     let angle = REST_ANGLE;
@@ -181,7 +200,17 @@ export class CreatureView {
     let hx = hand.x;
     let hy = hand.y;
     const elapsed = (this.clock - this.animStart) / 1000;
-    const def = info.action ? getAttack(info.action) : undefined;
+    const def = info.action && !info.rangedMode ? getAttack(info.action) : undefined;
+
+    if (info.rangedMode && (info.state === "idle" || info.state === "shooting" || info.state === "blocking")) {
+      angle = info.state === "shooting" ? 0.05 : 0.15;
+      thrust = info.state === "shooting" ? 4 : 0;
+      hx = hand.x;
+      hy = hand.y * 0.35;
+      this.weapon.setPosition(hx + Math.cos(angle) * thrust, hy + Math.sin(angle) * thrust).setRotation(angle).clearTint();
+      this.weapon2?.setVisible(false);
+      return;
+    }
 
     if (def && info.phase > 0) {
       const back = def.swing.from === def.swing.to ? 0 : Math.sign(def.swing.from) * 0.25;

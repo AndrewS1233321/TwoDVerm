@@ -23,6 +23,7 @@ export interface InputMessage {
   interact: boolean;
   /** Pressed since the previous input. */
   dodge: boolean;
+  /** Pressed since the previous input: toggles melee / ranged weapon. */
   fire: boolean;
   ult: boolean;
 }

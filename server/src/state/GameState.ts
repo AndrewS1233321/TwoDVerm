@@ -29,6 +29,8 @@ export class PlayerState extends Schema {
   @type("uint8") maxDodges = 0;
   @type("uint16") ammo = 0;
   @type("uint16") maxAmmo = 0;
+  /** True while the ranged weapon is equipped (Q toggles). */
+  @type("boolean") rangedMode = false;
   @type("float32") ultCooldown = 0;
   @type("float32") ultActive = 0;
   @type("float32") reviveProgress = 0;

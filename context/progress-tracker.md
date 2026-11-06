@@ -56,6 +56,8 @@ Update this file after every meaningful implementation change.
 
 ## Architecture Decisions
 
+- Q toggles melee / ranged. While ranged is drawn, left click fires
+  (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting
   multiplayer onto a single-player game is very costly.
 - Colyseus for rooms and state sync, to avoid writing low-level netcode.

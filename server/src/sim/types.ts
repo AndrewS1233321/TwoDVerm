@@ -74,6 +74,8 @@ export interface Hero extends MoveBody {
 
   ammo: number;
   shotCd: number;
+  /** True while the ranged weapon is equipped; left-click fires instead of melee. */
+  rangedMode: boolean;
   ultCd: number;
   ultActiveT: number;
   dashHit: Set<string>;

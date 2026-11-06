@@ -30,6 +30,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.maxDodges = hero.def.dodges;
   s.ammo = hero.ammo;
   s.maxAmmo = hero.def.ranged.ammo;
+  s.rangedMode = hero.rangedMode;
   s.ultCooldown = r1(hero.ultCd);
   s.ultActive = r1(hero.ultActiveT);
   s.reviveProgress = hero.state === "downed" ? r2(hero.reviveT / DOWNED.reviveTime) : 0;

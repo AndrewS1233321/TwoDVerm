@@ -100,7 +100,7 @@ export class HudScene extends Phaser.Scene {
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)
-      .setText("Left click: attack (hold for heavy)   Right click: block (+ left click: push)   Space: dodge\nQ: shoot   F: ultimate   Hold E: revive / use   Esc: menu");
+      .setText("Left click: attack (hold for heavy)   Right click: block (+ left click: push)   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / use   Esc: menu");
   }
 
   private drawSelf(me: PlayerView, W: number, H: number): void {
@@ -162,8 +162,9 @@ export class HudScene extends Phaser.Scene {
     t.ult!.setPosition(ux, uy).setText(ready ? "F" : `${Math.ceil(me.ultCooldown)}`);
     t.ultName!.setPosition(ux - 60, uy - 8).setOrigin(1, 0).setText(def.ultName);
 
-    t.ammo!.setPosition(W - 20, H - 30).setText(`${me.ammo} / ${me.maxAmmo}`).setColor(me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
-    t.ammoName!.setPosition(W - 20, H - 14).setText(`Q  ${def.ranged.name}`);
+    const ranged = me.rangedMode;
+    t.ammo!.setPosition(W - 20, H - 30).setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name).setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
+    t.ammoName!.setPosition(W - 20, H - 14).setText(ranged ? `Left click: fire   Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
   }
 
   private drawTeam(me: PlayerView): void {

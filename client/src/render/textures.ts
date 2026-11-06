@@ -24,7 +24,9 @@ export function handOffset(radius: number): { x: number; y: number } {
   return { x: radius * 0.45, y: radius * 0.6 };
 }
 
-export const WEAPON_INFO: Record<WeaponStyle | "ratblade" | "hookpole", { length: number; handle: number }> = {
+export type DrawnWeaponStyle = WeaponStyle | "ratblade" | "hookpole" | "repeater" | "longbow" | "handgun" | "pistols";
+
+export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: number }> = {
   greatsword: { length: 46, handle: 4 },
   daggers: { length: 20, handle: 3 },
   hammer: { length: 36, handle: 3 },
@@ -34,7 +36,15 @@ export const WEAPON_INFO: Record<WeaponStyle | "ratblade" | "hookpole", { length
   fists: { length: 8, handle: 2 },
   ratblade: { length: 22, handle: 3 },
   hookpole: { length: 46, handle: 6 },
+  repeater: { length: 28, handle: 4 },
+  longbow: { length: 36, handle: 4 },
+  handgun: { length: 34, handle: 4 },
+  pistols: { length: 18, handle: 3 },
 };
+
+export function rangedWeaponStyle(heroId: HeroId): DrawnWeaponStyle {
+  return HEROES[heroId].ranged.id as DrawnWeaponStyle;
+}
 
 export function enemyWeaponStyle(id: EnemyId): keyof typeof WEAPON_INFO | null {
   switch (id) {
@@ -54,7 +64,7 @@ export function generateTextures(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   for (const id of Object.keys(HEROES) as HeroId[]) drawHero(scene, g, id);
   for (const id of Object.keys(ENEMIES) as EnemyId[]) drawEnemy(scene, g, id);
-  for (const style of Object.keys(WEAPON_INFO) as (keyof typeof WEAPON_INFO)[]) drawWeapon(scene, g, style);
+  for (const style of Object.keys(WEAPON_INFO) as DrawnWeaponStyle[]) drawWeapon(scene, g, style);
   drawPickups(scene, g);
   drawMisc(scene, g);
   g.destroy();
@@ -287,7 +297,7 @@ function drawOgre(scene: Phaser.Scene, g: G): void {
   finish(scene, g, enemyTextureKey("ogre"), size, size);
 }
 
-function drawWeapon(scene: Phaser.Scene, g: G, style: keyof typeof WEAPON_INFO): void {
+function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
   const S = TEX_SCALE;
   const { length } = WEAPON_INFO[style];
   const w = (length + 4) * S;
@@ -362,6 +372,44 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: keyof typeof WEAPON_INFO):
     case "fists":
       g.fillStyle(0x8a8f96);
       g.fillCircle(6 * S, cy, 3 * S);
+      break;
+    case "repeater":
+      g.fillStyle(wood);
+      g.fillRect(0, cy - 1.5 * S, 8 * S, 3 * S);
+      g.fillStyle(0x4a423b);
+      g.fillRect(8 * S, cy - 2.5 * S, 16 * S, 5 * S);
+      g.fillStyle(steel);
+      g.fillRect(24 * S, cy - 1.2 * S, 6 * S, 2.4 * S);
+      g.fillStyle(0xd9b44a);
+      g.fillCircle(14 * S, cy + 4 * S, 2.2 * S);
+      break;
+    case "longbow":
+      g.lineStyle(2.2 * S, wood, 1);
+      g.beginPath();
+      g.arc(18 * S, cy, 16 * S, -Math.PI * 0.55, Math.PI * 0.55, false);
+      g.strokePath();
+      g.lineStyle(S * 0.8, 0xe8e0d0, 1);
+      g.lineBetween(10 * S, cy - 13 * S, 10 * S, cy + 13 * S);
+      g.fillStyle(0xc9a14a);
+      g.fillTriangle(10 * S, cy - 1 * S, 10 * S, cy + 1 * S, 34 * S, cy);
+      break;
+    case "handgun":
+      g.fillStyle(wood);
+      g.fillRect(0, cy - 1.5 * S, 10 * S, 3 * S);
+      g.fillStyle(0x3d3832);
+      g.fillRect(8 * S, cy - 2.8 * S, 22 * S, 5.6 * S);
+      g.fillStyle(steel);
+      g.fillRect(30 * S, cy - 1.4 * S, 6 * S, 2.8 * S);
+      g.fillStyle(0xd9b44a);
+      g.fillRect(12 * S, cy + 2.5 * S, 4 * S, 3 * S);
+      break;
+    case "pistols":
+      g.fillStyle(wood);
+      g.fillRect(0, cy - 1.3 * S, 6 * S, 2.6 * S);
+      g.fillStyle(0x3d3832);
+      g.fillRect(5 * S, cy - 2.2 * S, 10 * S, 4.4 * S);
+      g.fillStyle(steel);
+      g.fillRect(15 * S, cy - 1.1 * S, 5 * S, 2.2 * S);
       break;
   }
   finish(scene, g, weaponTextureKey(style), w, h);
