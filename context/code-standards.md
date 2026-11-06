@@ -16,15 +16,19 @@
 - Validate every message from a client on the server before using it.
 - Use `type` imports for types (`import type { X } from ...`).
 - Angles are radians. Positions and radii are world pixels.
-  Durations in data tables are milliseconds; simulation converts to ticks.
+  Durations in data tables and tuning are seconds; the simulation steps by
+  the fixed `DT`.
 
 ## Phaser (client)
 
-- One Phaser `Scene` per screen: `MenuScene`, `LobbyScene`, `GameScene`,
-  `ResultsScene`.
+- Two Phaser scenes: `GameScene` (world) and `HudScene` (overlay drawn on
+  top). Menus, lobby, results, pause and settings are HTML in
+  `client/index.html`, driven by `client/src/ui/overlay.ts`.
 - Scenes render state and forward input; gameplay rules stay in `shared/`.
-- Rendering objects are keyed by entity id and created/destroyed in
-  response to server state add/remove events.
+- Rendering objects are keyed by entity id; each frame the scene diffs
+  server state against its views, creating and destroying as needed.
+- Phaser stops its loop for good if a frame throws, so guard anything that
+  reads room state before the first patch (`hasState`).
 - Do not use Phaser Arcade or Matter physics for gameplay.
 
 ## Colyseus (server)
@@ -47,8 +51,11 @@
 
 - `client/src/scenes/` — Phaser scenes
 - `client/src/net/` — Colyseus client connection, prediction, interpolation
-- `client/src/render/` — sprite creation, effects, HUD drawing
-- `client/public/assets/` — sprites, audio, maps
+- `client/src/render/` — generated textures, level, creature views, effects
+- `client/src/audio/` — synthesised sound effects and music
+- `client/src/ui/` — HTML overlay screens
+- `shared/src/levels/` — ASCII level maps
+- `scripts/` — offline tests, level check and bot teammates
 - `server/src/rooms/` — Colyseus room classes
 - `server/src/state/` — schema state classes
 - `server/src/sim/` — tick loop systems (combat, AI, director)

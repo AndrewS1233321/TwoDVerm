@@ -74,7 +74,7 @@ game is moderately fast-paced; reaction time and attack timing matter.
 
 ### World and pacing
 
-- One linear level built in Tiled
+- One linear level, drawn as an ASCII map in `shared/src/levels/`
 - AI Director controls hordes, specials and boss timing
 - Mid-level "hold the point" horde event
 

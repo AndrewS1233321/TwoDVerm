@@ -10,7 +10,8 @@
 | Server         | Node.js + Colyseus                  | Rooms, room codes, joining, state sync over WebSockets        |
 | State sync     | @colyseus/schema                    | Declares synced state; sends only changes each tick           |
 | Server runtime | tsx                                 | Runs TypeScript server directly in dev and production         |
-| Levels         | Tiled (desktop app), JSON export    | Level layout, walls, spawn and zone markers                   |
+| Levels         | ASCII map in `shared/src/levels/`   | Level layout, walls, spawn and zone markers (one char a tile) |
+| Menus          | HTML/CSS overlay (`client/index.html`, `client/src/ui/overlay.ts`) | Main menu, lobby, results, pause, settings |
 | Hosting        | Fly.io (single region near players) | Serves the built client and runs the game server on one URL   |
 | Repo layout    | npm workspaces                      | `client`, `server`, `shared` packages in one repository       |
 
@@ -27,8 +28,25 @@
 - `shared/` — Pure game rules and data with no Phaser and no Colyseus
   imports: constants, math, collision, movement, combat resolution,
   weapon and enemy data tables, message types. Imported by both sides.
-- `client/public/assets/` — Sprites (code-drawn SVG/PNG), audio, Tiled maps.
+- Sprites are drawn in code at startup (`client/src/render/textures.ts`)
+  and sounds and music are synthesised with WebAudio (`client/src/audio/`),
+  so there are no asset files to download.
+- `scripts/` — Headless tools run on the server simulation: `combat-test`,
+  `mission-test`, `check:level`, `bot-test` (network smoke test) and `bot`
+  (bot teammates that join a room by code).
 - `context/` — Project documentation and specs for AI-driven development.
+
+## Client Layout
+
+- `scenes/GameScene.ts` — world drawing, input sending (30/sec), local
+  prediction, interpolation of others, effects and sounds from `fx` events.
+- `scenes/HudScene.ts` — health, block stamina, dodge pips, ammo, ultimate,
+  teammates, announcements, event timer, boss bar, prompts.
+- `net/` — connection (create/join/reconnect), prediction, interpolation.
+- `render/` — level, creature views (weapon swing animation from attack
+  data), effects, palette, generated textures.
+- One-off events (hits, blocks, deaths, tracers, announcements) are sent as
+  an `fx` message list each tick; lasting state is synced via the schema.
 
 ## Simulation Model
 
@@ -58,7 +76,9 @@ Every creature (hero or enemy) has:
 
 - **In-memory (server)**: all room and match state. Nothing persists
   after a room closes.
-- **Static files**: client build, sprites, audio, Tiled maps.
+- **Static files**: the client build only.
+- **Browser storage**: settings and name in localStorage; a reconnect
+  token in sessionStorage so a refresh rejoins the same seat.
 - **No database.** No accounts, no saved progress (see out of scope).
 
 ## Auth and Access Model

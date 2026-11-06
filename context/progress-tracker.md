@@ -4,18 +4,41 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Foundation (units 1-2)
+- Playtesting and tuning (all 12 units built)
 
 ## Current Goal
 
-- Unit 03: join by room code, server-moved players, deploy to Fly.io
+- Deploy to Fly.io and play a full mission with friends; collect feel
+  notes (attack timings, horde size, damage) for tuning in `shared/`.
 
 ## Completed
 
 - Unit 01: context files and build plan written.
 - Unit 02: skeleton. `npm run dev` starts Colyseus (port 2567) and Vite
-  (port 5173); browser shows floor and title and joins the `game` room;
-  typecheck passes. Installed: Colyseus 0.16, Phaser 3, Vite 6.
+  (port 5173). Colyseus 0.16, Phaser 3, Vite 6.
+- Unit 03: main menu, 4-letter room codes, invite link (`?code=ABCD`),
+  lobby with hero picks and host start, reconnect after refresh, results
+  screen. One Node server serves the client build and the game in
+  production. `Dockerfile` and `fly.toml` written (region `syd`).
+- Unit 04: local prediction with replay of unacknowledged inputs and eased
+  corrections; others interpolated 110ms behind. Tested with `npm run
+  dev:lag` (100ms each way): ~150ms ping, corrections under 12px, final
+  positions match the server exactly.
+- Unit 05: separate light and heavy chains (hold 0.2s for heavy), block
+  (front only, block stamina, guard break), push, dodge (own charges,
+  i-frames), front/side/back damage, hit numbers, hit-pause, shake, sounds.
+- Unit 06: slave rats, clanrats, Stormvermin with telegraphed swings;
+  downed state with bleed-out, hold-E revive, respawn after 45s.
+- Unit 07: 118x32 tile mission as an ASCII map; flow-field pathing (wide
+  field for large creatures); victory in the end zone, defeat when all are
+  down.
+- Units 08-09: AI Director (intensity, hordes, elites after 2 minutes,
+  specials capped at 2); Ratling Gunner, Globadier, Packmaster.
+- Units 10-12: four heroes with their own weapons, ranged weapons and
+  ultimates; hold-the-square event that opens the gate; Rat Ogre boss;
+  HUD, generated music and sound, settings, pause menu.
+- Tests: `npm run combat-test` (17 checks) and `npm run mission-test`
+  (19 checks, including 90 rats at ~0.2ms per tick) all pass.
 
 ## In Progress
 
@@ -23,13 +46,13 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-- Unit 03: join by room code, server-moved players, deploy to Fly.io
+- First deploy (`fly launch`, `fly deploy --ha=false`) and a friend test.
+- Tuning pass from playtest notes.
 
 ## Open Questions
 
-- Can light and heavy attacks mix within one combo (light, light,
-  heavy as in Vermintide)? Decide in the unit 05b spec.
-- Fly.io region: pick the one nearest all four players (likely Sydney).
+- Is the horde size right for 4 real players (10 + 5 per player)?
+- Should ammo crates be single-use like medical supplies?
 
 ## Architecture Decisions
 
@@ -41,9 +64,18 @@ Update this file after every meaningful implementation change.
 - Every creature has facing and radius, so directional hits and
   different sizes work identically for heroes and enemies.
 - Two separate player resources: block stamina and dodge charges.
-- Sprites are code-drawn first; AI image generation used for
-  backgrounds and menus.
+- Light and heavy chains are independent counters (a heavy in the middle
+  does not reset the light chain); both reset after 0.9s without attacking.
+- Levels are ASCII maps in `shared/` instead of Tiled, so the server and
+  client read the same file with no extra tool or loader.
+- Menus are an HTML overlay rather than Phaser scenes: text input,
+  buttons and copy-to-clipboard come for free.
+- Sprites are drawn in code and sounds are synthesised, so the game is a
+  single ~400KB (gzipped) download.
+- Unaware enemies count every hit as a back hit (rewards sneaking up).
 
 ## Session Notes
 
 - Node v24 and git are installed on the dev machine.
+- The Fly CLI is not installed yet; Docker Desktop is installed but was
+  not running, so the image was not built locally (Fly builds it remotely).

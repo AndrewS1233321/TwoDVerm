@@ -14,7 +14,7 @@ Each unit ends with something playable. Write the spec file for a unit
 | 05c  | Directional hits        | Hit arcs and cleave vs training dummies of varied sizes; front/back detection; backstab bonus; hit feedback | 05b |
 | 05d  | Defence and resources   | Block (front only) with block stamina, push, guard break; dodge with dodge charges; HUD bars | 05c        |
 | 06   | First enemies           | Horde rat sprite and AI, telegraphed attacks, player damage, downed state, revive            | 05d        |
-| 07   | Level                   | Tiled map, wall collision, flow-field pathfinding (separate field for large creatures), start/end zones, win/lose | 06 |
+| 07   | Level                   | ASCII tile map (replaces Tiled), wall collision, flow-field pathfinding (separate field for large creatures), start/end zones, win/lose | 06 |
 | 08   | AI Director             | Horde waves, ambient spawns, intensity pacing                                                | 07         |
 | 09   | Elites and specials     | Armoured rat, gas thrower, hooker, gunner, with warnings                                     | 08         |
 | 10   | Heroes                  | 4 archetypes, ranged weapons and ammo, ultimates, hero-select lobby                          | 09         |
