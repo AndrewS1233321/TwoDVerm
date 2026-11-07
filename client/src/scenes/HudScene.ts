@@ -41,11 +41,11 @@ export class HudScene extends Phaser.Scene {
     const t = (key: string, style: Phaser.Types.GameObjects.Text.TextStyle, ox = 0, oy = 0) => {
       this.texts[key] = this.add.text(0, 0, "", { fontFamily: FONT, fontSize: "13px", color: palette.textPrimary, stroke: "#000", strokeThickness: 3, ...style }).setOrigin(ox, oy);
     };
-    t("hp", { fontSize: "12px" }, 0, 0.5);
-    t("ammo", { fontSize: "16px", fontStyle: "bold" }, 1, 1);
-    t("ammoName", { fontSize: "11px", color: palette.textMuted }, 1, 1);
-    t("ult", { fontSize: "12px", fontStyle: "bold" }, 0.5, 0.5);
-    t("ultName", { fontSize: "11px", color: palette.textMuted }, 0.5, 0);
+    t("hp", { fontSize: "14px" }, 0, 0.5);
+    t("ammo", { fontSize: "28px", fontStyle: "bold" }, 0, 0.5);
+    t("ammoName", { fontSize: "12px", color: palette.textMuted }, 0, 0);
+    t("ult", { fontSize: "13px", fontStyle: "bold" }, 0.5, 0.5);
+    t("ultName", { fontSize: "12px", color: palette.textMuted }, 0.5, 0);
     t("announce", { fontFamily: TITLE_FONT, fontSize: "30px", color: palette.accent, strokeThickness: 5 }, 0.5, 0.5);
     t("event", { fontSize: "16px", fontStyle: "bold", color: palette.accent }, 0.5, 0);
     t("boss", { fontFamily: TITLE_FONT, fontSize: "16px", color: "#ff8a70" }, 0.5, 1);
@@ -53,7 +53,7 @@ export class HudScene extends Phaser.Scene {
     t("status", { fontFamily: TITLE_FONT, fontSize: "24px", color: "#ff8a70", strokeThickness: 5 }, 0.5, 0.5);
     t("info", { fontSize: "12px", color: palette.textMuted }, 1, 0);
     t("hint", { fontSize: "12px", color: palette.textMuted, align: "center" }, 0.5, 0);
-    t("heroName", { fontFamily: TITLE_FONT, fontSize: "14px", color: palette.accent }, 0, 1);
+    t("heroName", { fontFamily: TITLE_FONT, fontSize: "15px", color: palette.accent }, 0, 1);
     for (let i = 0; i < 3; i++) {
       this.teamTexts.push(this.add.text(0, 0, "", { fontFamily: FONT, fontSize: "12px", color: palette.textPrimary, stroke: "#000", strokeThickness: 3 }));
     }
@@ -118,82 +118,103 @@ export class HudScene extends Phaser.Scene {
     const def = HEROES[me.heroId as keyof typeof HEROES];
     const g = this.g;
     const t = this.texts;
-    const x = 20;
-    const y = H - 92;
-    g.fillStyle(0x000000, 0.45);
-    g.fillRoundedRect(x - 10, y - 26, 300, 102, 8);
-    g.fillStyle(toColorNumber(def.color), 1);
-    g.fillCircle(x + 20, y + 22, 20);
-    g.lineStyle(2, colors.accent, 1);
-    g.strokeCircle(x + 20, y + 22, 20);
-    t.heroName!.setPosition(x, y - 6).setText(`${def.name} the ${def.title}`);
 
-    const bx = x + 50;
-    const bw = 220;
+    const panelW = 560;
+    const panelH = 118;
+    const x = Math.round(W / 2 - panelW / 2);
+    const y = H - panelH - 14;
+    g.fillStyle(0x000000, 0.5);
+    g.fillRoundedRect(x, y, panelW, panelH, 10);
+
+    const portraitX = x + 34;
+    const portraitY = y + 52;
+    g.fillStyle(toColorNumber(def.color), 1);
+    g.fillCircle(portraitX, portraitY, 24);
+    g.lineStyle(2, colors.accent, 1);
+    g.strokeCircle(portraitX, portraitY, 24);
+    t.heroName!.setOrigin(0, 1).setPosition(x + 66, y + 28).setText(`${def.name} the ${def.title}`);
+
+    const bx = x + 66;
+    const bw = 300;
+    const ammoX = bx + bw + 18;
     const downed = me.state === "downed";
     const hpFrac = downed ? me.downHp / DOWNED.hp : me.hp / Math.max(1, me.maxHp);
-    bar(g, bx, y + 2, bw, 12, hpFrac, downed ? 0x7a1010 : colors.health);
-    t.hp!.setPosition(bx + 6, y + 8).setText(downed ? `DOWNED ${Math.ceil(me.downHp)}` : `${Math.ceil(me.hp)} / ${me.maxHp}`);
+    bar(g, bx, y + 34, bw, 18, hpFrac, downed ? 0x7a1010 : colors.health);
+    t.hp!.setPosition(bx + 8, y + 43).setText(downed ? `DOWNED ${Math.ceil(me.downHp)}` : `${Math.ceil(me.hp)} / ${me.maxHp}`);
 
     const segs = me.maxStamina;
-    const segW = (bw - (segs - 1) * 3) / segs;
+    const gap = 4;
+    const segH = 12;
+    const segW = (bw - (segs - 1) * gap) / segs;
+    const staminaY = y + 58;
     for (let i = 0; i < segs; i++) {
       const fill = clamp(me.stamina - i, 0, 1);
-      const sx = bx + i * (segW + 3);
+      const sx = bx + i * (segW + gap);
       g.fillStyle(0x000000, 0.6);
-      g.fillRect(sx, y + 20, segW, 8);
+      g.fillRect(sx, staminaY, segW, segH);
       const flash = me.guardBroken && Math.floor(performance.now() / 120) % 2 === 0;
       g.fillStyle(flash ? colors.health : colors.stamina, 1);
-      g.fillRect(sx, y + 20, segW * fill, 8);
+      g.fillRect(sx, staminaY, segW * fill, segH);
     }
+
+    const dodgeY = y + 88;
+    const dodgeR = 9;
     for (let i = 0; i < me.maxDodges; i++) {
-      const cx = bx + 7 + i * 18;
+      const cx = bx + dodgeR + i * (dodgeR * 2 + 8);
       g.fillStyle(0x000000, 0.6);
-      g.fillCircle(cx, y + 40, 6);
+      g.fillCircle(cx, dodgeY, dodgeR + 1);
       if (i < me.dodgeCharges) {
         g.fillStyle(colors.dodge, 1);
-        g.fillCircle(cx, y + 40, 5);
+        g.fillCircle(cx, dodgeY, dodgeR);
       }
     }
 
-    const ux = bx + bw - 22;
-    const uy = y + 50;
-    const ready = me.ultCooldown <= 0;
+    const ux = bx + bw - 20;
+    const uy = dodgeY;
+    const ultReady = me.ultCooldown <= 0;
     g.fillStyle(0x000000, 0.6);
-    g.fillCircle(ux, uy, 16);
-    if (ready) {
+    g.fillCircle(ux, uy, 18);
+    if (ultReady) {
       g.fillStyle(colors.accent, 0.6 + 0.3 * Math.sin(performance.now() * 0.006));
-      g.fillCircle(ux, uy, 14);
+      g.fillCircle(ux, uy, 16);
     } else {
       const frac = 1 - me.ultCooldown / def.ultCooldown;
       g.fillStyle(colors.accent, 0.5);
-      g.slice(ux, uy, 14, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2, false);
+      g.slice(ux, uy, 16, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2, false);
       g.fillPath();
     }
-    t.ult!.setPosition(ux, uy).setText(ready ? "F" : `${Math.ceil(me.ultCooldown)}`);
-    t.ultName!.setPosition(ux - 60, uy - 8).setOrigin(1, 0).setText(def.ultName);
+    t.ult!.setPosition(ux, uy).setText(ultReady ? "F" : `${Math.ceil(me.ultCooldown)}`);
+    t.ultName!.setOrigin(1, 0.5).setPosition(ux - 26, uy).setText(def.ultName);
 
     if (me.carryingBarrel) {
-      const ready = barrelThrowReady(me.barrelCharge * BARREL.throwMaxHold);
-      t.ammo!.setPosition(W - 20, H - 30).setText("Barrel").setColor(palette.accent);
+      const throwReady = barrelThrowReady(me.barrelCharge * BARREL.throwMaxHold);
+      t.ammo!.setOrigin(0, 0.5).setPosition(ammoX, y + 43).setText("Barrel").setColor(palette.accent);
       t.ammoName!
-        .setPosition(W - 20, H - 14)
-        .setText(ready ? "Release to throw   Q: drop" : "Hold 1s+ to throw (4s max)   Q: drop");
+        .setOrigin(0, 0)
+        .setPosition(ammoX, y + 62)
+        .setText(throwReady ? "Release to throw" : "Hold 1s+ to throw");
       if (me.barrelCharge > 0) {
-        const bx = W - 160;
-        const by = H - 52;
-        const minMark = (BARREL.throwMinHold / BARREL.throwMaxHold) * 140;
-        this.g.fillStyle(0x000000, 0.55);
-        this.g.fillRect(bx, by, 140, 8);
-        this.g.fillStyle(ready ? colors.accent : colors.textMuted, 1);
-        this.g.fillRect(bx, by, 140 * clamp(me.barrelCharge, 0, 1), 8);
-        this.g.lineStyle(1, 0xffffff, 0.7);
-        this.g.lineBetween(bx + minMark, by - 1, bx + minMark, by + 9);
+        const chargeW = 120;
+        const chargeY = y + 84;
+        const minMark = (BARREL.throwMinHold / BARREL.throwMaxHold) * chargeW;
+        g.fillStyle(0x000000, 0.55);
+        g.fillRect(ammoX, chargeY, chargeW, 10);
+        g.fillStyle(throwReady ? colors.accent : colors.textMuted, 1);
+        g.fillRect(ammoX, chargeY, chargeW * clamp(me.barrelCharge, 0, 1), 10);
+        g.lineStyle(1, 0xffffff, 0.7);
+        g.lineBetween(ammoX + minMark, chargeY - 1, ammoX + minMark, chargeY + 11);
       }
     } else {
       const ranged = me.rangedMode;
-      t.ammo!.setPosition(W - 20, H - 30).setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name).setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
-      t.ammoName!.setPosition(W - 20, H - 14).setText(ranged ? `Left click: fire   Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
+      t.ammo!
+        .setOrigin(0, 0.5)
+        .setPosition(ammoX, y + 43)
+        .setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name)
+        .setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
+      t.ammoName!
+        .setOrigin(0, 0)
+        .setPosition(ammoX, y + 62)
+        .setText(ranged ? `Fire · Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
     }
   }
 
