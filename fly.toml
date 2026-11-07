@@ -1,33 +1,36 @@
-# Fly.io settings. `fly launch` will offer to change the app name to one that is free.
-app = "twodverm"
-primary_region = "syd"
+# fly.toml app configuration file generated for vermy on 2026-11-07T12:23:53+11:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'vermy'
+primary_region = 'syd'
 
 [build]
-
 [env]
-  PORT = "8080"
+  PORT = '8080'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  # The machine sleeps when nobody is connected and wakes on the first visit (a few seconds).
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  # Rooms live in memory, so everyone must reach the same machine: deploy with `fly deploy --ha=false`.
   min_machines_running = 0
 
   [http_service.concurrency]
-    type = "connections"
-    soft_limit = 200
+    type = 'connections'
     hard_limit = 250
+    soft_limit = 200
 
   [[http_service.checks]]
-    grace_period = "10s"
-    interval = "30s"
-    method = "GET"
-    path = "/health"
-    timeout = "5s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
+  cpus = 1
+  memory_mb = 512
