@@ -394,6 +394,7 @@ export class World {
           text: `Hold the chamber (${Math.ceil(this.eventTimeLeft)}s)!`,
           kind: "event",
         });
+        this.director.triggerHoldEntryHorde();
       }
       if (this.eventActive && this.holdObjectiveId === obj.id) {
         this.eventTimeLeft -= dt;

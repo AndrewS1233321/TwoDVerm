@@ -153,6 +153,11 @@ export class Director {
     return "stormvermin";
   }
 
+  /** First entry into a hold event: a horde at twice the regular size. */
+  triggerHoldEntryHorde(): void {
+    this.startHorde(this.hordeSize() * 2, this.world.missionTime > 120);
+  }
+
   private checkTriggers(): void {
     const w = this.world;
     const standing = w.standingHeroes();
@@ -162,6 +167,7 @@ export class Director {
       this.waveT = 2;
       this.eventSpecialSpawned = false;
       w.emit({ t: "announce", text: "Hold the square until the gate opens!", kind: "event" });
+      this.triggerHoldEntryHorde();
     }
     if (
       !this.bossSpawned &&
