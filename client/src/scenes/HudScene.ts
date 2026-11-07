@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   BARREL,
+  barrelThrowReady,
   clamp,
   dist,
   DOWNED,
@@ -173,15 +174,21 @@ export class HudScene extends Phaser.Scene {
     t.ultName!.setPosition(ux - 60, uy - 8).setOrigin(1, 0).setText(def.ultName);
 
     if (me.carryingBarrel) {
+      const ready = barrelThrowReady(me.barrelCharge * BARREL.throwMaxHold);
       t.ammo!.setPosition(W - 20, H - 30).setText("Barrel").setColor(palette.accent);
-      t.ammoName!.setPosition(W - 20, H - 14).setText("Hold left click: throw   Q: drop");
+      t.ammoName!
+        .setPosition(W - 20, H - 14)
+        .setText(ready ? "Release to throw   Q: drop" : "Hold 1s+ to throw (4s max)   Q: drop");
       if (me.barrelCharge > 0) {
         const bx = W - 160;
         const by = H - 52;
+        const minMark = (BARREL.throwMinHold / BARREL.throwMaxHold) * 140;
         this.g.fillStyle(0x000000, 0.55);
         this.g.fillRect(bx, by, 140, 8);
-        this.g.fillStyle(colors.accent, 1);
+        this.g.fillStyle(ready ? colors.accent : colors.textMuted, 1);
         this.g.fillRect(bx, by, 140 * clamp(me.barrelCharge, 0, 1), 8);
+        this.g.lineStyle(1, 0xffffff, 0.7);
+        this.g.lineBetween(bx + minMark, by - 1, bx + minMark, by + 9);
       }
     } else {
       const ranged = me.rangedMode;
@@ -278,7 +285,12 @@ export class HudScene extends Phaser.Scene {
         }
       });
       if (!prompt && me.carryingBarrel) {
-        prompt = me.barrelCharge > 0 ? "Release to throw" : "Hold left click to throw · Q to drop";
+        const hold = me.barrelCharge * BARREL.throwMaxHold;
+        prompt = barrelThrowReady(hold)
+          ? "Release to throw"
+          : me.barrelCharge > 0
+            ? `Charging… ${Math.ceil(BARREL.throwMinHold - hold)}s`
+            : "Hold left click 1s+ to throw · Q to drop";
       }
       if (!prompt && !me.carryingBarrel && room.state.barrels) {
         room.state.barrels.forEach((b) => {

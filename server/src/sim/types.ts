@@ -169,6 +169,8 @@ export interface Barrel {
   vx: number;
   vy: number;
   flightT: number;
+  landX: number;
+  landY: number;
   throwerId: string;
 }
 

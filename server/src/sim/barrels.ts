@@ -1,4 +1,11 @@
-import { BARREL, collideCircle, dist, moveCircle } from "@twodverm/shared";
+import {
+  BARREL,
+  barrelLandingPoint,
+  barrelThrowDistance,
+  collideCircle,
+  dist,
+  moveCircle,
+} from "@twodverm/shared";
 import { damageEnemy, killEnemy, strikeHero } from "./damage";
 import type { Barrel, Hero } from "./types";
 import type { World } from "./World";
@@ -16,6 +23,8 @@ export function createBarrel(id: string, x: number, y: number): Barrel {
     vx: 0,
     vy: 0,
     flightT: 0,
+    landX: x,
+    landY: y,
     throwerId: "",
   };
 }
@@ -93,20 +102,36 @@ export function updateBarrels(world: World, dt: number): void {
       barrel.flightT -= dt;
       const beforeX = barrel.x;
       const beforeY = barrel.y;
-      const p = moveCircle(world.level, world.gateOpen, barrel.x, barrel.y, BARREL.radius, barrel.vx * dt, barrel.vy * dt);
+      const p = moveCircle(
+        world.level,
+        world.gateOpen,
+        barrel.x,
+        barrel.y,
+        BARREL.radius,
+        barrel.vx * dt,
+        barrel.vy * dt,
+      );
       barrel.x = p.x;
       barrel.y = p.y;
       const blocked =
-        Math.hypot(barrel.x - (beforeX + barrel.vx * dt), barrel.y - (beforeY + barrel.vy * dt)) > 2 ||
-        barrel.flightT <= 0;
-      if (blocked) {
+        Math.hypot(barrel.x - (beforeX + barrel.vx * dt), barrel.y - (beforeY + barrel.vy * dt)) > 2;
+      const arrived = dist(barrel.x, barrel.y, barrel.landX, barrel.landY) <= 10 || barrel.flightT <= 0;
+      if (blocked || arrived) {
         destroyBarrel(world, barrel, barrel.throwerId, true);
       }
       continue;
     }
 
     if (Math.abs(barrel.kvx) + Math.abs(barrel.kvy) >= 1) {
-      const p = moveCircle(world.level, world.gateOpen, barrel.x, barrel.y, BARREL.radius, barrel.kvx * dt, barrel.kvy * dt);
+      const p = moveCircle(
+        world.level,
+        world.gateOpen,
+        barrel.x,
+        barrel.y,
+        BARREL.radius,
+        barrel.kvx * dt,
+        barrel.kvy * dt,
+      );
       barrel.x = p.x;
       barrel.y = p.y;
       const decay = Math.exp(-8 * dt);
@@ -114,7 +139,6 @@ export function updateBarrels(world: World, dt: number): void {
       barrel.kvy *= decay;
     }
 
-    // Heroes walking into free barrels shove them.
     for (const hero of world.standingHeroes()) {
       if (hero.carryingBarrelId) continue;
       const d = dist(hero.x, hero.y, barrel.x, barrel.y);
@@ -194,16 +218,30 @@ export function throwBarrel(world: World, hero: Hero): void {
     hero.barrelCharge = 0;
     return;
   }
-  const t = Math.min(1, hero.barrelCharge / BARREL.throwChargeTime);
-  const speed = BARREL.throwMinSpeed + (BARREL.throwMaxSpeed - BARREL.throwMinSpeed) * t;
+  const distance = barrelThrowDistance(hero.barrelCharge, hero.radius);
+  if (distance <= 0) {
+    hero.barrelCharge = 0;
+    return;
+  }
+
+  const cos = Math.cos(hero.facing);
+  const sin = Math.sin(hero.facing);
+  const startX = hero.x + cos * (hero.radius + BARREL.radius);
+  const startY = hero.y + sin * (hero.radius + BARREL.radius);
+  const land = barrelLandingPoint(world.level, world.gateOpen, startX, startY, hero.facing, distance);
+  const travel = Math.max(1, dist(startX, startY, land.x, land.y));
+  const ang = Math.atan2(land.y - startY, land.x - startX);
+
   barrel.carriedBy = "";
   barrel.flying = true;
-  barrel.vx = Math.cos(hero.facing) * speed;
-  barrel.vy = Math.sin(hero.facing) * speed;
-  barrel.flightT = BARREL.throwMaxTime * (0.55 + 0.45 * t);
+  barrel.vx = Math.cos(ang) * BARREL.throwFlightSpeed;
+  barrel.vy = Math.sin(ang) * BARREL.throwFlightSpeed;
+  barrel.flightT = travel / BARREL.throwFlightSpeed + 0.05;
+  barrel.landX = land.x;
+  barrel.landY = land.y;
   barrel.throwerId = hero.id;
-  barrel.x = hero.x + Math.cos(hero.facing) * (hero.radius + BARREL.radius);
-  barrel.y = hero.y + Math.sin(hero.facing) * (hero.radius + BARREL.radius);
+  barrel.x = startX;
+  barrel.y = startY;
   hero.carryingBarrelId = "";
   hero.barrelCharge = 0;
   hero.actionSeq++;

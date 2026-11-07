@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import {
   angleTo,
+  BARREL,
+  barrelLandingPoint,
+  barrelThrowDistance,
+  barrelThrowReady,
   clamp,
   ENEMIES,
   generateLevel,
@@ -69,6 +73,8 @@ export class GameScene extends Phaser.Scene {
   private activeProcKey = "";
   private appliedProcProgress = -1;
   private procMeta: GeneratedLevelMeta | null = null;
+  /** Local barrel charge timer for throw preview (seconds). */
+  private localBarrelCharge = 0;
   private readonly lagMs = Number(new URLSearchParams(location.search).get("lag") ?? 0);
 
   constructor() {
@@ -259,9 +265,51 @@ export class GameScene extends Phaser.Scene {
     this.syncEnemies(delta);
     this.syncPickups();
     this.syncBarrels();
+    this.updateBarrelThrowPreview(delta / 1000, me);
     this.drawHazards();
     this.levelRenderer.setGateOpen(state.gateOpen);
     this.followCamera();
+  }
+
+  private updateBarrelThrowPreview(dt: number, me: PlayerView | undefined): void {
+    if (!me?.carryingBarrel || me.state === "dead" || me.state === "downed") {
+      this.localBarrelCharge = 0;
+      return;
+    }
+    const holding = this.controls.enabled && this.input.activePointer.leftButtonDown();
+    if (holding) this.localBarrelCharge = Math.min(BARREL.throwMaxHold, this.localBarrelCharge + dt);
+    else this.localBarrelCharge = 0;
+
+    if (this.localBarrelCharge <= 0) return;
+    if (!isHeroId(me.heroId)) return;
+    const def = HEROES[me.heroId];
+    const pos = this.localPosition;
+    const pointer = this.input.activePointer;
+    pointer.updateWorldPoint(this.cameras.main);
+    const facing = angleTo(pos.x, pos.y, pointer.worldX, pointer.worldY);
+    const distance = barrelThrowDistance(this.localBarrelCharge, def.radius);
+    const ready = barrelThrowReady(this.localBarrelCharge);
+    const startX = pos.x + Math.cos(facing) * (def.radius + BARREL.radius);
+    const startY = pos.y + Math.sin(facing) * (def.radius + BARREL.radius);
+    const land =
+      distance > 0
+        ? barrelLandingPoint(this.level, this.room?.state.gateOpen ?? true, startX, startY, facing, distance)
+        : { x: startX, y: startY };
+
+    const g = this.ground;
+    const alpha = ready ? 0.85 : 0.35;
+    const col = ready ? colors.accent : colors.textMuted;
+    g.lineStyle(2, col, alpha * 0.7);
+    g.lineBetween(startX, startY, land.x, land.y);
+    g.fillStyle(col, alpha * 0.2);
+    g.fillCircle(land.x, land.y, BARREL.throwRadius * (ready ? 0.55 : 0.35));
+    g.lineStyle(2, col, alpha);
+    g.strokeCircle(land.x, land.y, 10);
+    g.lineStyle(1.5, col, alpha);
+    g.strokeCircle(land.x, land.y, BARREL.radius);
+    // Crosshair
+    g.lineBetween(land.x - 14, land.y, land.x + 14, land.y);
+    g.lineBetween(land.x, land.y - 14, land.x, land.y + 14);
   }
 
   private backdrop(delta: number): void {

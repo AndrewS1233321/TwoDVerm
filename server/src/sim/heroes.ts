@@ -377,9 +377,10 @@ function toggleRanged(hero: Hero): void {
 
 function updateIdle(world: World, hero: Hero, dt: number): void {
   if (hero.carryingBarrelId) {
-    if (hero.held.attack) hero.barrelCharge += dt;
-    if (hero.edges.attackReleased && hero.barrelCharge > 0.04) {
-      throwBarrel(world, hero);
+    if (hero.held.attack) hero.barrelCharge = Math.min(BARREL.throwMaxHold, hero.barrelCharge + dt);
+    if (hero.edges.attackReleased) {
+      if (hero.barrelCharge >= BARREL.throwMinHold) throwBarrel(world, hero);
+      else hero.barrelCharge = 0;
       return;
     }
     if (!hero.held.attack) hero.barrelCharge = 0;

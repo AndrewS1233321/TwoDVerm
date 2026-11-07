@@ -32,7 +32,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.maxAmmo = hero.def.ranged.ammo;
   s.rangedMode = hero.rangedMode;
   s.carryingBarrel = !!hero.carryingBarrelId;
-  s.barrelCharge = r2(Math.min(1, hero.barrelCharge / BARREL.throwChargeTime));
+  s.barrelCharge = r2(Math.min(1, hero.barrelCharge / BARREL.throwMaxHold));
   s.ultCooldown = r1(hero.ultCd);
   s.ultActive = r1(hero.ultActiveT);
   s.reviveProgress = hero.state === "downed" ? r2(hero.reviveT / DOWNED.reviveTime) : 0;
