@@ -294,10 +294,22 @@
       .loc-node:hover:not(:disabled) {
         border-color: var(--accent);
       }
-      .loc-node.selected {
+      .loc-node.inspected {
         outline: 2px solid var(--accent);
         box-shadow: 0 0 0 1px rgba(201, 161, 74, 0.35);
         background: #3a3128;
+      }
+      .loc-node.voted {
+        border-color: var(--success);
+      }
+      .loc-node.voted .loc-votes {
+        color: var(--success);
+      }
+      .expedition-detail-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: -6px 0 14px;
       }
       .loc-node .loc-name {
         font-family: Georgia, serif;
@@ -470,7 +482,7 @@
     <div id="expedition" class="screen">
       <div class="panel">
         <h1 style="font-size: 34px">Gingey's Map</h1>
-        <p class="subtitle">Vote on the next path through the Wastes. Majority decides; ties are broken by fate.</p>
+        <p class="subtitle">Inspect a path, then confirm with Vote. Majority decides; ties are broken by fate.</p>
         <p id="expedition-progress" class="muted" style="text-align: center; margin: -8px 0 12px">Stop 1 of 4</p>
         <div class="expedition-map">
           <div class="expedition-start">Choose your road</div>
@@ -482,6 +494,9 @@
         </div>
         <div id="expedition-detail" class="expedition-detail">
           <div class="muted">Select a location to inspect its dangers and rewards.</div>
+        </div>
+        <div class="expedition-detail-actions">
+          <button id="vote-btn" class="primary" disabled>Vote for this path</button>
         </div>
         <h3>Votes</h3>
         <div id="expedition-votes" class="expedition-votes"></div>

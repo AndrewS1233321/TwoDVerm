@@ -70,6 +70,7 @@ export class Overlay {
     el("start-btn").onclick = () => this.h.onStart();
     el("lobby-leave-btn").onclick = () => this.h.onLeave();
     el("expedition-leave-btn").onclick = () => this.h.onLeave();
+    el("vote-btn").onclick = () => this.confirmVote();
     el("travel-btn").onclick = () => this.h.onTravel();
     el("results-leave-btn").onclick = () => this.h.onLeave();
     el("return-btn").onclick = () => this.h.onReturnToLobby();
@@ -281,7 +282,10 @@ export class Overlay {
     this.fillLocationNode(el<HTMLButtonElement>("expedition-option-b"), optionB, myVote, voteCount);
 
     const detail = this.inspected && isExpeditionLocationId(this.inspected) ? EXPEDITION_LOCATIONS[this.inspected] : null;
-    el("expedition-detail").innerHTML = detail ? this.locationDetailHtml(detail) : `<div class="muted">Select a location to inspect its dangers and rewards.</div>`;
+    el("expedition-detail").innerHTML = detail
+      ? this.locationDetailHtml(detail)
+      : `<div class="muted">Select a location to inspect its dangers and rewards.</div>`;
+    this.updateVoteButton(myVote);
 
     el("expedition-votes").innerHTML = players
       .map((p) => {
@@ -297,14 +301,38 @@ export class Overlay {
     travel.style.display = isHost ? "" : "none";
     travel.disabled = !anyVote;
     el("expedition-status").textContent = !myVote
-      ? "Click a path to cast your vote"
-      : isHost
-        ? allVoted
-          ? "All voted — Travel, or wait for auto-depart"
-          : "Waiting for votes — Travel uses majority of votes cast"
-        : allVoted
-          ? "All voted — departing soon"
-          : "Waiting for the rest of the party";
+      ? "Inspect a path, then click Vote to confirm"
+      : this.inspected && this.inspected !== myVote
+        ? "Inspecting another path — Vote again to change"
+        : isHost
+          ? allVoted
+            ? "All voted — Travel, or wait for auto-depart"
+            : "Waiting for votes — Travel uses majority of votes cast"
+          : allVoted
+            ? "All voted — departing soon"
+            : "Waiting for the rest of the party";
+  }
+
+  private updateVoteButton(myVote: ExpeditionLocationId | null): void {
+    const btn = el<HTMLButtonElement>("vote-btn");
+    const id = this.inspected;
+    if (!id || !isExpeditionLocationId(id)) {
+      btn.disabled = true;
+      btn.textContent = "Vote for this path";
+      return;
+    }
+    if (myVote === id) {
+      btn.disabled = true;
+      btn.textContent = "Voted for this path";
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = myVote ? "Change vote to this path" : "Vote for this path";
+  }
+
+  private confirmVote(): void {
+    if (!this.inspected || !isExpeditionLocationId(this.inspected)) return;
+    this.h.onVoteLocation(this.inspected);
   }
 
   private fillLocationNode(
@@ -321,17 +349,20 @@ export class Overlay {
     }
     const loc = EXPEDITION_LOCATIONS[id];
     btn.disabled = false;
-    btn.classList.toggle("selected", myVote === id || this.inspected === id);
+    btn.classList.toggle("inspected", this.inspected === id);
+    btn.classList.toggle("voted", myVote === id);
+    const votes = voteCount(id);
     btn.innerHTML = `<span class="loc-name">${escapeHtml(loc.name)}</span>
       <span class="loc-curse${loc.curse ? "" : " none"}">${loc.curse ? `Curse: ${escapeHtml(loc.curse)}` : "Uncursed"}</span>
       <span class="muted">${escapeHtml(loc.factions)}</span>
-      <span class="loc-votes">${voteCount(id)} vote${voteCount(id) === 1 ? "" : "s"}</span>`;
+      <span class="loc-votes">${myVote === id ? "Your vote · " : ""}${votes} vote${votes === 1 ? "" : "s"}</span>`;
     btn.onclick = () => {
       this.inspected = id;
       el("expedition-detail").innerHTML = this.locationDetailHtml(loc);
-      el("expedition-option-a").classList.toggle("selected", id === el("expedition-option-a").dataset.locId);
-      el("expedition-option-b").classList.toggle("selected", id === el("expedition-option-b").dataset.locId);
-      this.h.onVoteLocation(id);
+      el("expedition-option-a").classList.toggle("inspected", id === el("expedition-option-a").dataset.locId);
+      el("expedition-option-b").classList.toggle("inspected", id === el("expedition-option-b").dataset.locId);
+      this.updateVoteButton(myVote);
+      this.signature = "";
     };
     btn.dataset.locId = id;
   }
