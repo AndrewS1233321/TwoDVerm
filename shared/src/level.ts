@@ -63,6 +63,8 @@ export interface Level {
   medKits: Point[];
   dummySpawns: DummySpawn[];
   summonPads: SummonPad[];
+  /** Centres where a merchant NPC should stand (Gingey Wastes hall). */
+  merchantSpawns: Point[];
   roomLabels: RoomLabel[];
 }
 
@@ -93,6 +95,7 @@ export function parseLevel(rows: readonly string[]): Level {
     medKits: [],
     dummySpawns: [],
     summonPads: [],
+    merchantSpawns: [],
     roomLabels: [],
   };
 
@@ -129,6 +132,7 @@ export function parseLevel(rows: readonly string[]): Level {
         case "M": level.medKits.push(c); break;
         case "D": level.dummySpawns.push({ armored: false, x: c.x, y: c.y }); break;
         case "F": level.dummySpawns.push({ armored: true, x: c.x, y: c.y }); break;
+        case "N": level.merchantSpawns.push(c); break;
       }
     }
   }

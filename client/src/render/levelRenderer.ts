@@ -169,7 +169,11 @@ export class LevelRenderer {
       this.disposables.push(g, text);
     };
     zone(this.level.holdZone, colors.accent, "HOLD THE SQUARE");
-    zone(this.level.endZone, colors.success, "SAFE ROOM");
+    zone(
+      this.level.endZone,
+      colors.success,
+      this.level.merchantSpawns.length > 0 ? "HOLD TO DEPART" : "SAFE ROOM",
+    );
   }
 
   private drawGate(): void {

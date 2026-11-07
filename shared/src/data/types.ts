@@ -78,7 +78,7 @@ export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "boss" | "du
 /** Combat enemies that appear in missions and on testing-zone summon pads. */
 export type CombatEnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "gas" | "hooker" | "ogre";
 
-export type EnemyId = CombatEnemyId | "dummy" | "dummyArmored";
+export type EnemyId = CombatEnemyId | "dummy" | "dummyArmored" | "merchant";
 
 export interface EnemyDef {
   id: EnemyId;

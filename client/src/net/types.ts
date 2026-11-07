@@ -95,6 +95,7 @@ export interface GameStateView {
   expeditionOptionA: string;
   expeditionOptionB: string;
   expeditionStop: number;
+  merchantHold: number;
   gateOpen: boolean;
   eventActive: boolean;
   eventDone: boolean;

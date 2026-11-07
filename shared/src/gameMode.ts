@@ -7,8 +7,9 @@ import {
 import { MISSION_1 } from "./levels/mission1";
 import { TESTING_ZONE } from "./levels/testingZone";
 import { WASTES_CAMP } from "./levels/wastesCamp";
+import { WASTES_MERCHANT } from "./levels/wastesMerchant";
 import { parseLevel, type Level } from "./level";
-import { isExpeditionLocationId, type ExpeditionLocationId } from "./data/expedition";
+import { isExpeditionLocationId, WASTES_MERCHANT_LEVEL_ID, type ExpeditionLocationId } from "./data/expedition";
 
 export type GameMode = "default" | "testing" | "wastes";
 
@@ -31,7 +32,7 @@ export function sanitizeGameMode(raw: unknown): GameMode {
 /** Level id used while a wastes party is still in lobby / map vote. */
 export const WASTES_CAMP_LEVEL_ID = "wastes_camp";
 
-export type LevelId = "default" | "testing" | typeof WASTES_CAMP_LEVEL_ID | ExpeditionLocationId;
+export type LevelId = "default" | "testing" | typeof WASTES_CAMP_LEVEL_ID | typeof WASTES_MERCHANT_LEVEL_ID | ExpeditionLocationId;
 
 export function initialLevelIdForMode(mode: GameMode): LevelId {
   if (mode === "testing") return "testing";
@@ -45,6 +46,8 @@ export function levelRowsForId(id: string): readonly string[] {
       return TESTING_ZONE;
     case WASTES_CAMP_LEVEL_ID:
       return WASTES_CAMP;
+    case WASTES_MERCHANT_LEVEL_ID:
+      return WASTES_MERCHANT;
     case "grim_causeway":
       return GRIM_CAUSEWAY;
     case "weeping_quarry":
@@ -71,6 +74,8 @@ export function parseLevelById(id: string): Level {
       { name: "central", ...averagePoint(level.playerStarts) },
       { name: "summon room", ...averagePoint(level.summonPads) },
     ];
+  } else if (id === WASTES_MERCHANT_LEVEL_ID) {
+    level.roomLabels = [{ name: "merchant hall", ...averagePoint(level.playerStarts) }];
   } else if (isExpeditionLocationId(id)) {
     level.roomLabels = [{ name: id.replace(/_/g, " "), ...averagePoint(level.playerStarts) }];
   }

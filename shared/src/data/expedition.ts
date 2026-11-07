@@ -69,6 +69,11 @@ export const EXPEDITION_LOCATION_IDS = Object.keys(EXPEDITION_LOCATIONS) as Expe
 /** How many locations a Gingey Wastes expedition runs before the final results. */
 export const WASTES_EXPEDITION_STOPS = 4;
 
+/** Seconds the full party must stand in the merchant exit zone to depart. */
+export const MERCHANT_EXIT_HOLD = 10;
+
+export const WASTES_MERCHANT_LEVEL_ID = "wastes_merchant";
+
 export function isExpeditionLocationId(v: unknown): v is ExpeditionLocationId {
   return typeof v === "string" && (EXPEDITION_LOCATION_IDS as string[]).includes(v);
 }

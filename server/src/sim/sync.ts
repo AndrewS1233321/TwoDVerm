@@ -60,6 +60,7 @@ export function syncWorld(world: World, state: GameState): void {
   state.bossActive = world.bossActive;
   state.missionTime = Math.floor(world.missionTime);
   state.totalKills = world.totalKills;
+  state.merchantHold = r1(world.merchantHold);
 
   for (const hero of world.heroes.values()) {
     const s = state.players.get(hero.id);

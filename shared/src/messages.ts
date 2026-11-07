@@ -43,7 +43,7 @@ export interface JoinOptions {
   gameMode?: GameMode;
 }
 
-export type GamePhase = "lobby" | "expedition" | "playing" | "victory" | "defeat";
+export type GamePhase = "lobby" | "expedition" | "merchant" | "playing" | "victory" | "defeat";
 
 export type HitSide = "front" | "side" | "back";
 

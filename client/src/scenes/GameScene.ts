@@ -163,7 +163,7 @@ export class GameScene extends Phaser.Scene {
     if (state.levelId) this.setActiveLevel(state.levelId);
     const now = performance.now();
     if (state.phase !== this.lastPhase) {
-      if (state.phase === "playing") {
+      if (state.phase === "playing" || state.phase === "merchant") {
         this.predictor.reset();
         this.interp.clear();
       }
@@ -195,7 +195,7 @@ export class GameScene extends Phaser.Scene {
     }
     const state = room.state;
     const me = state.players.get(this.localId);
-    if (state.phase === "playing" && me?.heroId) {
+    if ((state.phase === "playing" || state.phase === "merchant") && me?.heroId) {
       this.inputAcc += delta;
       if (this.inputAcc > 250) this.inputAcc = TICK_MS;
       while (this.inputAcc >= TICK_MS) {
@@ -244,7 +244,7 @@ export class GameScene extends Phaser.Scene {
     let y = p.y;
     let facing = p.facing;
     let dodging = p.dodgeT > 0;
-    if (p.id === this.localId && this.room?.state.phase === "playing") {
+    if (p.id === this.localId && (this.room?.state.phase === "playing" || this.room?.state.phase === "merchant")) {
       const b = this.predictor.body;
       x = b.x + this.predictor.offset.x;
       y = b.y + this.predictor.offset.y;

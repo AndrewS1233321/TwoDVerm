@@ -34,6 +34,21 @@ export type HeroHitResult = "dodged" | "blocked" | "hit" | "ignored";
 
 export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: EnemyHit): void {
   if (!world.enemies.has(enemy.id)) return;
+  // Merchant is invulnerable (shop UI comes later).
+  if (enemy.def.id === "merchant") {
+    world.emit({
+      t: "hit",
+      id: enemy.id,
+      by: hero?.id ?? "",
+      x: enemy.x,
+      y: enemy.y,
+      dmg: 0,
+      side: "front",
+      armor: true,
+      heavy: hit.heavy ?? false,
+    });
+    return;
+  }
   const side = enemy.aggro ? hitSide(enemy.facing, enemy.x, enemy.y, hit.srcX, hit.srcY) : "back";
   let mul = ENEMY_DAMAGE_TAKEN[side];
   if (side === "back") mul *= hit.backstabMul ?? 1;

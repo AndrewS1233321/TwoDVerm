@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { clamp, dist, DOWNED, ENEMIES, HEROES, INTERACT_RANGE, isHeroId } from "@twodverm/shared";
+import { clamp, dist, DOWNED, ENEMIES, HEROES, INTERACT_RANGE, isHeroId, MERCHANT_EXIT_HOLD } from "@twodverm/shared";
 import { hasState } from "../net/connection";
 import type { PlayerView } from "../net/types";
 import { colors, palette, toColorNumber } from "../render/palette";
@@ -201,7 +201,17 @@ export class HudScene extends Phaser.Scene {
     } else {
       t.announce!.setText("");
     }
-    t.event!.setPosition(W / 2, 12).setText(room.state.eventActive ? `Hold the square: ${Math.ceil(room.state.eventTimeLeft)}s` : "");
+    let eventText = "";
+    if (room.state.phase === "merchant") {
+      const left = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
+      eventText =
+        room.state.merchantHold > 0
+          ? `Departing in ${Math.ceil(left)}s — stay in the exit`
+          : "Merchant hall — gather in the exit to continue";
+    } else if (room.state.eventActive) {
+      eventText = `Hold the square: ${Math.ceil(room.state.eventTimeLeft)}s`;
+    }
+    t.event!.setPosition(W / 2, 12).setText(eventText);
 
     let boss: { hp: number; maxHp: number } | null = null;
     room.state.enemies.forEach((e) => {

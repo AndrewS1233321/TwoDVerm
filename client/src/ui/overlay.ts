@@ -86,7 +86,7 @@ export class Overlay {
     window.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (el("settings").classList.contains("show")) el("settings").classList.remove("show");
-      else if (this.inRoom && this.currentPhase === "playing") this.setPaused(!this.paused);
+      else if (this.inRoom && (this.currentPhase === "playing" || this.currentPhase === "merchant")) this.setPaused(!this.paused);
     });
   }
 

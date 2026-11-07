@@ -103,6 +103,8 @@ export class GameState extends Schema {
   @type("string") expeditionOptionB = "";
   /** 1-based index of the next wastes stop to play (0 before the first Travel). */
   @type("uint8") expeditionStop = 0;
+  /** Seconds the party has held the merchant exit (0–MERCHANT_EXIT_HOLD). */
+  @type("float32") merchantHold = 0;
   @type("boolean") gateOpen = false;
   @type("boolean") eventActive = false;
   @type("boolean") eventDone = false;

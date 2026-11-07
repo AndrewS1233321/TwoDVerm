@@ -149,6 +149,21 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     elite: false,
     attacks: [],
   },
+  merchant: {
+    id: "merchant",
+    name: "Wastes Merchant",
+    radius: 16,
+    hp: 99999,
+    speed: 0,
+    turnRate: 0,
+    armored: false,
+    staggerResist: 99,
+    behavior: "dummy",
+    large: false,
+    special: false,
+    elite: false,
+    attacks: [],
+  },
 };
 
 export const ENEMY_IDS = Object.keys(ENEMIES) as EnemyId[];

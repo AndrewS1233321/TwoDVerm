@@ -6,8 +6,10 @@ import {
   initialLevelIdForMode,
   isInZone,
   MAX_ENEMIES,
+  MERCHANT_EXIT_HOLD,
   parseLevelById,
   tileIndexAt,
+  WASTES_MERCHANT_LEVEL_ID,
   type EnemyId,
   type FxEvent,
   type GameMode,
@@ -49,6 +51,10 @@ export class World {
   bossActive = false;
   missionTime = 0;
   totalKills = 0;
+  /** Seconds the party has continuously held the merchant exit. */
+  merchantHold = 0;
+  /** Set when the merchant exit hold finishes; GameRoom clears and advances. */
+  merchantDepart = false;
 
   private nextId = 1;
   private flowT = 0;
@@ -129,6 +135,37 @@ export class World {
     }
   }
 
+  /** After a wastes mission, send the party to the merchant hall. */
+  enterMerchantHall(): void {
+    this.loadLevel(WASTES_MERCHANT_LEVEL_ID);
+    this.enemies.clear();
+    this.hazards.clear();
+    this.pickups.clear();
+    this.fx = [];
+    this.gateOpen = true;
+    this.eventActive = false;
+    this.eventDone = false;
+    this.eventTimeLeft = 0;
+    this.bossActive = false;
+    this.merchantHold = 0;
+    this.merchantDepart = false;
+    let i = 0;
+    for (const hero of this.heroes.values()) {
+      const start = this.level.playerStarts[i++ % this.level.playerStarts.length]!;
+      resetHeroForMission(hero, start.x, start.y);
+    }
+    for (const p of this.level.merchantSpawns) {
+      this.spawnEnemy("merchant", p.x, p.y, false);
+    }
+    this.rebuildFlow();
+    this.phase = "merchant";
+    this.emit({
+      t: "announce",
+      text: "A merchant waits. Gather at the exit to continue.",
+      kind: "info",
+    });
+  }
+
   private addPickup(kind: Pickup["kind"], x: number, y: number): void {
     const id = this.newId("p");
     this.pickups.set(id, { id, kind, x, y, used: false });
@@ -196,13 +233,12 @@ export class World {
   }
 
   step(dt: number): void {
-    if (this.phase !== "playing") {
+    if (this.phase !== "playing" && this.phase !== "merchant") {
       for (const hero of this.heroes.values()) {
         hero.inputs.length = 0;
       }
       return;
     }
-    this.missionTime += dt;
 
     for (const hero of this.heroes.values()) processHeroInputs(this, hero);
     for (const hero of this.heroes.values()) updateHero(this, hero, dt);
@@ -219,11 +255,38 @@ export class World {
       this.despawnIfLonely(enemy, dt);
     }
 
-    updateHazards(this, dt);
     separateCreatures(this);
+
+    if (this.phase === "merchant") {
+      this.updateMerchantExit(dt);
+      return;
+    }
+
+    this.missionTime += dt;
+    updateHazards(this, dt);
     if (this.mode === "testing") this.updateSummonPads();
     else if (this.mode !== "wastes") this.director.step(dt);
     this.checkMissionEnd();
+  }
+
+  /** Whole living party must stand in the exit zone for MERCHANT_EXIT_HOLD seconds. */
+  private updateMerchantExit(dt: number): void {
+    if (this.merchantDepart) return;
+    const living = this.aliveHeroes();
+    const standing = this.standingHeroes();
+    const ready =
+      living.length > 0 &&
+      standing.length === living.length &&
+      standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y));
+    if (ready) {
+      this.merchantHold += dt;
+      if (this.merchantHold >= MERCHANT_EXIT_HOLD) {
+        this.merchantHold = MERCHANT_EXIT_HOLD;
+        this.merchantDepart = true;
+      }
+    } else {
+      this.merchantHold = 0;
+    }
   }
 
   /** Summon one enemy when a hero first steps onto a pad (not while standing on it). */

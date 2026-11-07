@@ -244,6 +244,10 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
     drawDummy(scene, g, id);
     return;
   }
+  if (id === "merchant") {
+    drawMerchant(scene, g);
+    return;
+  }
   const def = ENEMIES[id];
   const look = RAT_LOOKS[id] ?? { fur: palette.ratFurNum, width: 1.6 };
   const R = def.radius * TEX_SCALE;
@@ -286,6 +290,30 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
     g.fillTriangle(cx + R * 0.5, cy + R * 0.3, cx + R * 0.65, cy + R * 0.3, cx + R * 0.35, cy + R * 0.75);
   }
   finish(scene, g, enemyTextureKey(id), w, h);
+}
+
+function drawMerchant(scene: Phaser.Scene, g: G): void {
+  const R = ENEMIES.merchant.radius * TEX_SCALE;
+  const w = R * 4.4;
+  const h = R * 4.6;
+  const cx = w / 2;
+  const cy = h / 2;
+  // Cloak and body — human trader, not a rat.
+  g.fillStyle(0x3a2a18);
+  g.fillEllipse(cx, cy + R * 0.35, R * 2.1, R * 2.4);
+  g.fillStyle(0xc9a14a);
+  g.fillRect(cx - R * 0.9, cy + R * 0.1, R * 1.8, R * 0.35);
+  g.fillStyle(0xd4b896);
+  g.fillCircle(cx, cy - R * 0.55, R * 0.72);
+  g.fillStyle(0x2a2218);
+  g.fillEllipse(cx, cy - R * 1.05, R * 1.35, R * 0.55);
+  g.fillStyle(0x6b4a2a);
+  g.fillCircle(cx + R * 1.05, cy + R * 0.2, R * 0.45);
+  g.fillStyle(0x8a3fa0, 0.85);
+  g.fillCircle(cx + R * 1.05, cy + R * 0.2, R * 0.18);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.45);
+  g.strokeEllipse(cx, cy + R * 0.35, R * 2.1, R * 2.4);
+  finish(scene, g, enemyTextureKey("merchant"), w, h);
 }
 
 function drawDummy(scene: Phaser.Scene, g: G, id: "dummy" | "dummyArmored"): void {

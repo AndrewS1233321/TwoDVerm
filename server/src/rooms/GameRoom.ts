@@ -201,7 +201,7 @@ export class GameRoom extends Room<GameState> {
     );
   }
 
-  /** After clearing a wastes map, open the next fork until the expedition is finished. */
+  /** After clearing a wastes map, send the party to the merchant hall. */
   private maybeContinueWastesExpedition(): void {
     if (this.state.gameMode !== "wastes") return;
     if (this.lastPhase !== "playing" || this.world.phase !== "victory") return;
@@ -211,22 +211,36 @@ export class GameRoom extends Room<GameState> {
       this.playedLocations.push(cleared);
     }
 
+    this.world.enterMerchantHall();
+    this.state.levelId = this.world.levelId;
+    this.lastPhase = "merchant";
+    console.log(`Merchant hall opened in room ${this.code} after stop ${this.state.expeditionStop}`);
+  }
+
+  /** Merchant exit hold finished → next map vote, or expedition results after the last stop. */
+  private maybeLeaveMerchant(): void {
+    if (this.state.gameMode !== "wastes") return;
+    if (this.world.phase !== "merchant" || !this.world.merchantDepart) return;
+    this.world.merchantDepart = false;
+    this.world.merchantHold = 0;
+    this.world.enemies.clear();
+    this.world.hazards.clear();
+    this.world.pickups.clear();
+
     if (this.state.expeditionStop >= WASTES_EXPEDITION_STOPS) {
+      this.world.phase = "victory";
+      this.lastPhase = "victory";
       this.world.emit({
         t: "announce",
         text: "Expedition complete! The Wastes yield… for now.",
         kind: "info",
       });
-      this.lastPhase = "victory";
       return;
     }
 
-    this.world.enemies.clear();
-    this.world.hazards.clear();
-    this.world.pickups.clear();
     this.world.emit({
       t: "announce",
-      text: `Path cleared (${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}). Choose the next road.`,
+      text: `Onward (${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}). Choose the next road.`,
       kind: "info",
     });
     this.beginExpeditionVote();
@@ -272,6 +286,7 @@ export class GameRoom extends Room<GameState> {
   private tick(): void {
     this.world.step(DT);
     this.maybeContinueWastesExpedition();
+    this.maybeLeaveMerchant();
     this.syncAll();
     if (this.world.fx.length > 0) {
       this.broadcast(MSG.fx, this.world.fx);
