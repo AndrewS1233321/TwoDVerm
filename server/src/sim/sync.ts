@@ -1,5 +1,5 @@
-import { DOWNED, serializeLevelProps } from "@twodverm/shared";
-import { EnemyState, HazardState, PickupState, type GameState, type PlayerState } from "../state/GameState";
+import { BARREL, DOWNED, serializeLevelProps } from "@twodverm/shared";
+import { BarrelState, EnemyState, HazardState, PickupState, type GameState, type PlayerState } from "../state/GameState";
 import { phaseNumber } from "./attacks";
 import { heroMoveMods } from "./heroes";
 import type { Hero } from "./types";
@@ -31,6 +31,8 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.ammo = hero.ammo;
   s.maxAmmo = hero.def.ranged.ammo;
   s.rangedMode = hero.rangedMode;
+  s.carryingBarrel = !!hero.carryingBarrelId;
+  s.barrelCharge = r2(Math.min(1, hero.barrelCharge / BARREL.throwChargeTime));
   s.ultCooldown = r1(hero.ultCd);
   s.ultActive = r1(hero.ultActiveT);
   s.reviveProgress = hero.state === "downed" ? r2(hero.reviveT / DOWNED.reviveTime) : 0;
@@ -127,5 +129,22 @@ export function syncWorld(world: World, state: GameState): void {
       state.pickups.set(p.id, s);
     }
     s.used = p.used;
+  }
+
+  for (const id of [...state.barrels.keys()]) {
+    if (!world.barrels.has(id)) state.barrels.delete(id);
+  }
+  for (const b of world.barrels.values()) {
+    let s = state.barrels.get(b.id);
+    if (!s) {
+      s = new BarrelState();
+      s.id = b.id;
+      state.barrels.set(b.id, s);
+    }
+    s.x = r1(b.x);
+    s.y = r1(b.y);
+    s.hp = r1(Math.max(0, b.hp));
+    s.carriedBy = b.carriedBy;
+    s.flying = b.flying;
   }
 }

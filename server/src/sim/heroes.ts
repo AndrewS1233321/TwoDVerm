@@ -1,4 +1,5 @@
 import {
+  BARREL,
   BLOCK,
   collideCircle,
   DODGE,
@@ -24,6 +25,7 @@ import {
   type MoveMods,
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, heroMeleeHits, newAttack } from "./attacks";
+import { damageBarrel, dropBarrel, throwBarrel, tryPickupBarrel, pushBarrels } from "./barrels";
 import { damageEnemy, staggerEnemy } from "./damage";
 import type { Enemy, Hero } from "./types";
 import type { World } from "./World";
@@ -72,6 +74,8 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     ammo: def.ranged.ammo,
     shotCd: 0,
     rangedMode: false,
+    carryingBarrelId: "",
+    barrelCharge: 0,
     ultCd: 0,
     ultActiveT: 0,
     dashHit: new Set(),
@@ -108,7 +112,8 @@ export function queueInput(hero: Hero, input: InputMessage): void {
 /** The movement limits for this hero's current state. Also synced to the client for prediction. */
 export function heroMoveMods(hero: Hero): MoveMods {
   const key = hero.state === "attack" && hero.attack ? hero.attack.phase : hero.state;
-  const speed = hero.def.speed * (HERO_STATE_SPEED[key] ?? 1);
+  let speed = hero.def.speed * (HERO_STATE_SPEED[key] ?? 1);
+  if (hero.carryingBarrelId) speed *= BARREL.carrySpeedMul;
   const turnRate = HERO_TURN_RATE * (HERO_STATE_TURN[key] ?? 1);
   const stateAllowsDodge =
     hero.state === "idle" ||
@@ -133,16 +138,31 @@ export function processHeroInputs(world: World, hero: Hero): void {
     n++;
     if (input.attack) {
       if (!hero.prevAttackHeld) hero.edges.attackPressed = true;
-      if (!hero.rangedMode) hero.attackHeldT += DT;
+      if (!hero.carryingBarrelId && !hero.rangedMode) hero.attackHeldT += DT;
     } else if (hero.prevAttackHeld) {
-      if (!hero.rangedMode && hero.attackHeldT < MELEE.heavyHoldThreshold) hero.lightBufferT = MELEE.lightBufferTime;
-      hero.edges.attackReleased = true;
-      hero.attackHeldT = 0;
+      if (hero.carryingBarrelId) {
+        hero.edges.attackReleased = true;
+      } else if (!hero.rangedMode && hero.attackHeldT < MELEE.heavyHoldThreshold) {
+        hero.lightBufferT = MELEE.lightBufferTime;
+        hero.edges.attackReleased = true;
+      } else {
+        hero.edges.attackReleased = true;
+      }
+      if (!hero.carryingBarrelId) hero.attackHeldT = 0;
     }
     hero.prevAttackHeld = input.attack;
     if (input.fire) {
       hero.edges.fire = true;
-      toggleRanged(hero);
+      if (hero.carryingBarrelId) {
+        const barrel = world.barrels.get(hero.carryingBarrelId);
+        if (barrel) dropBarrel(world, barrel, hero);
+        else {
+          hero.carryingBarrelId = "";
+          hero.barrelCharge = 0;
+        }
+      } else {
+        toggleRanged(hero);
+      }
     }
     if (input.ult) hero.edges.ult = true;
     if (input.interact && !hero.held.interact) hero.edges.interact = true;
@@ -215,7 +235,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       else if (hero.stateT <= 0) hero.state = "idle";
       break;
     case "idle":
-      updateIdle(world, hero);
+      updateIdle(world, hero, dt);
       break;
   }
 
@@ -355,7 +375,17 @@ function toggleRanged(hero: Hero): void {
   }
 }
 
-function updateIdle(world: World, hero: Hero): void {
+function updateIdle(world: World, hero: Hero, dt: number): void {
+  if (hero.carryingBarrelId) {
+    if (hero.held.attack) hero.barrelCharge += dt;
+    if (hero.edges.attackReleased && hero.barrelCharge > 0.04) {
+      throwBarrel(world, hero);
+      return;
+    }
+    if (!hero.held.attack) hero.barrelCharge = 0;
+    if (hero.held.interact) tryInteract(world, hero);
+    return;
+  }
   if (hero.held.block && hero.guardBrokenT <= 0) {
     hero.state = "blocking";
     hero.actionSeq++;
@@ -385,6 +415,7 @@ function tryPush(world: World, hero: Hero): void {
   hero.stateT = PUSH.duration;
   hero.actionSeq++;
   world.emit({ t: "push", id: hero.id, x: hero.x, y: hero.y, facing: hero.facing });
+  pushBarrels(world, hero);
   for (const e of world.enemies.values()) {
     if (!inAttackArc(hero.x, hero.y, hero.radius, hero.facing, PUSH.reach, PUSH.arc, e.x, e.y, e.radius)) continue;
     if (e.def.staggerResist > PUSH.power) continue;
@@ -428,23 +459,38 @@ function fireRay(
   const sx = hero.x + cos * hero.radius;
   const sy = hero.y + sin * hero.radius;
   const wall = raycastWalls(world.level, world.gateOpen, sx, sy, angle, range);
-  const hits: { e: Enemy; t: number }[] = [];
+  type RayHit = { kind: "enemy"; e: Enemy; t: number } | { kind: "barrel"; id: string; t: number };
+  const hits: RayHit[] = [];
   for (const e of world.enemies.values()) {
     const dx = e.x - sx;
     const dy = e.y - sy;
     const t = dx * cos + dy * sin;
     if (t < 0 || t > wall) continue;
     const perp = Math.abs(dx * sin - dy * cos);
-    if (perp <= e.radius) hits.push({ e, t });
+    if (perp <= e.radius) hits.push({ kind: "enemy", e, t });
+  }
+  for (const b of world.barrels.values()) {
+    if (b.carriedBy || b.flying) continue;
+    const dx = b.x - sx;
+    const dy = b.y - sy;
+    const t = dx * cos + dy * sin;
+    if (t < 0 || t > wall) continue;
+    const perp = Math.abs(dx * sin - dy * cos);
+    if (perp <= BARREL.radius) hits.push({ kind: "barrel", id: b.id, t });
   }
   hits.sort((a, b) => a.t - b.t);
   let end = wall;
   let left = pierce;
-  for (const { e, t } of hits) {
+  for (const hit of hits) {
     if (left <= 0) break;
     left--;
-    damageEnemy(world, hero, e, { damage, stagger, armorPierce, srcX: hero.x, srcY: hero.y });
-    if (left === 0) end = t;
+    if (hit.kind === "enemy") {
+      damageEnemy(world, hero, hit.e, { damage, stagger, armorPierce, srcX: hero.x, srcY: hero.y });
+    } else {
+      const barrel = world.barrels.get(hit.id);
+      if (barrel) damageBarrel(world, barrel, damage, hero.id);
+    }
+    if (left === 0) end = hit.t;
   }
   world.emit({ t: "tracer", x1: sx, y1: sy, x2: sx + cos * end, y2: sy + sin * end, kind });
 }
@@ -460,6 +506,7 @@ function tryInteract(world: World, hero: Hero): void {
     return;
   }
   if (!hero.edges.interact) return;
+  if (tryPickupBarrel(world, hero)) return;
   for (const p of world.pickups.values()) {
     if (p.used || dist(hero.x, hero.y, p.x, p.y) > INTERACT_RANGE) continue;
     if (p.kind === "ammo") {

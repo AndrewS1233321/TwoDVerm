@@ -76,6 +76,10 @@ export interface Hero extends MoveBody {
   shotCd: number;
   /** True while the ranged weapon is equipped; left-click fires instead of melee. */
   rangedMode: boolean;
+  /** Barrel currently equipped ("" if none). */
+  carryingBarrelId: string;
+  /** Seconds left-click has been held while charging a barrel throw. */
+  barrelCharge: number;
   ultCd: number;
   ultActiveT: number;
   dashHit: Set<string>;
@@ -150,6 +154,22 @@ export interface Pickup {
   x: number;
   y: number;
   used: boolean;
+}
+
+export interface Barrel {
+  id: string;
+  x: number;
+  y: number;
+  hp: number;
+  kvx: number;
+  kvy: number;
+  /** Hero id carrying this barrel, or "". */
+  carriedBy: string;
+  flying: boolean;
+  vx: number;
+  vy: number;
+  flightT: number;
+  throwerId: string;
 }
 
 export type Creature = Hero | Enemy;

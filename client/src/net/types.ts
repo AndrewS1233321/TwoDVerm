@@ -50,6 +50,9 @@ export interface PlayerView {
   damageDealt: number;
   /** Gingey Wastes vote (location id) or "". */
   vote: string;
+  carryingBarrel: boolean;
+  /** 0–1 throw charge while holding a barrel. */
+  barrelCharge: number;
 }
 
 export interface EnemyView {
@@ -72,6 +75,15 @@ export interface PickupView {
   x: number;
   y: number;
   used: boolean;
+}
+
+export interface BarrelView {
+  id: string;
+  x: number;
+  y: number;
+  hp: number;
+  carriedBy: string;
+  flying: boolean;
 }
 
 export interface HazardView {
@@ -112,5 +124,6 @@ export interface GameStateView {
   players: MapLike<PlayerView>;
   enemies: MapLike<EnemyView>;
   pickups: MapLike<PickupView>;
+  barrels: MapLike<BarrelView>;
   hazards: MapLike<HazardView>;
 }

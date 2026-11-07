@@ -13,6 +13,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Barrels**: procedural rooms roll density (50% none / 25% few /
+  15% many / 10% lots); barrels are pushable, destroyable, pick-upable
+  (E), throw with charged left-click (breaks for AoE damage), Q drops;
+  carry halves move speed. Testing zone also spawns a few near start.
 - **Procedural Gingey Wastes levels**: shared `generateLevel(props, seed)`
   room-based layouts (castle/dungeon aesthetics; other types stub the
   same generator). `LevelProperties` (type, difficulty, races), Skaven

@@ -191,6 +191,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     ogreSpawn: null,
     ammoCrates: [],
     medKits: [],
+    barrelSpawns: [],
     dummySpawns: [],
     summonPads: [],
     merchantSpawns: [],
@@ -293,6 +294,12 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     }
   }
 
+  // Barrels: per room density roll (exit/start skipped for clear staging).
+  for (const r of rooms) {
+    if (r.role === "exit" || r.id === startRoom.id) continue;
+    placeBarrelsInRoom(level, r, rng);
+  }
+
   const meta: GeneratedLevelMeta = {
     props,
     seed,
@@ -308,6 +315,38 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * 50% none, 25% few (1–3 or 3% fill), 15% many (4–5 or 7%), 10% lots (6–9 or 15%).
+ * Fill uses room tile count; one barrel ≈ one tile of footprint.
+ */
+function placeBarrelsInRoom(level: Level, r: ProcRoom, rng: () => number): void {
+  const roll = rng();
+  let count = 0;
+  const tiles = Math.max(1, r.w * r.h);
+  if (roll < 0.5) return;
+  if (roll < 0.75) {
+    const ranged = 1 + Math.floor(rng() * 3);
+    count = Math.max(ranged, Math.ceil(tiles * 0.03));
+  } else if (roll < 0.9) {
+    const ranged = 4 + Math.floor(rng() * 2);
+    count = Math.max(ranged, Math.ceil(tiles * 0.07));
+  } else {
+    const ranged = 6 + Math.floor(rng() * 4);
+    count = Math.max(ranged, Math.ceil(tiles * 0.15));
+  }
+  const placed: { x: number; y: number }[] = [];
+  const minDist = 28;
+  for (let attempt = 0; attempt < count * 8 && placed.length < count; attempt++) {
+    const tx = r.x + 1 + Math.floor(rng() * Math.max(1, r.w - 2));
+    const ty = r.y + 1 + Math.floor(rng() * Math.max(1, r.h - 2));
+    const p = tileCenter(tx, ty);
+    if (placed.some((o) => Math.hypot(o.x - p.x, o.y - p.y) < minDist)) continue;
+    if (level.playerStarts.some((s) => Math.hypot(s.x - p.x, s.y - p.y) < 40)) continue;
+    placed.push(p);
+    level.barrelSpawns.push(p);
+  }
 }
 
 function decorForType(t: LevelType): number {

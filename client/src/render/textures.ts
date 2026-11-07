@@ -508,6 +508,22 @@ function drawPickups(scene: Phaser.Scene, g: G): void {
   g.fillRect(7.5 * S, 3 * S, 3 * S, 10 * S);
   g.fillRect(4 * S, 6.5 * S, 10 * S, 3 * S);
   finish(scene, g, "pickup_med", 18 * S, 16 * S);
+
+  // Barrel ~22px wide (radius 11), drawn at TEX_SCALE then shown ~0.5 scale.
+  const bw = 22 * S;
+  const bh = 26 * S;
+  g.fillStyle(0x6e4424);
+  g.fillRoundedRect(0, 2 * S, bw, bh - 2 * S, 3 * S);
+  g.fillStyle(0x8a5a30);
+  g.fillRoundedRect(2 * S, 4 * S, bw - 4 * S, bh - 8 * S, 2 * S);
+  g.lineStyle(S, 0x3a2414, 1);
+  g.strokeRoundedRect(0, 2 * S, bw, bh - 2 * S, 3 * S);
+  g.lineStyle(S, 0x2a1a0e, 1);
+  g.lineBetween(0, 10 * S, bw, 10 * S);
+  g.lineBetween(0, 18 * S, bw, 18 * S);
+  g.fillStyle(0x9a7a40);
+  g.fillRect(bw * 0.35, 0, bw * 0.3, 4 * S);
+  finish(scene, g, "barrel", bw, bh);
 }
 
 function drawMisc(scene: Phaser.Scene, g: G): void {

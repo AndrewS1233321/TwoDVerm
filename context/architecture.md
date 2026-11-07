@@ -108,3 +108,6 @@ Every creature (hero or enemy) has:
    call `generateLevel(props, seed)` so tile data is not synced wholesale.
 9. Wastes proc missions enable the Director with difficulty budgets;
    exit victory requires the final boss objective, then a 10s party hold.
+10. Destructible barrels are world entities (synced separately from
+    pickups): push, melee/ranged damage, E to pick up, Q to drop,
+    charged left-click throw that breaks on impact.

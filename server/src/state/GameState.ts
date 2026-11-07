@@ -31,6 +31,9 @@ export class PlayerState extends Schema {
   @type("uint16") maxAmmo = 0;
   /** True while the ranged weapon is equipped (Q toggles). */
   @type("boolean") rangedMode = false;
+  /** True while carrying a barrel (Q drops; hold attack to throw). */
+  @type("boolean") carryingBarrel = false;
+  @type("float32") barrelCharge = 0;
   @type("float32") ultCooldown = 0;
   @type("float32") ultActive = 0;
   @type("float32") reviveProgress = 0;
@@ -74,6 +77,15 @@ export class PickupState extends Schema {
   @type("float32") x = 0;
   @type("float32") y = 0;
   @type("boolean") used = false;
+}
+
+export class BarrelState extends Schema {
+  @type("string") id = "";
+  @type("float32") x = 0;
+  @type("float32") y = 0;
+  @type("float32") hp = 0;
+  @type("string") carriedBy = "";
+  @type("boolean") flying = false;
 }
 
 export class HazardState extends Schema {
@@ -126,5 +138,6 @@ export class GameState extends Schema {
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
   @type({ map: EnemyState }) enemies = new MapSchema<EnemyState>();
   @type({ map: PickupState }) pickups = new MapSchema<PickupState>();
+  @type({ map: BarrelState }) barrels = new MapSchema<BarrelState>();
   @type({ map: HazardState }) hazards = new MapSchema<HazardState>();
 }

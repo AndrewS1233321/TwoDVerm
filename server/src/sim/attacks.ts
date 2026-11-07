@@ -1,4 +1,5 @@
-import { hasLineOfSight, inAttackArc, moveCircle, type AttackDef } from "@twodverm/shared";
+import { BARREL, hasLineOfSight, inAttackArc, moveCircle, type AttackDef } from "@twodverm/shared";
+import { damageBarrel } from "./barrels";
 import { damageEnemy, strikeHero } from "./damage";
 import type { ActiveAttack, AttackKind, Enemy, Hero } from "./types";
 import type { World } from "./World";
@@ -41,6 +42,14 @@ export function applyLunge(world: World, c: Hero | Enemy, a: ActiveAttack, dt: n
 
 export function heroMeleeHits(world: World, hero: Hero, a: ActiveAttack): void {
   if (a.hitsLeft <= 0) return;
+  for (const b of world.barrels.values()) {
+    if (a.hitsLeft <= 0) break;
+    if (a.hit.has(b.id) || b.carriedBy || b.flying) continue;
+    if (!inAttackArc(hero.x, hero.y, hero.radius, hero.facing, a.def.reach, a.def.arc, b.x, b.y, BARREL.radius)) continue;
+    a.hit.add(b.id);
+    a.hitsLeft--;
+    damageBarrel(world, b, a.def.damage, hero.id);
+  }
   const targets: { e: Enemy; d: number }[] = [];
   for (const e of world.enemies.values()) {
     if (a.hit.has(e.id)) continue;
@@ -67,6 +76,14 @@ export function heroMeleeHits(world: World, hero: Hero, a: ActiveAttack): void {
 
 export function enemyMeleeHits(world: World, enemy: Enemy, a: ActiveAttack): void {
   if (a.hitsLeft <= 0) return;
+  for (const b of world.barrels.values()) {
+    if (a.hitsLeft <= 0) break;
+    if (a.hit.has(b.id) || b.carriedBy || b.flying) continue;
+    if (!inAttackArc(enemy.x, enemy.y, enemy.radius, enemy.facing, a.def.reach, a.def.arc, b.x, b.y, BARREL.radius)) continue;
+    a.hit.add(b.id);
+    a.hitsLeft--;
+    damageBarrel(world, b, a.def.damage, enemy.id);
+  }
   for (const h of world.heroes.values()) {
     if (a.hitsLeft <= 0) break;
     if (a.hit.has(h.id) || h.state === "dead") continue;

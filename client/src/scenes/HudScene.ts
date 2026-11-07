@@ -1,5 +1,15 @@
 import Phaser from "phaser";
-import { clamp, dist, DOWNED, ENEMIES, HEROES, INTERACT_RANGE, isHeroId, MERCHANT_EXIT_HOLD } from "@twodverm/shared";
+import {
+  BARREL,
+  clamp,
+  dist,
+  DOWNED,
+  ENEMIES,
+  HEROES,
+  INTERACT_RANGE,
+  isHeroId,
+  MERCHANT_EXIT_HOLD,
+} from "@twodverm/shared";
 import { hasState } from "../net/connection";
 import type { PlayerView } from "../net/types";
 import { colors, palette, toColorNumber } from "../render/palette";
@@ -100,7 +110,7 @@ export class HudScene extends Phaser.Scene {
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)
-      .setText("Left click: attack (hold for heavy)   Right click: block (+ left click: push)   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / use   Esc: menu");
+      .setText("Left click: attack (hold for heavy)   Right click: block (+ left click: push)   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up barrel   Esc: menu");
   }
 
   private drawSelf(me: PlayerView, W: number, H: number): void {
@@ -162,9 +172,22 @@ export class HudScene extends Phaser.Scene {
     t.ult!.setPosition(ux, uy).setText(ready ? "F" : `${Math.ceil(me.ultCooldown)}`);
     t.ultName!.setPosition(ux - 60, uy - 8).setOrigin(1, 0).setText(def.ultName);
 
-    const ranged = me.rangedMode;
-    t.ammo!.setPosition(W - 20, H - 30).setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name).setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
-    t.ammoName!.setPosition(W - 20, H - 14).setText(ranged ? `Left click: fire   Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
+    if (me.carryingBarrel) {
+      t.ammo!.setPosition(W - 20, H - 30).setText("Barrel").setColor(palette.accent);
+      t.ammoName!.setPosition(W - 20, H - 14).setText("Hold left click: throw   Q: drop");
+      if (me.barrelCharge > 0) {
+        const bx = W - 160;
+        const by = H - 52;
+        this.g.fillStyle(0x000000, 0.55);
+        this.g.fillRect(bx, by, 140, 8);
+        this.g.fillStyle(colors.accent, 1);
+        this.g.fillRect(bx, by, 140 * clamp(me.barrelCharge, 0, 1), 8);
+      }
+    } else {
+      const ranged = me.rangedMode;
+      t.ammo!.setPosition(W - 20, H - 30).setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name).setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
+      t.ammoName!.setPosition(W - 20, H - 14).setText(ranged ? `Left click: fire   Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
+    }
   }
 
   private drawTeam(me: PlayerView): void {
@@ -254,6 +277,15 @@ export class HudScene extends Phaser.Scene {
           prompt = me.state === "reviving" ? `Reviving ${p.name}...` : `Hold E to revive ${p.name}`;
         }
       });
+      if (!prompt && me.carryingBarrel) {
+        prompt = me.barrelCharge > 0 ? "Release to throw" : "Hold left click to throw · Q to drop";
+      }
+      if (!prompt && !me.carryingBarrel && room.state.barrels) {
+        room.state.barrels.forEach((b) => {
+          if (b.carriedBy || b.flying) return;
+          if (dist(pos.x, pos.y, b.x, b.y) <= BARREL.pickupRange) prompt = "E: Pick up barrel";
+        });
+      }
       if (!prompt) {
         room.state.pickups.forEach((p) => {
           if (p.used || dist(pos.x, pos.y, p.x, p.y) > INTERACT_RANGE) return;

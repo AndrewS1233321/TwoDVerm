@@ -61,6 +61,8 @@ export interface Level {
   ogreSpawn: Point | null;
   ammoCrates: Point[];
   medKits: Point[];
+  /** World centres for destructible barrels (mostly from procgen). */
+  barrelSpawns: Point[];
   dummySpawns: DummySpawn[];
   summonPads: SummonPad[];
   /** Centres where a merchant NPC should stand (Gingey Wastes hall). */
@@ -93,6 +95,7 @@ export function parseLevel(rows: readonly string[]): Level {
     ogreSpawn: null,
     ammoCrates: [],
     medKits: [],
+    barrelSpawns: [],
     dummySpawns: [],
     summonPads: [],
     merchantSpawns: [],

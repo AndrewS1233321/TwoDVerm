@@ -20,13 +20,14 @@ import {
   type Level,
   type LevelProperties,
 } from "@twodverm/shared";
+import { createBarrel, updateBarrels } from "./barrels";
 import { Director } from "./director";
 import { updateEnemy } from "./enemies";
 import { FlowField } from "./flowField";
 import { updateHazards } from "./hazards";
 import { createHero, processHeroInputs, resetHeroForMission, updateHero } from "./heroes";
 import { separateCreatures } from "./separation";
-import type { Enemy, Hazard, Hero, Pickup } from "./types";
+import type { Barrel, Enemy, Hazard, Hero, Pickup } from "./types";
 
 const FLOW_REBUILD_INTERVAL = 0.4;
 const LONELY_DESPAWN_DISTANCE = 1800;
@@ -40,6 +41,7 @@ export class World {
   readonly enemies = new Map<string, Enemy>();
   readonly hazards = new Map<string, Hazard>();
   readonly pickups = new Map<string, Pickup>();
+  readonly barrels = new Map<string, Barrel>();
   flowSmall: FlowField;
   flowWide: FlowField;
   readonly director: Director;
@@ -158,6 +160,7 @@ export class World {
     this.enemies.clear();
     this.hazards.clear();
     this.pickups.clear();
+    this.barrels.clear();
     this.fx = [];
     this.gateOpen = this.mode === "testing" || (this.mode === "wastes" && !this.procMeta);
     this.eventActive = false;
@@ -180,6 +183,10 @@ export class World {
     }
     for (const p of this.level.ammoCrates) this.addPickup("ammo", p.x, p.y);
     for (const p of this.level.medKits) this.addPickup("med", p.x, p.y);
+    for (const p of this.level.barrelSpawns) {
+      const id = this.newId("b");
+      this.barrels.set(id, createBarrel(id, p.x, p.y));
+    }
     if (this.mode === "testing") this.setupTestingZone();
     else if (this.mode === "wastes" && this.procMeta) this.director.reset();
     else if (this.mode !== "wastes") this.director.reset();
@@ -191,6 +198,16 @@ export class World {
     for (const d of this.level.dummySpawns) {
       this.spawnEnemy(d.armored ? "dummyArmored" : "dummy", d.x, d.y, false);
     }
+    // A few barrels near the centre for interact / throw testing.
+    const starts = this.level.playerStarts;
+    const origin = starts[0] ?? { x: 200, y: 200 };
+    for (let i = 0; i < 4; i++) {
+      const id = this.newId("b");
+      this.barrels.set(
+        id,
+        createBarrel(id, origin.x + 80 + (i % 2) * 36, origin.y + 40 + Math.floor(i / 2) * 36),
+      );
+    }
   }
 
   /** After a wastes mission, send the party to the merchant hall. */
@@ -199,6 +216,7 @@ export class World {
     this.enemies.clear();
     this.hazards.clear();
     this.pickups.clear();
+    this.barrels.clear();
     this.fx = [];
     this.gateOpen = true;
     this.eventActive = false;
@@ -322,6 +340,7 @@ export class World {
 
     this.missionTime += dt;
     updateHazards(this, dt);
+    updateBarrels(this, dt);
     if (this.mode === "testing") this.updateSummonPads();
     else if (this.procMeta) {
       this.updateProcObjectives(dt);

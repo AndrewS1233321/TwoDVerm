@@ -60,6 +60,7 @@ export class GameScene extends Phaser.Scene {
   private readonly heroViews = new Map<string, CreatureView>();
   private readonly enemyViews = new Map<string, CreatureView>();
   private readonly pickupViews = new Map<string, Phaser.GameObjects.Image>();
+  private readonly barrelViews = new Map<string, Phaser.GameObjects.Image>();
   private readonly interp = new Map<string, SnapshotBuffer>();
   private readonly sendTimes = new Map<number, number>();
   private inputAcc = 0;
@@ -110,9 +111,11 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.heroViews.values()) v.destroy();
     for (const v of this.enemyViews.values()) v.destroy();
     for (const v of this.pickupViews.values()) v.destroy();
+    for (const v of this.barrelViews.values()) v.destroy();
     this.heroViews.clear();
     this.enemyViews.clear();
     this.pickupViews.clear();
+    this.barrelViews.clear();
     this.interp.clear();
     this.room = null;
     this.localId = "";
@@ -255,6 +258,7 @@ export class GameScene extends Phaser.Scene {
     this.syncHeroes(delta);
     this.syncEnemies(delta);
     this.syncPickups();
+    this.syncBarrels();
     this.drawHazards();
     this.levelRenderer.setGateOpen(state.gateOpen);
     this.followCamera();
@@ -432,6 +436,32 @@ export class GameScene extends Phaser.Scene {
       img.setVisible(!p.used);
       img.y = p.y + Math.sin(now * 0.003 + p.x) * 1.5;
     });
+  }
+
+  private syncBarrels(): void {
+    const state = this.room!.state;
+    if (!state.barrels) return;
+    const seen = new Set<string>();
+    state.barrels.forEach((b) => {
+      seen.add(b.id);
+      let img = this.barrelViews.get(b.id);
+      if (!img) {
+        img = this.add.image(b.x, b.y, "barrel").setScale(0.5).setDepth(b.flying ? 8 : 4);
+        this.barrelViews.set(b.id, img);
+      }
+      img.setPosition(b.x, b.y);
+      img.setDepth(b.flying ? 8 : b.carriedBy ? 9 : 4);
+      img.setAlpha(0.45 + 0.55 * Math.max(0, b.hp) / 45);
+      img.setVisible(true);
+      if (b.flying) img.setAngle((performance.now() * 0.4) % 360);
+      else img.setAngle(0);
+    });
+    for (const [id, img] of this.barrelViews) {
+      if (!seen.has(id)) {
+        img.destroy();
+        this.barrelViews.delete(id);
+      }
+    }
   }
 
   private drawHazards(): void {
