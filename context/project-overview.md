@@ -1,8 +1,8 @@
-# TwoDVerm (working title)
+# Vermy-2D
 
 ## Overview
 
-TwoDVerm is a browser-based, top-down 2D co-op action game heavily
+Vermy-2D is a browser-based, top-down 2D co-op action game heavily
 inspired by Vermintide 2. Up to 4 friends fight through a grim city
 overrun by ratmen, using timing-based melee combat (attack chains,
 blocking, pushing, dodging) plus ranged weapons. Players join by

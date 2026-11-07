@@ -18,7 +18,7 @@ const httpServer = createServer((req, res) => {
     serveClient(req, res);
     return;
   }
-  res.writeHead(200, { "Content-Type": "text/plain" }).end("TwoDVerm server running. In development open http://localhost:5173");
+  res.writeHead(200, { "Content-Type": "text/plain" }).end("Vermy-2D server running. In development open http://localhost:5173");
 });
 
 const transport = new WebSocketTransport({ server: httpServer });
@@ -31,4 +31,4 @@ const gameServer = new Server({ transport });
 gameServer.define(ROOM_NAME, GameRoom);
 
 await gameServer.listen(port);
-console.log(`TwoDVerm server listening on port ${port}`);
+console.log(`Vermy-2D server listening on port ${port}`);

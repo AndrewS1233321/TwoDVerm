@@ -4,7 +4,7 @@
 
 A single `npm run dev` starts a Colyseus server on port 2567 and a Vite
 dev server on port 5173. Opening http://localhost:5173 shows a Phaser
-canvas with a dark stone floor and the text "TwoDVerm", and the browser
+canvas with a dark stone floor and the text "Vermy-2D", and the browser
 connects to the server's `"game"` room and shows "Connected" or an error.
 
 ## Design
