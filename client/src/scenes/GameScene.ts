@@ -232,7 +232,7 @@ export class GameScene extends Phaser.Scene {
 
     const me = state.players.get(this.localId);
     if (me && me.heroId) {
-      this.predictor.reconcile(me, this.level, state.gateOpen);
+      this.predictor.reconcile(me, this.level, state.gateOpen, state.bossActive);
       const sent = this.sendTimes.get(me.ackSeq);
       if (sent !== undefined) {
         this.ping = Math.round(this.ping * 0.8 + (now - sent) * 0.2);
@@ -334,7 +334,7 @@ export class GameScene extends Phaser.Scene {
     this.sendTimes.set(input.seq, performance.now());
     if (this.lagMs > 0) setTimeout(() => room.send(MSG.input, input), this.lagMs);
     else room.send(MSG.input, input);
-    this.predictor.apply(input, this.level, gateOpen);
+    this.predictor.apply(input, this.level, gateOpen, this.room?.state.bossActive === true);
   }
 
   private heroPose(p: PlayerView): PoseInfo {

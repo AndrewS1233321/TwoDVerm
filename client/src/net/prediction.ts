@@ -1,4 +1,5 @@
 import {
+  confineToBossRoom,
   DT,
   HEROES,
   isHeroId,
@@ -32,14 +33,15 @@ export class Predictor {
   }
 
   /** Applies a just-sent input locally. */
-  apply(input: InputMessage, level: Level, gateOpen: boolean): void {
+  apply(input: InputMessage, level: Level, gateOpen: boolean, bossLocked = false): void {
     if (!this.initialised) return;
     this.pending.push(input);
     const started = stepMovement(this.body, input, this.mods, level, gateOpen, DT);
     if (started) this.mods.canDodge = false;
+    if (bossLocked) this.confine(level);
   }
 
-  reconcile(p: PlayerView, level: Level, gateOpen: boolean): void {
+  reconcile(p: PlayerView, level: Level, gateOpen: boolean, bossLocked = false): void {
     this.mods = {
       radius: isHeroId(p.heroId) ? HEROES[p.heroId].radius : 14,
       speed: p.moveSpeed,
@@ -62,6 +64,7 @@ export class Predictor {
     const mods = { ...this.mods };
     for (const input of this.pending) {
       if (stepMovement(this.body, input, mods, level, gateOpen, DT)) mods.canDodge = false;
+      if (bossLocked) this.confine(level);
     }
     this.mods.canDodge = mods.canDodge;
 
@@ -90,5 +93,11 @@ export class Predictor {
     this.initialised = false;
     this.offset.x = 0;
     this.offset.y = 0;
+  }
+
+  private confine(level: Level): void {
+    const p = confineToBossRoom(level, this.body.x, this.body.y, this.mods.radius);
+    this.body.x = p.x;
+    this.body.y = p.y;
   }
 }

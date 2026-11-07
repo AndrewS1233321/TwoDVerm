@@ -1,6 +1,7 @@
 import { TILE_SIZE } from "../constants";
 import { createRng } from "../math";
 import {
+  computeBossRoom,
   DECOR_COBBLE,
   DECOR_PLAIN,
   DECOR_SEWER,
@@ -183,6 +184,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     endZone: new Set(),
     holdZone: new Set(),
     bossTrigger: new Set(),
+    bossRoom: new Set(),
     playerStarts: [],
     hordeSpawns: [],
     specialSpawns: [],
@@ -299,6 +301,8 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     if (r.role === "exit" || r.id === startRoom.id) continue;
     placeBarrelsInRoom(level, r, rng);
   }
+
+  level.bossRoom = computeBossRoom(level);
 
   const meta: GeneratedLevelMeta = {
     props,

@@ -166,15 +166,16 @@ function place(h: Hero, p: Point): void {
   check("Surviving the event opens the gate", world.gateOpen && world.eventDone, `gate ${world.gateOpen}`);
 }
 
-// The boss arrives at its trigger and can be killed.
+// The boss arrives when the whole living party is in the boss room, and can be killed.
 {
   const { world, heroes } = setup(["soldier"]);
   const h = heroes[0]!;
   world.gateOpen = true;
-  place(h, zonePoint(world.level.bossTrigger, world.level.width));
+  const bossTile = [...world.level.bossRoom][0];
+  place(h, bossTile != null ? tileCenter(bossTile % world.level.width, Math.floor(bossTile / world.level.width)) : world.level.ogreSpawn!);
   run(world, DT * 2);
   const ogre = [...world.enemies.values()].find((e) => e.def.id === "ogre");
-  check("Rat Ogre spawns at the boss trigger", !!ogre && world.bossActive);
+  check("Rat Ogre spawns when the party is in the boss room", !!ogre && world.bossActive);
   if (ogre) {
     while (world.enemies.has(ogre.id)) damageEnemy(world, h, ogre, { damage: 100, stagger: 0, srcX: h.x, srcY: h.y });
     check("Killing the Rat Ogre ends the boss fight", !world.bossActive);

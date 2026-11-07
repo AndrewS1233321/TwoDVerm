@@ -13,6 +13,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Boss room lock**: Rat Ogre only spawns when every living hero is in
+  the boss arena; while `bossActive`, heroes are confined to that room
+  until the ogre dies (Default + Wastes proc).
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;

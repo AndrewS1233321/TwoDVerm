@@ -52,6 +52,11 @@ export interface Level {
   endZone: Set<number>;
   holdZone: Set<number>;
   bossTrigger: Set<number>;
+  /**
+   * Floor tiles that form the boss arena. Used to require the whole party
+   * inside before spawn, and to lock them in until the boss dies.
+   */
+  bossRoom: Set<number>;
   /** All marker positions below are world-pixel tile centres. */
   playerStarts: Point[];
   hordeSpawns: Point[];
@@ -87,6 +92,7 @@ export function parseLevel(rows: readonly string[]): Level {
     endZone: new Set(),
     holdZone: new Set(),
     bossTrigger: new Set(),
+    bossRoom: new Set(),
     playerStarts: [],
     hordeSpawns: [],
     specialSpawns: [],
@@ -139,7 +145,100 @@ export function parseLevel(rows: readonly string[]): Level {
       }
     }
   }
+  level.bossRoom = computeBossRoom(level);
   return level;
+}
+
+/**
+ * Resolve the boss arena. Procgen marks the whole objective room as
+ * `bossTrigger` (including the ogre tile); hand maps use a thin trigger strip
+ * and we flood-fill the chamber from the ogre spawn.
+ */
+export function computeBossRoom(level: Level): Set<number> {
+  const room = new Set<number>();
+  if (!level.ogreSpawn) return room;
+  const start = tileIndexAt(level, level.ogreSpawn.x, level.ogreSpawn.y);
+  if (start < 0) return room;
+
+  // Procedural levels: trigger set is already the full boss room.
+  if (level.bossTrigger.has(start)) {
+    for (const i of level.bossTrigger) {
+      if (!level.endZone.has(i)) room.add(i);
+    }
+    return room;
+  }
+
+  // Hand maps: flood from spawn; trigger strip + exit tiles form the soft wall.
+  const blocked = new Set<number>([...level.bossTrigger, ...level.endZone]);
+  const q = [start];
+  room.add(start);
+  while (q.length > 0) {
+    const i = q.shift()!;
+    const x = i % level.width;
+    const y = Math.floor(i / level.width);
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= level.width || ny >= level.height) continue;
+      const j = ny * level.width + nx;
+      if (room.has(j) || blocked.has(j)) continue;
+      const t = level.tiles[j]!;
+      if (t === TILE_WALL || t === TILE_GATE) continue;
+      room.add(j);
+      q.push(j);
+    }
+  }
+  return room;
+}
+
+/** True when every living hero is currently standing on a boss-room tile. */
+export function allLivingInBossRoom(
+  level: Level,
+  heroes: Iterable<{ x: number; y: number; state: string }>,
+): boolean {
+  if (level.bossRoom.size === 0) return false;
+  let n = 0;
+  for (const h of heroes) {
+    if (h.state === "dead") continue;
+    n++;
+    if (!isInZone(level, level.bossRoom, h.x, h.y)) return false;
+  }
+  return n > 0;
+}
+
+/** Snap a body back into the nearest boss-room tile if it left the arena. */
+export function confineToBossRoom(
+  level: Level,
+  x: number,
+  y: number,
+  radius: number,
+): Point {
+  if (level.bossRoom.size === 0 || isInZone(level, level.bossRoom, x, y)) {
+    return { x, y };
+  }
+  let bestX = x;
+  let bestY = y;
+  let bestD = Infinity;
+  for (const i of level.bossRoom) {
+    const c = tileCenter(i % level.width, Math.floor(i / level.width));
+    const d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+    if (d < bestD) {
+      bestD = d;
+      bestX = c.x;
+      bestY = c.y;
+    }
+  }
+  // Keep a little inside the tile so the next frame is still “in zone”.
+  const inward = 0.15;
+  bestX = bestX * (1 - inward) + x * inward;
+  bestY = bestY * (1 - inward) + y * inward;
+  void radius;
+  return { x: bestX, y: bestY };
 }
 
 export function tileIndexAt(level: Level, x: number, y: number): number {

@@ -1,4 +1,5 @@
 import {
+  allLivingInBossRoom,
   dist,
   enemiesForRaces,
   hasLineOfSight,
@@ -162,11 +163,15 @@ export class Director {
       this.eventSpecialSpawned = false;
       w.emit({ t: "announce", text: "Hold the square until the gate opens!", kind: "event" });
     }
-    if (!this.bossSpawned && w.level.ogreSpawn && standing.some((h) => isInZone(w.level, w.level.bossTrigger, h.x, h.y))) {
+    if (
+      !this.bossSpawned &&
+      w.level.ogreSpawn &&
+      allLivingInBossRoom(w.level, w.heroes.values())
+    ) {
       this.bossSpawned = true;
       w.bossActive = true;
       w.spawnEnemy("ogre", w.level.ogreSpawn.x, w.level.ogreSpawn.y, true);
-      w.emit({ t: "announce", text: "A Rat Ogre approaches!", kind: "boss" });
+      w.emit({ t: "announce", text: "A Rat Ogre approaches! The way out is sealed!", kind: "boss" });
     }
   }
 

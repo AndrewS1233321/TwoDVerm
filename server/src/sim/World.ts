@@ -1,5 +1,7 @@
 import {
+  allLivingInBossRoom,
   collideCircle,
+  confineToBossRoom,
   createRng,
   dist,
   ENEMIES,
@@ -318,6 +320,7 @@ export class World {
 
     for (const hero of this.heroes.values()) processHeroInputs(this, hero);
     for (const hero of this.heroes.values()) updateHero(this, hero, dt);
+    this.confineHeroesToBossRoom();
 
     this.flowT -= dt;
     if (this.flowT <= 0) {
@@ -403,19 +406,25 @@ export class World {
       return;
     }
 
-    if (!this.objectiveArmed && inZone) {
-      this.objectiveArmed = true;
-      const type = (obj.spawnType ?? (obj.kind === "boss" ? "ogre" : "stormvermin")) as EnemyId;
-      const spawned = this.spawnEnemy(type, obj.center.x, obj.center.y, true);
-      if (spawned) this.objectiveEnemyIds.add(spawned.id);
-      if (obj.kind === "boss") {
-        this.bossActive = true;
-        this.emit({ t: "announce", text: "A Rat Ogre approaches!", kind: "boss" });
-      } else {
-        this.emit({ t: "announce", text: "Elite vermin defend the chamber!", kind: "event" });
-        if (this.rng() < 0.5) {
-          const extra = this.spawnEnemy("stormvermin", obj.center.x + 40, obj.center.y, true);
-          if (extra) this.objectiveEnemyIds.add(extra.id);
+    if (!this.objectiveArmed) {
+      const canArm =
+        obj.kind === "boss"
+          ? allLivingInBossRoom(this.level, this.heroes.values())
+          : inZone;
+      if (canArm) {
+        this.objectiveArmed = true;
+        const type = (obj.spawnType ?? (obj.kind === "boss" ? "ogre" : "stormvermin")) as EnemyId;
+        const spawned = this.spawnEnemy(type, obj.center.x, obj.center.y, true);
+        if (spawned) this.objectiveEnemyIds.add(spawned.id);
+        if (obj.kind === "boss") {
+          this.bossActive = true;
+          this.emit({ t: "announce", text: "A Rat Ogre approaches! The way out is sealed!", kind: "boss" });
+        } else {
+          this.emit({ t: "announce", text: "Elite vermin defend the chamber!", kind: "event" });
+          if (this.rng() < 0.5) {
+            const extra = this.spawnEnemy("stormvermin", obj.center.x + 40, obj.center.y, true);
+            if (extra) this.objectiveEnemyIds.add(extra.id);
+          }
         }
       }
     }
@@ -449,6 +458,17 @@ export class World {
       this.rebuildFlow();
     }
     this.emit({ t: "announce", text: announce, kind: "event" });
+  }
+
+  /** While the boss fight is active, keep every living hero inside the arena. */
+  private confineHeroesToBossRoom(): void {
+    if (!this.bossActive || this.level.bossRoom.size === 0) return;
+    for (const hero of this.heroes.values()) {
+      if (hero.state === "dead") continue;
+      const p = confineToBossRoom(this.level, hero.x, hero.y, hero.radius);
+      hero.x = p.x;
+      hero.y = p.y;
+    }
   }
 
   /** Convert soft/exit gate tiles for the completed section into floor. */
