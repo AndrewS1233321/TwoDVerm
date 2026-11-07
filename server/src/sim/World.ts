@@ -8,14 +8,17 @@ import {
   MAX_ENEMIES,
   MERCHANT_EXIT_HOLD,
   parseLevelById,
+  TILE_FLOOR,
   tileIndexAt,
   WASTES_MERCHANT_LEVEL_ID,
   type EnemyId,
   type FxEvent,
   type GameMode,
   type GamePhase,
+  type GeneratedLevelMeta,
   type HeroDef,
   type Level,
+  type LevelProperties,
 } from "@twodverm/shared";
 import { Director } from "./director";
 import { updateEnemy } from "./enemies";
@@ -41,6 +44,8 @@ export class World {
   flowWide: FlowField;
   readonly director: Director;
   readonly rng: () => number;
+  /** Room-wide seed used for procgen rolls. */
+  readonly roomSeed: number;
 
   fx: FxEvent[] = [];
   phase: GamePhase = "lobby";
@@ -51,10 +56,21 @@ export class World {
   bossActive = false;
   missionTime = 0;
   totalKills = 0;
-  /** Seconds the party has continuously held the merchant exit. */
+  /** Seconds the party has continuously held the merchant exit or wastes exit. */
   merchantHold = 0;
   /** Set when the merchant exit hold finishes; GameRoom clears and advances. */
   merchantDepart = false;
+
+  /** Active procedural wastes level (null for hand-authored maps). */
+  procMeta: GeneratedLevelMeta | null = null;
+  levelProps: LevelProperties | null = null;
+  procSeed = 0;
+  finalObjectiveComplete = false;
+  /** How many section objectives have been completed (opens soft gates 0..n-1). */
+  procProgress = 0;
+  private objectiveArmed = false;
+  private objectiveEnemyIds = new Set<string>();
+  private holdObjectiveId: string | null = null;
 
   private nextId = 1;
   private flowT = 0;
@@ -63,6 +79,7 @@ export class World {
 
   constructor(seed: number, mode: GameMode = "default") {
     this.mode = mode;
+    this.roomSeed = seed >>> 0;
     this.levelId = initialLevelIdForMode(mode);
     this.level = parseLevelById(this.levelId);
     this.flowSmall = new FlowField(this.level, false);
@@ -71,12 +88,46 @@ export class World {
     this.rng = createRng(seed);
   }
 
-  /** Swap the playable map (Gingey Wastes after a Holseher's Map vote). */
+  /** Swap the playable map (hand-authored id). */
   loadLevel(levelId: string): void {
+    this.clearProc();
     this.levelId = levelId;
     this.level = parseLevelById(levelId);
     this.flowSmall = new FlowField(this.level, false);
     this.flowWide = new FlowField(this.level, true);
+  }
+
+  /** Load a deterministically generated wastes level. */
+  loadGeneratedLevel(
+    levelId: string,
+    level: Level,
+    meta: GeneratedLevelMeta,
+    props: LevelProperties,
+    seed: number,
+  ): void {
+    this.levelId = levelId;
+    this.level = level;
+    this.procMeta = meta;
+    this.levelProps = props;
+    this.procSeed = seed >>> 0;
+    this.finalObjectiveComplete = false;
+    this.procProgress = 0;
+    this.objectiveArmed = false;
+    this.objectiveEnemyIds.clear();
+    this.holdObjectiveId = null;
+    this.flowSmall = new FlowField(this.level, false);
+    this.flowWide = new FlowField(this.level, true);
+  }
+
+  private clearProc(): void {
+    this.procMeta = null;
+    this.levelProps = null;
+    this.procSeed = 0;
+    this.finalObjectiveComplete = false;
+    this.procProgress = 0;
+    this.objectiveArmed = false;
+    this.objectiveEnemyIds.clear();
+    this.holdObjectiveId = null;
   }
 
   newId(prefix: string): string {
@@ -108,13 +159,19 @@ export class World {
     this.hazards.clear();
     this.pickups.clear();
     this.fx = [];
-    this.gateOpen = this.mode === "testing" || this.mode === "wastes";
+    this.gateOpen = this.mode === "testing" || (this.mode === "wastes" && !this.procMeta);
     this.eventActive = false;
     this.eventDone = false;
     this.eventTimeLeft = 0;
     this.bossActive = false;
     this.missionTime = 0;
     this.totalKills = 0;
+    this.merchantHold = 0;
+    this.finalObjectiveComplete = false;
+    this.procProgress = 0;
+    this.objectiveArmed = false;
+    this.objectiveEnemyIds.clear();
+    this.holdObjectiveId = null;
     this.padOccupancy.clear();
     let i = 0;
     for (const hero of this.heroes.values()) {
@@ -124,6 +181,7 @@ export class World {
     for (const p of this.level.ammoCrates) this.addPickup("ammo", p.x, p.y);
     for (const p of this.level.medKits) this.addPickup("med", p.x, p.y);
     if (this.mode === "testing") this.setupTestingZone();
+    else if (this.mode === "wastes" && this.procMeta) this.director.reset();
     else if (this.mode !== "wastes") this.director.reset();
     this.rebuildFlow();
     this.phase = "playing";
@@ -265,8 +323,11 @@ export class World {
     this.missionTime += dt;
     updateHazards(this, dt);
     if (this.mode === "testing") this.updateSummonPads();
-    else if (this.mode !== "wastes") this.director.step(dt);
-    this.checkMissionEnd();
+    else if (this.procMeta) {
+      this.updateProcObjectives(dt);
+      this.director.step(dt);
+    } else if (this.mode !== "wastes") this.director.step(dt);
+    this.checkMissionEnd(dt);
   }
 
   /** Whole living party must stand in the exit zone for MERCHANT_EXIT_HOLD seconds. */
@@ -287,6 +348,99 @@ export class World {
     } else {
       this.merchantHold = 0;
     }
+  }
+
+  private currentObjective() {
+    if (!this.procMeta) return null;
+    return this.procMeta.objectives[this.procProgress] ?? null;
+  }
+
+  private updateProcObjectives(dt: number): void {
+    const obj = this.currentObjective();
+    if (!obj) return;
+    const standing = this.standingHeroes();
+    const zone = new Set(obj.zone);
+    const inZone = standing.some((h) => isInZone(this.level, zone, h.x, h.y));
+
+    if (obj.kind === "hold") {
+      if (!this.eventDone && !this.eventActive && inZone) {
+        this.eventActive = true;
+        this.holdObjectiveId = obj.id;
+        this.eventTimeLeft = this.procMeta!.budgets.holdDuration;
+        this.emit({
+          t: "announce",
+          text: `Hold the chamber (${Math.ceil(this.eventTimeLeft)}s)!`,
+          kind: "event",
+        });
+      }
+      if (this.eventActive && this.holdObjectiveId === obj.id) {
+        this.eventTimeLeft -= dt;
+        if (this.eventTimeLeft <= 0) {
+          this.eventActive = false;
+          this.eventDone = true;
+          this.completeCurrentObjective("Chamber secured!");
+        }
+      }
+      return;
+    }
+
+    if (!this.objectiveArmed && inZone) {
+      this.objectiveArmed = true;
+      const type = (obj.spawnType ?? (obj.kind === "boss" ? "ogre" : "stormvermin")) as EnemyId;
+      const spawned = this.spawnEnemy(type, obj.center.x, obj.center.y, true);
+      if (spawned) this.objectiveEnemyIds.add(spawned.id);
+      if (obj.kind === "boss") {
+        this.bossActive = true;
+        this.emit({ t: "announce", text: "A Rat Ogre approaches!", kind: "boss" });
+      } else {
+        this.emit({ t: "announce", text: "Elite vermin defend the chamber!", kind: "event" });
+        if (this.rng() < 0.5) {
+          const extra = this.spawnEnemy("stormvermin", obj.center.x + 40, obj.center.y, true);
+          if (extra) this.objectiveEnemyIds.add(extra.id);
+        }
+      }
+    }
+
+    if (this.objectiveArmed) {
+      for (const id of [...this.objectiveEnemyIds]) {
+        if (!this.enemies.has(id)) this.objectiveEnemyIds.delete(id);
+      }
+      if (this.objectiveEnemyIds.size === 0) {
+        if (obj.kind === "boss") this.bossActive = false;
+        this.completeCurrentObjective(obj.kind === "boss" ? "The ogre falls! Exit unlocked." : "Path ahead opens!");
+      }
+    }
+  }
+
+  private completeCurrentObjective(announce: string): void {
+    if (!this.procMeta) return;
+    const idx = this.procProgress;
+    this.openProcGate(idx);
+    this.procProgress += 1;
+    this.objectiveArmed = false;
+    this.objectiveEnemyIds.clear();
+    this.holdObjectiveId = null;
+    this.eventActive = false;
+    this.eventDone = false;
+    this.eventTimeLeft = 0;
+
+    if (this.procProgress >= this.procMeta.objectives.length) {
+      this.finalObjectiveComplete = true;
+      this.gateOpen = true;
+      this.rebuildFlow();
+    }
+    this.emit({ t: "announce", text: announce, kind: "event" });
+  }
+
+  /** Convert soft/exit gate tiles for the completed section into floor. */
+  private openProcGate(index: number): void {
+    if (!this.procMeta) return;
+    const gates = this.procMeta.sectionGates[index];
+    if (!gates) return;
+    for (const i of gates) {
+      if (i >= 0 && i < this.level.tiles.length) this.level.tiles[i] = TILE_FLOOR;
+    }
+    this.rebuildFlow();
   }
 
   /** Summon one enemy when a hero first steps onto a pad (not while standing on it). */
@@ -317,7 +471,7 @@ export class World {
     }
   }
 
-  private checkMissionEnd(): void {
+  private checkMissionEnd(dt: number): void {
     if (this.heroes.size === 0) return;
     const standing = this.standingHeroes();
     if (standing.length === 0) {
@@ -325,8 +479,31 @@ export class World {
       this.emit({ t: "announce", text: "Your party has fallen...", kind: "info" });
       return;
     }
-    // Testing zone has no end zone; empty endZone must not auto-win.
     if (this.level.endZone.size === 0) return;
+
+    if (this.procMeta) {
+      if (!this.finalObjectiveComplete) {
+        this.merchantHold = 0;
+        return;
+      }
+      const living = this.aliveHeroes();
+      const ready =
+        living.length > 0 &&
+        standing.length === living.length &&
+        standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y));
+      if (ready) {
+        this.merchantHold += dt;
+        if (this.merchantHold >= MERCHANT_EXIT_HOLD) {
+          this.merchantHold = MERCHANT_EXIT_HOLD;
+          this.phase = "victory";
+          this.emit({ t: "announce", text: "Mission complete!", kind: "info" });
+        }
+      } else {
+        this.merchantHold = 0;
+      }
+      return;
+    }
+
     if (standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y))) {
       this.phase = "victory";
       this.emit({ t: "announce", text: "Mission complete!", kind: "info" });

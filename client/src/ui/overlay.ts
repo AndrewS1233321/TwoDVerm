@@ -1,17 +1,21 @@
 import {
+  CREATURE_RACE_LABELS,
   EXPEDITION_LOCATIONS,
   GAME_MODE_LABELS,
   HERO_IDS,
   HEROES,
+  LEVEL_TYPE_LABELS,
   MAX_PLAYERS,
   WASTES_EXPEDITION_STOPS,
   isExpeditionLocationId,
   isGameMode,
   isHeroId,
+  parseLevelProps,
   type ExpeditionLocation,
   type ExpeditionLocationId,
   type GameMode,
   type HeroId,
+  type LevelProperties,
 } from "@twodverm/shared";
 import type { GameStateView } from "../net/types";
 import { getSettings, updateSettings } from "../settings";
@@ -181,6 +185,8 @@ export class Overlay {
       state.levelId,
       state.expeditionOptionA,
       state.expeditionOptionB,
+      state.expeditionPropsA,
+      state.expeditionPropsB,
       state.expeditionStop,
       this.inspected ?? "",
       ...players.map(
@@ -278,12 +284,20 @@ export class Overlay {
 
     const voteCount = (id: string) => players.filter((p) => p.vote === id).length;
 
-    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-a"), optionA, myVote, voteCount);
-    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-b"), optionB, myVote, voteCount);
+    const propsFor = (id: ExpeditionLocationId | null): LevelProperties | null => {
+      if (!id) return null;
+      if (id === optionA) return parseLevelProps(state.expeditionPropsA);
+      if (id === optionB) return parseLevelProps(state.expeditionPropsB);
+      return null;
+    };
+
+    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-a"), optionA, myVote, voteCount, propsFor(optionA));
+    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-b"), optionB, myVote, voteCount, propsFor(optionB));
 
     const detail = this.inspected && isExpeditionLocationId(this.inspected) ? EXPEDITION_LOCATIONS[this.inspected] : null;
+    const detailProps = this.inspected && isExpeditionLocationId(this.inspected) ? propsFor(this.inspected) : null;
     el("expedition-detail").innerHTML = detail
-      ? this.locationDetailHtml(detail)
+      ? this.locationDetailHtml(detail, detailProps)
       : `<div class="muted">Select a location to inspect its dangers and rewards.</div>`;
     this.updateVoteButton(myVote);
 
@@ -340,6 +354,7 @@ export class Overlay {
     id: ExpeditionLocationId | null,
     myVote: ExpeditionLocationId | null,
     voteCount: (id: string) => number,
+    props: LevelProperties | null,
   ): void {
     if (!id) {
       btn.disabled = true;
@@ -352,13 +367,15 @@ export class Overlay {
     btn.classList.toggle("inspected", this.inspected === id);
     btn.classList.toggle("voted", myVote === id);
     const votes = voteCount(id);
+    const typeLabel = props ? LEVEL_TYPE_LABELS[props.levelType] : loc.factions;
+    const diffLabel = props ? `Difficulty ${props.difficulty.toFixed(1)}` : loc.curse ? `Curse: ${loc.curse}` : "Uncursed";
     btn.innerHTML = `<span class="loc-name">${escapeHtml(loc.name)}</span>
-      <span class="loc-curse${loc.curse ? "" : " none"}">${loc.curse ? `Curse: ${escapeHtml(loc.curse)}` : "Uncursed"}</span>
-      <span class="muted">${escapeHtml(loc.factions)}</span>
+      <span class="loc-curse${props || loc.curse ? "" : " none"}">${escapeHtml(diffLabel)}</span>
+      <span class="muted">${escapeHtml(typeLabel)}</span>
       <span class="loc-votes">${myVote === id ? "Your vote · " : ""}${votes} vote${votes === 1 ? "" : "s"}</span>`;
     btn.onclick = () => {
       this.inspected = id;
-      el("expedition-detail").innerHTML = this.locationDetailHtml(loc);
+      el("expedition-detail").innerHTML = this.locationDetailHtml(loc, props);
       el("expedition-option-a").classList.toggle("inspected", id === el("expedition-option-a").dataset.locId);
       el("expedition-option-b").classList.toggle("inspected", id === el("expedition-option-b").dataset.locId);
       this.updateVoteButton(myVote);
@@ -367,10 +384,21 @@ export class Overlay {
     btn.dataset.locId = id;
   }
 
-  private locationDetailHtml(loc: ExpeditionLocation): string {
+  private locationDetailHtml(loc: ExpeditionLocation, props: LevelProperties | null): string {
+    const races = props
+      ? props.allowableRaces.map((r) => CREATURE_RACE_LABELS[r]).join(", ")
+      : loc.factions;
+    const primary = props ? CREATURE_RACE_LABELS[props.primaryRace] : null;
     return `<h3>${escapeHtml(loc.name)}</h3>
       <div class="detail-line">${escapeHtml(loc.description)}</div>
-      <div class="detail-line"><b>Factions:</b> ${escapeHtml(loc.factions)}</div>
+      ${
+        props
+          ? `<div class="detail-line"><b>Level type:</b> ${escapeHtml(LEVEL_TYPE_LABELS[props.levelType])}</div>
+      <div class="detail-line"><b>Difficulty:</b> ${props.difficulty.toFixed(1)}</div>
+      <div class="detail-line"><b>Primary race:</b> ${escapeHtml(primary!)}</div>
+      <div class="detail-line"><b>Allowable races:</b> ${escapeHtml(races)}</div>`
+          : `<div class="detail-line"><b>Factions:</b> ${escapeHtml(loc.factions)}</div>`
+      }
       <div class="detail-line"><b>Curse:</b> ${loc.curse ? escapeHtml(loc.curse) : "None"}</div>
       <div class="detail-line"><b>Modifiers:</b> ${loc.modifiers.map(escapeHtml).join(" · ")}</div>
       <div class="detail-line"><b>Completion reward:</b> ${escapeHtml(loc.reward)}</div>`;

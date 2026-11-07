@@ -3,13 +3,17 @@ import {
   angleTo,
   clamp,
   ENEMIES,
+  generateLevel,
   HEROES,
   isHeroId,
   MSG,
   parseLevelById,
+  parseLevelProps,
+  TILE_FLOOR,
   TICK_MS,
   type EnemyId,
   type FxEvent,
+  type GeneratedLevelMeta,
   type InputMessage,
   type Level,
 } from "@twodverm/shared";
@@ -61,7 +65,9 @@ export class GameScene extends Phaser.Scene {
   private inputAcc = 0;
   private lastPhase = "";
   private backdropT = 0;
-  private activeLevelId = "default";
+  private activeProcKey = "";
+  private appliedProcProgress = -1;
+  private procMeta: GeneratedLevelMeta | null = null;
   private readonly lagMs = Number(new URLSearchParams(location.search).get("lag") ?? 0);
 
   constructor() {
@@ -97,7 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.lastPhase = "";
     room.onStateChange(() => this.onPatch());
     room.onMessage(MSG.fx, (list: FxEvent[]) => this.handleFx(list));
-    if (hasState(room) && room.state.levelId) this.setActiveLevel(room.state.levelId);
+    if (hasState(room) && room.state.levelId) this.setActiveLevelFromState(room.state);
   }
 
   detach(): void {
@@ -113,19 +119,59 @@ export class GameScene extends Phaser.Scene {
     this.levelRenderer?.setGateOpen(false);
   }
 
-  /** Rebuilds the world map when the synced level id changes (mode or expedition vote). */
-  private setActiveLevel(levelId: string): void {
-    if (levelId === this.activeLevelId && this.levelRenderer) return;
-    this.activeLevelId = levelId;
-    this.level = parseLevelById(levelId);
+  /** Rebuilds the world map when the synced level / proc seed changes. */
+  private setActiveLevelFromState(state: {
+    levelId: string;
+    procSeed: number;
+    levelProps: string;
+    procProgress: number;
+    finalObjectiveComplete: boolean;
+  }): void {
+    const props = state.procSeed && state.levelProps ? parseLevelProps(state.levelProps) : null;
+    const procKey = props ? `${state.levelId}:${state.procSeed}:${state.levelProps}` : state.levelId;
+    if (procKey === this.activeProcKey && this.levelRenderer) {
+      this.applyProcProgress(state.procProgress, state.finalObjectiveComplete);
+      return;
+    }
+    this.activeProcKey = procKey;
+    this.appliedProcProgress = -1;
+    if (props && state.procSeed) {
+      const { level, meta } = generateLevel(props, state.procSeed);
+      this.level = level;
+      this.procMeta = meta;
+    } else {
+      this.level = parseLevelById(state.levelId);
+      this.procMeta = null;
+    }
     this.levelRenderer?.destroy();
     this.summonPads?.destroy();
-    this.levelRenderer = new LevelRenderer(this, this.level);
+    this.levelRenderer = new LevelRenderer(this, this.level, {
+      exitLocked: !!props && !state.finalObjectiveComplete,
+    });
     this.summonPads = this.level.summonPads.length > 0 ? new SummonPadRenderer(this, this.level) : null;
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.level.width * 32, this.level.height * 32);
     const start = this.level.playerStarts[0];
     if (start) cam.centerOn(start.x, start.y);
+    this.applyProcProgress(state.procProgress, state.finalObjectiveComplete);
+  }
+
+  private applyProcProgress(progress: number, finalDone: boolean): void {
+    if (!this.procMeta) return;
+    if (progress === this.appliedProcProgress) {
+      this.levelRenderer?.setExitUnlocked(finalDone);
+      this.levelRenderer?.setGateOpen(finalDone);
+      return;
+    }
+    this.appliedProcProgress = progress;
+    for (let i = 0; i < progress && i < this.procMeta.sectionGates.length; i++) {
+      for (const ti of this.procMeta.sectionGates[i]!) {
+        if (ti >= 0 && ti < this.level.tiles.length) this.level.tiles[ti] = TILE_FLOOR;
+      }
+    }
+    this.levelRenderer?.setExitUnlocked(finalDone);
+    this.levelRenderer?.setGateOpen(finalDone);
+    this.levelRenderer?.redrawGates();
   }
 
   get localPlayer(): PlayerView | undefined {
@@ -160,7 +206,7 @@ export class GameScene extends Phaser.Scene {
     const room = this.room;
     if (!hasState(room)) return;
     const state = room.state;
-    if (state.levelId) this.setActiveLevel(state.levelId);
+    if (state.levelId) this.setActiveLevelFromState(state);
     const now = performance.now();
     if (state.phase !== this.lastPhase) {
       if (state.phase === "playing" || state.phase === "merchant") {

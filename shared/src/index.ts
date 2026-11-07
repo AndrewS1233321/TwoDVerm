@@ -18,4 +18,5 @@ export { WASTES_MERCHANT } from "./levels/wastesMerchant";
 export * from "./levels/expeditionLevels";
 export * from "./data/expedition";
 export * from "./gameMode";
+export * from "./procgen";
 

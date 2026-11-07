@@ -103,8 +103,19 @@ export class GameState extends Schema {
   @type("string") expeditionOptionB = "";
   /** 1-based index of the next wastes stop to play (0 before the first Travel). */
   @type("uint8") expeditionStop = 0;
-  /** Seconds the party has held the merchant exit (0–MERCHANT_EXIT_HOLD). */
+  /** Seconds the party has held the merchant exit or wastes exit (0–MERCHANT_EXIT_HOLD). */
   @type("float32") merchantHold = 0;
+  /** Compact JSON LevelProperties for the active proc level, or "". */
+  @type("string") levelProps = "";
+  /** Deterministic seed for client-side regenerateLevel. */
+  @type("uint32") procSeed = 0;
+  /** Preview props for vote option A (serialized). */
+  @type("string") expeditionPropsA = "";
+  /** Preview props for vote option B (serialized). */
+  @type("string") expeditionPropsB = "";
+  @type("boolean") finalObjectiveComplete = false;
+  /** Completed section objectives (opens soft gates). */
+  @type("uint8") procProgress = 0;
   @type("boolean") gateOpen = false;
   @type("boolean") eventActive = false;
   @type("boolean") eventDone = false;

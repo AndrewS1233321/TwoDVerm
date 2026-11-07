@@ -15,6 +15,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: false,
+    race: "skaven",
     attacks: [
       { id: "slave_bite", windup: 0.5, active: 0.12, recovery: 0.7, reach: 16, arc: deg(90), damage: 5, cleave: 1, stagger: 0, blockCost: 0.4, lunge: 120, swing: { from: -0.8, to: 0.8 } },
     ],
@@ -32,6 +33,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: false,
+    race: "skaven",
     attacks: [
       { id: "clan_slash", windup: 0.55, active: 0.12, recovery: 0.75, reach: 18, arc: deg(90), damage: 9, cleave: 1, stagger: 0, blockCost: 0.8, lunge: 110, swing: { from: -1, to: 1 } },
     ],
@@ -49,6 +51,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: true,
+    race: "skaven",
     attacks: [
       { id: "storm_overhead", windup: 0.85, active: 0.14, recovery: 0.9, reach: 34, arc: deg(50), damage: 24, cleave: 1, stagger: 2, blockCost: 2, swing: { from: 0.4, to: -0.1, thrust: 10 } },
       { id: "storm_sweep", windup: 0.75, active: 0.16, recovery: 0.8, reach: 32, arc: deg(150), damage: 16, cleave: 3, stagger: 1, blockCost: 1.5, swing: { from: -1.4, to: 1.4 } },
@@ -67,6 +70,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: true,
     elite: false,
+    race: "skaven",
     attacks: [],
   },
   gas: {
@@ -82,6 +86,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: true,
     elite: false,
+    race: "skaven",
     attacks: [],
   },
   hooker: {
@@ -97,6 +102,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: true,
     elite: false,
+    race: "skaven",
     attacks: [
       { id: "hook_grab", windup: 0.5, active: 0.15, recovery: 1, reach: 28, arc: deg(60), damage: 0, cleave: 1, stagger: 0, blockCost: 0, swing: { from: 0, to: 0, thrust: 20 } },
     ],
@@ -114,6 +120,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: true,
     special: false,
     elite: false,
+    race: "skaven",
     attacks: [
       { id: "ogre_slam", windup: 0.9, active: 0.16, recovery: 0.9, reach: 36, arc: deg(100), damage: 32, cleave: 4, stagger: 3, blockCost: 3, swing: { from: 0.5, to: -0.1, thrust: 12 } },
       { id: "ogre_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
@@ -132,6 +139,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: false,
+    race: "none",
     attacks: [],
   },
   dummyArmored: {
@@ -147,6 +155,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: false,
+    race: "none",
     attacks: [],
   },
   merchant: {
@@ -162,6 +171,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     large: false,
     special: false,
     elite: false,
+    race: "none",
     attacks: [],
   },
 };

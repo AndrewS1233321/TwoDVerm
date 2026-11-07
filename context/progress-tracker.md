@@ -8,16 +8,22 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Playtest Default, Testing zone, and The Gingey Wastes map vote;
-  expand wastes levels beyond bare shells.
+- Playtest Default, Testing zone, and The Gingey Wastes procedural
+  expedition loop.
 
 ## Completed
 
+- **Procedural Gingey Wastes levels**: shared `generateLevel(props, seed)`
+  room-based layouts (castle/dungeon aesthetics; other types stub the
+  same generator). `LevelProperties` (type, difficulty, races), Skaven
+  race tags, Director budgets from difficulty, section objectives
+  (hold / mini-boss / final boss), exit gate + 10s hold → merchant →
+  next vote. Client regenerates from synced seed/props; vote UI shows
+  rolled props. `npm run check:procgen`.
 - **The Gingey Wastes** game mode: Chaos Wastes–style Holseher's Map
   after lobby; majority vote on randomised forks; after each clear,
   party enters a merchant hall (invulnerable non-functional merchant
   NPC + exit hold 10s) then next map vote; 4 stops then results.
-  Four bare placeholder levels in the pool.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
   central room (starts + unarmoured/armoured dummies) and a summon
@@ -68,9 +74,11 @@ Update this file after every meaningful implementation change.
 
 - Game mode is chosen by the host at create time and stored on the
   room (`default` | `testing` | `wastes`). Joiners inherit it.
-  Wastes uses phase `expedition` for map voting, then `loadLevel`
-  swaps the ASCII map before `startMission`. Testing disables the
-  Director and uses edge-triggered summon pads instead of horde pacing.
+  Wastes uses phase `expedition` for map voting, then
+  `generateLevel` + `loadGeneratedLevel` before `startMission`.
+  Testing disables the Director and uses edge-triggered summon pads
+  instead of horde pacing. Hand-authored ASCII remains for Default,
+  Testing, merchant, and camp.
 - Q toggles melee / ranged. While ranged is drawn, left click fires
   (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting

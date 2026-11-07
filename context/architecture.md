@@ -10,7 +10,7 @@
 | Server         | Node.js + Colyseus                  | Rooms, room codes, joining, state sync over WebSockets        |
 | State sync     | @colyseus/schema                    | Declares synced state; sends only changes each tick           |
 | Server runtime | tsx                                 | Runs TypeScript server directly in dev and production         |
-| Levels         | ASCII map in `shared/src/levels/`   | Level layout, walls, spawn and zone markers (one char a tile); mode picks mission, testing zone, or wastes camp / expedition location |
+| Levels         | ASCII maps + shared procgen         | Hand-authored ASCII in `shared/src/levels/`; Gingey Wastes missions from `shared/src/procgen/` (seed + `LevelProperties`) |
 | Menus          | HTML/CSS overlay (`client/index.html`, `client/src/ui/overlay.ts`) | Main menu, lobby, results, pause, settings |
 | Hosting        | Fly.io (single region near players) | Serves the built client and runs the game server on one URL   |
 | Repo layout    | npm workspaces                      | `client`, `server`, `shared` packages in one repository       |
@@ -32,8 +32,8 @@
   and sounds and music are synthesised with WebAudio (`client/src/audio/`),
   so there are no asset files to download.
 - `scripts/` — Headless tools run on the server simulation: `combat-test`,
-  `mission-test`, `check:level`, `bot-test` (network smoke test) and `bot`
-  (bot teammates that join a room by code).
+  `mission-test`, `check:level`, `check:procgen`, `bot-test` (network smoke
+  test) and `bot` (bot teammates that join a room by code).
 - `context/` — Project documentation and specs for AI-driven development.
 
 ## Client Layout
@@ -104,3 +104,7 @@ Every creature (hero or enemy) has:
    tables in `shared/`, not hard-coded branches in logic.
 7. Simulation code uses the fixed tick delta, never wall-clock time
    or frame rate.
+8. Procedural wastes layouts are deterministic: server and client both
+   call `generateLevel(props, seed)` so tile data is not synced wholesale.
+9. Wastes proc missions enable the Director with difficulty budgets;
+   exit victory requires the final boss objective, then a 10s party hold.

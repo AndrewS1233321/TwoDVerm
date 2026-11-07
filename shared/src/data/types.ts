@@ -80,6 +80,9 @@ export type CombatEnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "ga
 
 export type EnemyId = CombatEnemyId | "dummy" | "dummyArmored" | "merchant";
 
+/** Faction / race tag for procedural level filters. */
+export type EnemyRace = "skaven" | "beastmen" | "orcs" | "undead" | "human" | "chaos" | "none";
+
 export interface EnemyDef {
   id: EnemyId;
   name: string;
@@ -95,4 +98,6 @@ export interface EnemyDef {
   large: boolean;
   special: boolean;
   elite: boolean;
+  /** Creature race for procgen filters (`none` for dummies / merchant). */
+  race: EnemyRace;
 }

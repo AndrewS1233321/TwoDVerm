@@ -30,13 +30,17 @@ game is moderately fast-paced; reaction time and attack timing matter.
 4. In the lobby, each player picks a hero (unique per team).
 5. Host starts: Default/Testing enter the mission; Gingey Wastes
    opens Gingey's Map so the party votes on a forked path (Chaos
-   Wastes style), then loads the winning location.
+   Wastes style). Each option shows rolled level type, difficulty,
+   and races; Travel generates a room-based layout from those props.
 6. All players spawn at the start zone of the chosen level.
 7. Players fight through the level; the Director spawns hordes,
-   specials and a boss (Default mission).
+   specials and a boss (Default mission and Wastes proc levels).
+   Wastes maps have section objectives (hold / mini-boss) and a final
+   boss; the exit unlocks after the boss, then a 10s party hold.
 8. Downed players can be revived by teammates.
-9. Mission ends in victory (all living players reach the end zone)
-   or defeat (all players downed). Results screen, then back to lobby.
+9. Mission ends in victory (end zone — instant on Default; hold after
+   boss on Wastes) or defeat (all players downed). Wastes then enters
+   the merchant hall → next map vote (4 stops) → results.
 
 ## Features
 

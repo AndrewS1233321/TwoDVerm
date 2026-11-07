@@ -96,6 +96,12 @@ export interface GameStateView {
   expeditionOptionB: string;
   expeditionStop: number;
   merchantHold: number;
+  levelProps: string;
+  procSeed: number;
+  expeditionPropsA: string;
+  expeditionPropsB: string;
+  finalObjectiveComplete: boolean;
+  procProgress: number;
   gateOpen: boolean;
   eventActive: boolean;
   eventDone: boolean;

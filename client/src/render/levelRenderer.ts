@@ -19,15 +19,24 @@ function hash(x: number, y: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
+export interface LevelRendererOptions {
+  /** When true, end zone label warns that the boss must be cleared first. */
+  exitLocked?: boolean;
+}
+
 export class LevelRenderer {
   private gateGfx: Phaser.GameObjects.Graphics;
   private gateShown = true;
+  private exitLabel: Phaser.GameObjects.Text | null = null;
+  exitUnlocked = false;
   private readonly disposables: Phaser.GameObjects.GameObject[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly level: Level,
+    options: LevelRendererOptions = {},
   ) {
+    this.exitUnlocked = !options.exitLocked;
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
     const worldW = level.width * TILE_SIZE;
     const worldH = level.height * TILE_SIZE;
@@ -64,6 +73,26 @@ export class LevelRenderer {
       this.gateShown = true;
       this.gateGfx.setAlpha(1);
     }
+  }
+
+  setExitUnlocked(unlocked: boolean): void {
+    this.exitUnlocked = unlocked;
+    if (this.exitLabel) {
+      this.exitLabel.setText(
+        this.level.merchantSpawns.length > 0
+          ? "HOLD TO DEPART"
+          : unlocked
+            ? "EXIT"
+            : "EXIT — CLEAR BOSS FIRST",
+      );
+    }
+  }
+
+  /** Redraw gate bars after soft gates were converted to floor. */
+  redrawGates(): void {
+    this.gateGfx.clear();
+    this.drawGate();
+    if (!this.gateShown) this.gateGfx.setAlpha(0);
   }
 
   private tile(tx: number, ty: number): number {
@@ -144,8 +173,8 @@ export class LevelRenderer {
 
   private drawZones(): void {
     const T = TILE_SIZE;
-    const zone = (set: Set<number>, color: number, label: string) => {
-      if (set.size === 0) return;
+    const zone = (set: Set<number>, color: number, label: string): Phaser.GameObjects.Text | null => {
+      if (set.size === 0) return null;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       for (const i of set) {
         const tx = i % this.level.width;
@@ -167,13 +196,19 @@ export class LevelRenderer {
         .setAlpha(0.55)
         .setDepth(1);
       this.disposables.push(g, text);
+      return text;
     };
-    zone(this.level.holdZone, colors.accent, "HOLD THE SQUARE");
-    zone(
-      this.level.endZone,
-      colors.success,
-      this.level.merchantSpawns.length > 0 ? "HOLD TO DEPART" : "SAFE ROOM",
-    );
+    zone(this.level.holdZone, colors.accent, this.level.bossTrigger.size > 0 ? "HOLD" : "HOLD THE SQUARE");
+    zone(this.level.bossTrigger, 0x9a2a1a, "BOSS");
+    const exitText =
+      this.level.merchantSpawns.length > 0
+        ? "HOLD TO DEPART"
+        : this.exitUnlocked
+          ? this.level.holdZone.size > 0 || this.level.bossTrigger.size > 0
+            ? "EXIT"
+            : "SAFE ROOM"
+          : "EXIT — CLEAR BOSS FIRST";
+    this.exitLabel = zone(this.level.endZone, colors.success, exitText);
   }
 
   private drawGate(): void {

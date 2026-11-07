@@ -208,6 +208,16 @@ export class HudScene extends Phaser.Scene {
         room.state.merchantHold > 0
           ? `Departing in ${Math.ceil(left)}s — stay in the exit`
           : "Merchant hall — gather in the exit to continue";
+    } else if (room.state.phase === "playing" && room.state.procSeed && room.state.finalObjectiveComplete) {
+      const left = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
+      eventText =
+        room.state.merchantHold > 0
+          ? `Extracting in ${Math.ceil(left)}s — stay in the exit`
+          : "Boss down — gather in the exit to leave";
+    } else if (room.state.phase === "playing" && room.state.procSeed && !room.state.finalObjectiveComplete) {
+      eventText = room.state.eventActive
+        ? `Hold the chamber: ${Math.ceil(room.state.eventTimeLeft)}s`
+        : `Section ${room.state.procProgress + 1} objective`;
     } else if (room.state.eventActive) {
       eventText = `Hold the square: ${Math.ceil(room.state.eventTimeLeft)}s`;
     }

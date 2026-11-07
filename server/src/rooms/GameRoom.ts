@@ -2,15 +2,19 @@ import { Room, type Client } from "colyseus";
 import {
   DT,
   EXPEDITION_LOCATION_IDS,
+  generateLevel,
   HERO_IDS,
   HEROES,
   isExpeditionLocationId,
   isHeroId,
   MAX_PLAYERS,
   MSG,
+  rollLevelProperties,
+  rollProcSeed,
   sanitizeGameMode,
   sanitizeInput,
   sanitizeName,
+  serializeLevelProps,
   TICK_MS,
   WASTES_EXPEDITION_STOPS,
   type ExpeditionLocationId,
@@ -104,6 +108,8 @@ export class GameRoom extends Room<GameState> {
       this.world.hazards.clear();
       this.state.expeditionOptionA = "";
       this.state.expeditionOptionB = "";
+      this.state.expeditionPropsA = "";
+      this.state.expeditionPropsB = "";
       for (const p of this.state.players.values()) p.vote = "";
       this.syncAll();
     });
@@ -161,8 +167,15 @@ export class GameRoom extends Room<GameState> {
   /** Opens Holseher's Map with two random forked locations (Chaos Wastes style). */
   private beginExpeditionVote(): void {
     const [a, b] = this.pickForkOptions();
+    const nextStop = Math.min(this.state.expeditionStop + 1, WASTES_EXPEDITION_STOPS);
     this.state.expeditionOptionA = a;
     this.state.expeditionOptionB = b;
+    this.state.expeditionPropsA = serializeLevelProps(
+      rollLevelProperties(nextStop, a, rollProcSeed(this.world.roomSeed, nextStop, a)),
+    );
+    this.state.expeditionPropsB = serializeLevelProps(
+      rollLevelProperties(nextStop, b, rollProcSeed(this.world.roomSeed, nextStop, b)),
+    );
     for (const p of this.state.players.values()) p.vote = "";
     this.world.phase = "expedition";
     this.lastPhase = "expedition";
@@ -191,13 +204,19 @@ export class GameRoom extends Room<GameState> {
     const winner = this.tallyVotes();
     if (!winner) return;
     this.state.expeditionStop += 1;
-    this.world.loadLevel(winner);
+    const stop = this.state.expeditionStop;
+    const seed = rollProcSeed(this.world.roomSeed, stop, winner);
+    const props = rollLevelProperties(stop, winner, seed);
+    const { level, meta } = generateLevel(props, seed);
+    this.world.loadGeneratedLevel(winner, level, meta, props, seed);
     this.state.levelId = winner;
+    this.state.expeditionPropsA = "";
+    this.state.expeditionPropsB = "";
     this.world.startMission();
     this.lastPhase = "playing";
     this.syncAll();
     console.log(
-      `Expedition stop ${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}: ${winner} in room ${this.code}`,
+      `Expedition stop ${stop}/${WASTES_EXPEDITION_STOPS}: ${winner} (${props.levelType} d${props.difficulty}) seed=${seed} in room ${this.code}`,
     );
   }
 

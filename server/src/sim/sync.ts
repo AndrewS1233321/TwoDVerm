@@ -1,4 +1,4 @@
-import { DOWNED } from "@twodverm/shared";
+import { DOWNED, serializeLevelProps } from "@twodverm/shared";
 import { EnemyState, HazardState, PickupState, type GameState, type PlayerState } from "../state/GameState";
 import { phaseNumber } from "./attacks";
 import { heroMoveMods } from "./heroes";
@@ -61,6 +61,10 @@ export function syncWorld(world: World, state: GameState): void {
   state.missionTime = Math.floor(world.missionTime);
   state.totalKills = world.totalKills;
   state.merchantHold = r1(world.merchantHold);
+  state.procSeed = world.procSeed >>> 0;
+  state.finalObjectiveComplete = world.finalObjectiveComplete;
+  state.procProgress = world.procProgress;
+  state.levelProps = world.levelProps ? serializeLevelProps(world.levelProps) : "";
 
   for (const hero of world.heroes.values()) {
     const s = state.players.get(hero.id);
