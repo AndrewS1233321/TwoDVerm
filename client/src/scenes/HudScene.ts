@@ -88,12 +88,13 @@ export class HudScene extends Phaser.Scene {
     const H = this.scale.height;
     this.g.clear();
     this.vignette.setDisplaySize(W, H);
-    const playing = hasState(room) && room.state.phase === "playing";
+    const inMission =
+      hasState(room) && (room.state.phase === "playing" || room.state.phase === "merchant");
     const me = this.game_.localPlayer;
-    for (const t of Object.values(this.texts)) t.setVisible(playing);
+    for (const t of Object.values(this.texts)) t.setVisible(inMission);
     for (const t of this.teamTexts) t.setVisible(false);
     this.vignette.setVisible(!!room);
-    if (!playing || !room || !me || !isHeroId(me.heroId)) return;
+    if (!inMission || !room || !me || !isHeroId(me.heroId)) return;
 
     this.hurtAlpha = Math.max(0, this.hurtAlpha - delta / 600);
     if (this.hurtAlpha > 0) {

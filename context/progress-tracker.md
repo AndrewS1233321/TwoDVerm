@@ -21,6 +21,8 @@ Update this file after every meaningful implementation change.
 - **Hold entry horde**: first time players enter a hold event (mission
   square or proc hold objective), Director spawns a horde at 2× regular
   size (`hordeSize() * 2`).
+- **Merchant exit countdown**: HudScene runs in `merchant` phase so the
+  centered exit hold timer matches mission / wastes exits.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
