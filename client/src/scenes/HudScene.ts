@@ -245,6 +245,28 @@ export class HudScene extends Phaser.Scene {
     const room = this.game_.room!;
     const t = this.texts;
     const now = performance.now();
+    const exitHolding = room.state.merchantHold > 0;
+    const exitLeft = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
+    const exitLabel =
+      room.state.phase === "merchant" ? "Departing" : room.state.phase === "playing" ? "Extracting" : "Departing";
+
+    if (exitHolding) {
+      const secs = Math.max(1, Math.ceil(exitLeft));
+      t.announce!
+        .setPosition(W / 2, H * 0.38)
+        .setText(String(secs))
+        .setAlpha(1)
+        .setColor(palette.accent)
+        .setFontSize("72px");
+      t.event!
+        .setPosition(W / 2, H * 0.48)
+        .setText(`${exitLabel} — stay in the exit`)
+        .setFontSize("20px");
+      return;
+    }
+
+    t.announce!.setFontSize("30px");
+    t.event!.setFontSize("16px");
     if (this.announce && now < this.announce.until) {
       const left = this.announce.until - now;
       t.announce!.setPosition(W / 2, H * 0.22).setText(this.announce.text).setAlpha(Math.min(1, left / 500));
@@ -254,17 +276,9 @@ export class HudScene extends Phaser.Scene {
     }
     let eventText = "";
     if (room.state.phase === "merchant") {
-      const left = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
-      eventText =
-        room.state.merchantHold > 0
-          ? `Departing in ${Math.ceil(left)}s — stay in the exit`
-          : "Merchant hall — gather in the exit to continue";
+      eventText = "Merchant hall — gather in the exit to continue";
     } else if (room.state.phase === "playing" && room.state.procSeed && room.state.finalObjectiveComplete) {
-      const left = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
-      eventText =
-        room.state.merchantHold > 0
-          ? `Extracting in ${Math.ceil(left)}s — stay in the exit`
-          : "Boss down — gather in the exit to leave";
+      eventText = "Boss down — gather in the exit to leave";
     } else if (room.state.phase === "playing" && room.state.procSeed && !room.state.finalObjectiveComplete) {
       eventText = room.state.eventActive
         ? `Hold the chamber: ${Math.ceil(room.state.eventTimeLeft)}s`

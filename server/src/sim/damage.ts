@@ -118,6 +118,8 @@ export function releaseGrab(world: World, enemy: Enemy): void {
 /** A melee or ranged strike on a hero that can be dodged and (from the front) blocked. */
 export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResult {
   if (hero.state === "dead") return "ignored";
+  // Whole party is invulnerable while holding the exit countdown.
+  if (world.merchantHold > 0) return "ignored";
   if (hero.iframesT > 0) {
     world.emit({ t: "dodge", id: hero.id });
     return "dodged";
@@ -159,6 +161,7 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
 /** Raw damage with no blocking or dodging (gas, being dragged, bleeding). */
 export function damageHero(world: World, hero: Hero, dmg: number): void {
   if (dmg <= 0) return;
+  if (world.merchantHold > 0) return;
   world.director.addIntensity(dmg / hero.def.hp);
   if (hero.state === "dead") return;
   if (hero.state === "downed") {
