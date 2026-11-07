@@ -12,6 +12,7 @@ import {
   sanitizeInput,
   sanitizeName,
   TICK_MS,
+  WASTES_EXPEDITION_STOPS,
   type ExpeditionLocationId,
   type HeroId,
 } from "@twodverm/shared";
@@ -28,6 +29,9 @@ export class GameRoom extends Room<GameState> {
   state = new GameState();
   private world!: World;
   private code = "";
+  /** Locations already cleared this expedition (preferred excluded from the next fork). */
+  private playedLocations: ExpeditionLocationId[] = [];
+  private lastPhase = "lobby";
 
   onCreate(options: unknown): void {
     const mode = sanitizeGameMode((options as { gameMode?: unknown } | null)?.gameMode);
@@ -94,6 +98,7 @@ export class GameRoom extends Room<GameState> {
     this.onMessage(MSG.returnToLobby, (client) => {
       if (client.sessionId !== this.state.hostId) return;
       if (this.state.phase !== "victory" && this.state.phase !== "defeat") return;
+      this.resetExpeditionProgress();
       this.world.phase = "lobby";
       this.world.enemies.clear();
       this.world.hazards.clear();
@@ -104,6 +109,12 @@ export class GameRoom extends Room<GameState> {
     });
 
     console.log(`Room ${this.code} created (${mode})`);
+  }
+
+  private resetExpeditionProgress(): void {
+    this.playedLocations = [];
+    this.state.expeditionStop = 0;
+    this.lastPhase = "lobby";
   }
 
   onJoin(client: Client, options: unknown): void {
@@ -154,11 +165,14 @@ export class GameRoom extends Room<GameState> {
     this.state.expeditionOptionB = b;
     for (const p of this.state.players.values()) p.vote = "";
     this.world.phase = "expedition";
+    this.lastPhase = "expedition";
     this.syncAll();
   }
 
+  /** Prefer unplayed locations; if fewer than two remain, redraw from the full pool. */
   private pickForkOptions(): [ExpeditionLocationId, ExpeditionLocationId] {
-    const pool = [...EXPEDITION_LOCATION_IDS];
+    const remaining = EXPEDITION_LOCATION_IDS.filter((id) => !this.playedLocations.includes(id));
+    const pool = [...(remaining.length >= 2 ? remaining : EXPEDITION_LOCATION_IDS)];
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(this.world.rng() * (i + 1));
       [pool[i], pool[j]] = [pool[j]!, pool[i]!];
@@ -176,11 +190,46 @@ export class GameRoom extends Room<GameState> {
     if (this.state.phase !== "expedition") return;
     const winner = this.tallyVotes();
     if (!winner) return;
+    this.state.expeditionStop += 1;
     this.world.loadLevel(winner);
     this.state.levelId = winner;
     this.world.startMission();
+    this.lastPhase = "playing";
     this.syncAll();
-    console.log(`Expedition traveled to ${winner} in room ${this.code}`);
+    console.log(
+      `Expedition stop ${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}: ${winner} in room ${this.code}`,
+    );
+  }
+
+  /** After clearing a wastes map, open the next fork until the expedition is finished. */
+  private maybeContinueWastesExpedition(): void {
+    if (this.state.gameMode !== "wastes") return;
+    if (this.lastPhase !== "playing" || this.world.phase !== "victory") return;
+
+    const cleared = this.world.levelId;
+    if (isExpeditionLocationId(cleared) && !this.playedLocations.includes(cleared)) {
+      this.playedLocations.push(cleared);
+    }
+
+    if (this.state.expeditionStop >= WASTES_EXPEDITION_STOPS) {
+      this.world.emit({
+        t: "announce",
+        text: "Expedition complete! The Wastes yield… for now.",
+        kind: "info",
+      });
+      this.lastPhase = "victory";
+      return;
+    }
+
+    this.world.enemies.clear();
+    this.world.hazards.clear();
+    this.world.pickups.clear();
+    this.world.emit({
+      t: "announce",
+      text: `Path cleared (${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}). Choose the next road.`,
+      kind: "info",
+    });
+    this.beginExpeditionVote();
   }
 
   private tallyVotes(): ExpeditionLocationId | null {
@@ -222,6 +271,7 @@ export class GameRoom extends Room<GameState> {
 
   private tick(): void {
     this.world.step(DT);
+    this.maybeContinueWastesExpedition();
     this.syncAll();
     if (this.world.fx.length > 0) {
       this.broadcast(MSG.fx, this.world.fx);

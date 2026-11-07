@@ -66,6 +66,9 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
 
 export const EXPEDITION_LOCATION_IDS = Object.keys(EXPEDITION_LOCATIONS) as ExpeditionLocationId[];
 
+/** How many locations a Gingey Wastes expedition runs before the final results. */
+export const WASTES_EXPEDITION_STOPS = 4;
+
 export function isExpeditionLocationId(v: unknown): v is ExpeditionLocationId {
   return typeof v === "string" && (EXPEDITION_LOCATION_IDS as string[]).includes(v);
 }

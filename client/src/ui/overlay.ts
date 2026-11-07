@@ -4,6 +4,7 @@ import {
   HERO_IDS,
   HEROES,
   MAX_PLAYERS,
+  WASTES_EXPEDITION_STOPS,
   isExpeditionLocationId,
   isGameMode,
   isHeroId,
@@ -179,6 +180,7 @@ export class Overlay {
       state.levelId,
       state.expeditionOptionA,
       state.expeditionOptionB,
+      state.expeditionStop,
       this.inspected ?? "",
       ...players.map(
         (p) =>
@@ -255,6 +257,9 @@ export class Overlay {
     const players = [...state.players.values()];
     const me = state.players.get(localId);
     const myVote = isExpeditionLocationId(me?.vote) ? me.vote : null;
+    const nextStop = Math.min(state.expeditionStop + 1, WASTES_EXPEDITION_STOPS);
+
+    el("expedition-progress").textContent = `Stop ${nextStop} of ${WASTES_EXPEDITION_STOPS}`;
 
     if (!this.inspected) this.inspected = myVote ?? optionA;
 
@@ -335,7 +340,7 @@ export class Overlay {
     el("results-title").style.color = win ? "var(--accent)" : "#ff8a70";
     el("results-subtitle").textContent = win
       ? state.gameMode === "wastes"
-        ? "This stretch of the Wastes is behind you."
+        ? "Expedition complete. Four paths conquered in the Gingey Wastes."
         : "You escaped the city. The rats will remember this."
       : "The horde overwhelmed you.";
     el("results-body").innerHTML = [...state.players.values()]

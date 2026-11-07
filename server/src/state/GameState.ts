@@ -101,6 +101,8 @@ export class GameState extends Schema {
   @type("string") expeditionOptionA = "";
   /** Holseher's Map fork option B (expedition location id). */
   @type("string") expeditionOptionB = "";
+  /** 1-based index of the next wastes stop to play (0 before the first Travel). */
+  @type("uint8") expeditionStop = 0;
   @type("boolean") gateOpen = false;
   @type("boolean") eventActive = false;
   @type("boolean") eventDone = false;

@@ -15,9 +15,9 @@ Update this file after every meaningful implementation change.
 
 - **The Gingey Wastes** game mode: Chaos Wastes–style Holseher's Map
   (Gingey's Map) after lobby. Two random location forks with
-  placeholder info (factions, curse, modifiers, reward); majority
-  vote (ties random); host Travel or auto-depart when all vote;
-  loads a bare unfinished level for the winner.
+  placeholder info; majority vote; after each win a new randomised
+  fork (prefer unplayed); 4 stops then expedition results. Four
+  bare placeholder levels in the pool.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
   central room (starts + unarmoured/armoured dummies) and a summon

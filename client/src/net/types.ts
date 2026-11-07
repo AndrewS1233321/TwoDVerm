@@ -94,6 +94,7 @@ export interface GameStateView {
   levelId: string;
   expeditionOptionA: string;
   expeditionOptionB: string;
+  expeditionStop: number;
   gateOpen: boolean;
   eventActive: boolean;
   eventDone: boolean;
