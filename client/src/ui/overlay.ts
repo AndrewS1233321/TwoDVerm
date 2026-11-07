@@ -225,7 +225,19 @@ export class Overlay {
       btn.disabled = !!owner && !mine;
       btn.innerHTML = `<span class="name">${def.name}</span><span class="title">${def.title}</span>
         <span class="desc">${def.description}</span>
-        <span class="desc"><b>${def.weapon.name}</b> + ${def.ranged.name}<br/>Ultimate: ${def.ultName}</span>
+        <div class="stats">
+          <span>Health <b>${def.hp}</b></span>
+          <span>Move speed <b>${def.speed}</b></span>
+          <span>Block stamina <b>${def.stamina}</b></span>
+          <span>Dodges <b>${def.dodges}</b></span>
+          <span>Stagger resist <b>${def.staggerResist}</b></span>
+          <span>Size <b>${def.radius}</b></span>
+          <span>Melee <b>${escapeHtml(def.weapon.name)}</b></span>
+          <span>Ranged <b>${escapeHtml(def.ranged.name)}</b></span>
+          <span>Ammo <b>${def.ranged.ammo}</b></span>
+          <span>Ult CD <b>${def.ultCooldown}s</b></span>
+        </div>
+        <span class="desc"><b>Ultimate:</b> ${escapeHtml(def.ultName)}</span>
         ${owner && !mine ? `<span class="taken">Taken by ${escapeHtml(owner.name)}</span>` : ""}`;
       btn.onclick = () => this.h.onPickHero(id);
       heroes.appendChild(btn);
