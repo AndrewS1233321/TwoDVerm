@@ -5,10 +5,11 @@ import {
   ENEMIES,
   isInZone,
   MAX_ENEMIES,
-  MISSION_1,
-  parseLevel,
+  parseLevelForMode,
+  tileIndexAt,
   type EnemyId,
   type FxEvent,
+  type GameMode,
   type GamePhase,
   type HeroDef,
   type Level,
@@ -26,14 +27,15 @@ const LONELY_DESPAWN_DISTANCE = 1800;
 const LONELY_DESPAWN_TIME = 10;
 
 export class World {
-  readonly level: Level = parseLevel(MISSION_1);
+  readonly mode: GameMode;
+  readonly level: Level;
   readonly heroes = new Map<string, Hero>();
   readonly enemies = new Map<string, Enemy>();
   readonly hazards = new Map<string, Hazard>();
   readonly pickups = new Map<string, Pickup>();
-  readonly flowSmall = new FlowField(this.level, false);
-  readonly flowWide = new FlowField(this.level, true);
-  readonly director = new Director(this);
+  readonly flowSmall: FlowField;
+  readonly flowWide: FlowField;
+  readonly director: Director;
   readonly rng: () => number;
 
   fx: FxEvent[] = [];
@@ -48,8 +50,15 @@ export class World {
 
   private nextId = 1;
   private flowT = 0;
+  /** Hero+pad keys that were occupied last tick (edge-triggered summons). */
+  private padOccupancy = new Set<string>();
 
-  constructor(seed: number) {
+  constructor(seed: number, mode: GameMode = "default") {
+    this.mode = mode;
+    this.level = parseLevelForMode(mode);
+    this.flowSmall = new FlowField(this.level, false);
+    this.flowWide = new FlowField(this.level, true);
+    this.director = new Director(this);
     this.rng = createRng(seed);
   }
 
@@ -82,13 +91,14 @@ export class World {
     this.hazards.clear();
     this.pickups.clear();
     this.fx = [];
-    this.gateOpen = false;
+    this.gateOpen = this.mode === "testing";
     this.eventActive = false;
     this.eventDone = false;
     this.eventTimeLeft = 0;
     this.bossActive = false;
     this.missionTime = 0;
     this.totalKills = 0;
+    this.padOccupancy.clear();
     let i = 0;
     for (const hero of this.heroes.values()) {
       const start = this.level.playerStarts[i++ % this.level.playerStarts.length]!;
@@ -96,9 +106,16 @@ export class World {
     }
     for (const p of this.level.ammoCrates) this.addPickup("ammo", p.x, p.y);
     for (const p of this.level.medKits) this.addPickup("med", p.x, p.y);
-    this.director.reset();
+    if (this.mode === "testing") this.setupTestingZone();
+    else this.director.reset();
     this.rebuildFlow();
     this.phase = "playing";
+  }
+
+  private setupTestingZone(): void {
+    for (const d of this.level.dummySpawns) {
+      this.spawnEnemy(d.armored ? "dummyArmored" : "dummy", d.x, d.y, false);
+    }
   }
 
   private addPickup(kind: Pickup["kind"], x: number, y: number): void {
@@ -193,12 +210,31 @@ export class World {
 
     updateHazards(this, dt);
     separateCreatures(this);
-    this.director.step(dt);
+    if (this.mode === "testing") this.updateSummonPads();
+    else this.director.step(dt);
     this.checkMissionEnd();
   }
 
+  /** Summon one enemy when a hero first steps onto a pad (not while standing on it). */
+  private updateSummonPads(): void {
+    const next = new Set<string>();
+    for (const hero of this.standingHeroes()) {
+      const heroTile = tileIndexAt(this.level, hero.x, hero.y);
+      this.level.summonPads.forEach((pad, i) => {
+        if (tileIndexAt(this.level, pad.x, pad.y) !== heroTile) return;
+        const key = `${hero.id}:${i}`;
+        next.add(key);
+        if (!this.padOccupancy.has(key)) {
+          const offset = 40 + (pad.type === "ogre" ? 20 : 0);
+          this.spawnEnemy(pad.type, pad.x, pad.y + offset, true);
+        }
+      });
+    }
+    this.padOccupancy = next;
+  }
+
   private despawnIfLonely(enemy: Enemy, dt: number): void {
-    if (!enemy.aggro || enemy.def.behavior === "boss") return;
+    if (!enemy.aggro || enemy.def.behavior === "boss" || enemy.def.behavior === "dummy") return;
     if (this.nearestHeroDistance(enemy.x, enemy.y) > LONELY_DESPAWN_DISTANCE) {
       enemy.lonelyT += dt;
       if (enemy.lonelyT > LONELY_DESPAWN_TIME) this.enemies.delete(enemy.id);
@@ -215,6 +251,8 @@ export class World {
       this.emit({ t: "announce", text: "Your party has fallen...", kind: "info" });
       return;
     }
+    // Testing zone has no end zone; empty endZone must not auto-win.
+    if (this.level.endZone.size === 0) return;
     if (standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y))) {
       this.phase = "victory";
       this.emit({ t: "announce", text: "Mission complete!", kind: "info" });

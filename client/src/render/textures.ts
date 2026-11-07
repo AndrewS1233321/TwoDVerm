@@ -211,11 +211,37 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
       g.fillCircle(cx + R * 0.85, cy, R * 0.3);
     },
   },
+  dummy: {
+    fur: 0x8a7a60,
+    width: 1.5,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0xc9a14a, 0.9);
+      g.fillRect(cx - R * 0.55, cy - R * 0.55, R * 1.1, R * 1.1);
+      g.lineStyle(TEX_SCALE, 0x3a3020, 0.9);
+      g.strokeRect(cx - R * 0.55, cy - R * 0.55, R * 1.1, R * 1.1);
+    },
+  },
+  dummyArmored: {
+    fur: 0x6a6a70,
+    width: 1.55,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x9aa3ad);
+      g.fillEllipse(cx - R * 0.05, cy, R * 1.45, R * 1.5);
+      g.lineStyle(TEX_SCALE, 0xd8d0c0, 0.9);
+      g.strokeEllipse(cx - R * 0.05, cy, R * 1.45, R * 1.5);
+      g.fillStyle(0x4b4f58);
+      g.fillRect(cx - R * 0.7, cy - R * 0.12, R * 1.0, R * 0.24);
+    },
+  },
 };
 
 function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
   if (id === "ogre") {
     drawOgre(scene, g);
+    return;
+  }
+  if (id === "dummy" || id === "dummyArmored") {
+    drawDummy(scene, g, id);
     return;
   }
   const def = ENEMIES[id];
@@ -259,6 +285,27 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
     g.fillTriangle(cx + R * 0.5, cy - R * 0.3, cx + R * 0.65, cy - R * 0.3, cx + R * 0.35, cy - R * 0.75);
     g.fillTriangle(cx + R * 0.5, cy + R * 0.3, cx + R * 0.65, cy + R * 0.3, cx + R * 0.35, cy + R * 0.75);
   }
+  finish(scene, g, enemyTextureKey(id), w, h);
+}
+
+function drawDummy(scene: Phaser.Scene, g: G, id: "dummy" | "dummyArmored"): void {
+  const def = ENEMIES[id];
+  const look = RAT_LOOKS[id]!;
+  const R = def.radius * TEX_SCALE;
+  const w = R * 4.2;
+  const h = R * 4.2;
+  const cx = w / 2;
+  const cy = h / 2;
+  g.fillStyle(0x5a4a38);
+  g.fillRect(cx - R * 0.22, cy + R * 0.55, R * 0.44, R * 1.1);
+  g.fillStyle(look.fur);
+  g.fillCircle(cx, cy - R * 0.1, R * 1.15);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.45);
+  g.strokeCircle(cx, cy - R * 0.1, R * 1.15);
+  look.extra?.(g, cx, cy - R * 0.1, R);
+  g.fillStyle(0x2a2218, 0.9);
+  g.fillCircle(cx - R * 0.35, cy - R * 0.25, R * 0.12);
+  g.fillCircle(cx + R * 0.35, cy - R * 0.25, R * 0.12);
   finish(scene, g, enemyTextureKey(id), w, h);
 }
 

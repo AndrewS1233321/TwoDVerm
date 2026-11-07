@@ -4,14 +4,16 @@ import {
   clamp,
   ENEMIES,
   HEROES,
+  isGameMode,
   isHeroId,
-  MISSION_1,
   MSG,
-  parseLevel,
+  parseLevelForMode,
   TICK_MS,
   type EnemyId,
   type FxEvent,
+  type GameMode,
   type InputMessage,
+  type Level,
 } from "@twodverm/shared";
 import { Music } from "../audio/music";
 import { playSfx, type SfxName } from "../audio/sfx";
@@ -23,6 +25,7 @@ import type { EnemyView, PlayerView } from "../net/types";
 import { Effects } from "../render/effects";
 import { LevelRenderer } from "../render/levelRenderer";
 import { colors } from "../render/palette";
+import { SummonPadRenderer } from "../render/summonPads";
 import { enemyTextureKey, enemyWeaponStyle, generateTextures, heroTextureKey, rangedWeaponStyle } from "../render/textures";
 import { CreatureView, type PoseInfo } from "../render/views";
 import { getSettings } from "../settings";
@@ -37,7 +40,7 @@ export interface Announcement {
 }
 
 export class GameScene extends Phaser.Scene {
-  readonly level = parseLevel(MISSION_1);
+  level: Level = parseLevelForMode("default");
   readonly music = new Music();
   readonly hud = new Phaser.Events.EventEmitter();
   room: GameRoom | null = null;
@@ -46,6 +49,7 @@ export class GameScene extends Phaser.Scene {
   ping = 0;
 
   private levelRenderer!: LevelRenderer;
+  private summonPads: SummonPadRenderer | null = null;
   private effects!: Effects;
   private controls!: Controls;
   private ground!: Phaser.GameObjects.Graphics;
@@ -59,6 +63,7 @@ export class GameScene extends Phaser.Scene {
   private inputAcc = 0;
   private lastPhase = "";
   private backdropT = 0;
+  private gameMode: GameMode = "default";
   private readonly lagMs = Number(new URLSearchParams(location.search).get("lag") ?? 0);
 
   constructor() {
@@ -94,6 +99,7 @@ export class GameScene extends Phaser.Scene {
     this.lastPhase = "";
     room.onStateChange(() => this.onPatch());
     room.onMessage(MSG.fx, (list: FxEvent[]) => this.handleFx(list));
+    if (hasState(room) && isGameMode(room.state.gameMode)) this.setGameMode(room.state.gameMode);
   }
 
   detach(): void {
@@ -107,6 +113,21 @@ export class GameScene extends Phaser.Scene {
     this.room = null;
     this.localId = "";
     this.levelRenderer?.setGateOpen(false);
+  }
+
+  /** Rebuilds the world map when the room's game mode is known or changes. */
+  private setGameMode(mode: GameMode): void {
+    if (mode === this.gameMode && this.levelRenderer) return;
+    this.gameMode = mode;
+    this.level = parseLevelForMode(mode);
+    this.levelRenderer?.destroy();
+    this.summonPads?.destroy();
+    this.levelRenderer = new LevelRenderer(this, this.level);
+    this.summonPads = this.level.summonPads.length > 0 ? new SummonPadRenderer(this, this.level) : null;
+    const cam = this.cameras.main;
+    cam.setBounds(0, 0, this.level.width * 32, this.level.height * 32);
+    const start = this.level.playerStarts[0];
+    if (start) cam.centerOn(start.x, start.y);
   }
 
   get localPlayer(): PlayerView | undefined {
@@ -141,6 +162,7 @@ export class GameScene extends Phaser.Scene {
     const room = this.room;
     if (!hasState(room)) return;
     const state = room.state;
+    if (isGameMode(state.gameMode)) this.setGameMode(state.gameMode);
     const now = performance.now();
     if (state.phase !== this.lastPhase) {
       if (state.phase === "playing") {

@@ -8,11 +8,16 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Deploy to Fly.io and play a full mission with friends; collect feel
-  notes (attack timings, horde size, damage) for tuning in `shared/`.
+- Playtest Default and Testing zone modes; collect feel notes
+  (attack timings, horde size, damage) for tuning in `shared/`.
 
 ## Completed
 
+- Game modes: create-menu select for **Default** (mission 1) and
+  **Testing zone**. Mode is fixed for the room. Testing zone has a
+  central room (starts + unarmoured/armoured dummies) and a summon
+  room with one green pad per combat enemy type (step on pad to
+  spawn). Director disabled in testing; no auto-victory.
 - Unit 01: context files and build plan written.
 - Unit 02: skeleton. `npm run dev` starts Colyseus (port 2567) and Vite
   (port 5173). Colyseus 0.16, Phaser 3, Vite 6.
@@ -56,6 +61,10 @@ Update this file after every meaningful implementation change.
 
 ## Architecture Decisions
 
+- Game mode is chosen by the host at create time and stored on the
+  room (`default` | `testing`). Joiners inherit it; the same World
+  loads `MISSION_1` or `TESTING_ZONE`. Testing disables the Director
+  and uses edge-triggered summon pads instead of horde pacing.
 - Q toggles melee / ranged. While ranged is drawn, left click fires
   (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting

@@ -12,3 +12,6 @@ export * from "./data/heroes";
 export * from "./data/enemies";
 export * from "./data/attacks";
 export { MISSION_1 } from "./levels/mission1";
+export { TESTING_ZONE } from "./levels/testingZone";
+export * from "./gameMode";
+

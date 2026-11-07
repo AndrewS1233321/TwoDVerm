@@ -81,7 +81,8 @@
         font-size: 13px;
         margin: 12px 0 6px;
       }
-      input[type="text"] {
+      input[type="text"],
+      select {
         width: 100%;
         padding: 10px 12px;
         font-size: 16px;
@@ -90,7 +91,8 @@
         border: 1px solid var(--border);
         border-radius: 6px;
       }
-      input[type="text"]:focus {
+      input[type="text"]:focus,
+      select:focus {
         outline: 2px solid var(--accent);
       }
       button {
@@ -292,6 +294,11 @@
         <p class="subtitle">The rats are in the city. Hold the line together.</p>
         <label for="name-input">Your name</label>
         <input id="name-input" type="text" maxlength="16" placeholder="Hero" autocomplete="off" />
+        <label for="mode-select">Game mode</label>
+        <select id="mode-select">
+          <option value="default" selected>Default</option>
+          <option value="testing">Testing zone</option>
+        </select>
         <div class="stack">
           <button id="create-btn" class="primary">Create game</button>
         </div>
@@ -314,6 +321,7 @@
           <div>
             <div class="muted">Room code: share it with your friends</div>
             <div id="lobby-code" class="code">----</div>
+            <div class="muted" style="margin-top: 6px">Mode: <span id="lobby-mode">Default</span></div>
           </div>
           <button id="copy-link-btn">Copy invite link</button>
         </div>

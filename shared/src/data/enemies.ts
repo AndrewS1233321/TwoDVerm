@@ -1,5 +1,5 @@
 import { deg } from "../math";
-import type { EnemyDef, EnemyId } from "./types";
+import type { CombatEnemyId, EnemyDef, EnemyId } from "./types";
 
 export const ENEMIES: Record<EnemyId, EnemyDef> = {
   slave: {
@@ -119,6 +119,39 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
       { id: "ogre_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
     ],
   },
+  dummy: {
+    id: "dummy",
+    name: "Test Dummy",
+    radius: 14,
+    hp: 9999,
+    speed: 0,
+    turnRate: 0,
+    armored: false,
+    staggerResist: 99,
+    behavior: "dummy",
+    large: false,
+    special: false,
+    elite: false,
+    attacks: [],
+  },
+  dummyArmored: {
+    id: "dummyArmored",
+    name: "Armoured Dummy",
+    radius: 15,
+    hp: 9999,
+    speed: 0,
+    turnRate: 0,
+    armored: true,
+    staggerResist: 99,
+    behavior: "dummy",
+    large: false,
+    special: false,
+    elite: false,
+    attacks: [],
+  },
 };
 
 export const ENEMY_IDS = Object.keys(ENEMIES) as EnemyId[];
+
+/** Mission / summon-pad enemies only (excludes test dummies). */
+export const COMBAT_ENEMY_IDS: CombatEnemyId[] = ["slave", "clanrat", "stormvermin", "gunner", "gas", "hooker", "ogre"];

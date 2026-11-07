@@ -88,6 +88,7 @@ export interface GameStateView {
   phase: string;
   hostId: string;
   code: string;
+  gameMode: string;
   gateOpen: boolean;
   eventActive: boolean;
   eventDone: boolean;

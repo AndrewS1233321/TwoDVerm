@@ -1,4 +1,5 @@
 import type { HeroId } from "./data/types";
+import type { GameMode } from "./gameMode";
 import { clamp, isFiniteNumber } from "./math";
 
 export const MSG = {
@@ -34,6 +35,8 @@ export interface SelectHeroMessage {
 
 export interface JoinOptions {
   name: string;
+  /** Host-only; ignored when joining an existing room. */
+  gameMode?: GameMode;
 }
 
 export type GamePhase = "lobby" | "playing" | "victory" | "defeat";

@@ -90,6 +90,8 @@ export class GameState extends Schema {
   @type("string") phase = "lobby";
   @type("string") hostId = "";
   @type("string") code = "";
+  /** "default" mission or "testing" zone. Set once when the room is created. */
+  @type("string") gameMode = "default";
   @type("boolean") gateOpen = false;
   @type("boolean") eventActive = false;
   @type("boolean") eventDone = false;

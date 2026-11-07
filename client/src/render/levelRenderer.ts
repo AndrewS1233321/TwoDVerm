@@ -22,6 +22,7 @@ function hash(x: number, y: number): number {
 export class LevelRenderer {
   private gateGfx: Phaser.GameObjects.Graphics;
   private gateShown = true;
+  private readonly disposables: Phaser.GameObjects.GameObject[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -38,14 +39,21 @@ export class LevelRenderer {
         this.drawTiles(g, ox, oy, w, h);
         const rt = scene.add.renderTexture(ox, oy, w, h).setOrigin(0, 0).setDepth(0);
         rt.draw(g, -ox, -oy);
+        this.disposables.push(rt);
       }
     }
     g.destroy();
 
     this.drawZones();
     this.gateGfx = scene.add.graphics().setDepth(4);
+    this.disposables.push(this.gateGfx);
     this.drawGate();
     this.placeTorches();
+  }
+
+  destroy(): void {
+    for (const obj of this.disposables) obj.destroy();
+    this.disposables.length = 0;
   }
 
   setGateOpen(open: boolean): void {
@@ -153,11 +161,12 @@ export class LevelRenderer {
       g.fillRect(x, y, w, h);
       g.lineStyle(2, color, 0.6);
       g.strokeRect(x + 2, y + 2, w - 4, h - 4);
-      this.scene.add
+      const text = this.scene.add
         .text(x + w / 2, y + h / 2, label, { fontFamily: "Georgia, serif", fontSize: "18px", color: "#" + color.toString(16).padStart(6, "0") })
         .setOrigin(0.5)
         .setAlpha(0.55)
         .setDepth(1);
+      this.disposables.push(g, text);
     };
     zone(this.level.holdZone, colors.accent, "HOLD THE SQUARE");
     zone(this.level.endZone, colors.success, "SAFE ROOM");
@@ -192,7 +201,8 @@ export class LevelRenderer {
         const x = (tx + 0.5) * TILE_SIZE;
         const y = (ty + 1) * TILE_SIZE - 4;
         const glow = this.scene.add.image(x, y + 10, "glow").setDepth(2).setTint(0xff9a3a).setAlpha(0.35).setScale(1.8).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.add.circle(x, y, 3, 0xffd27a).setDepth(3);
+        const flame = this.scene.add.circle(x, y, 3, 0xffd27a).setDepth(3);
+        this.disposables.push(glow, flame);
         this.scene.tweens.add({
           targets: glow,
           alpha: { from: 0.28, to: 0.42 },

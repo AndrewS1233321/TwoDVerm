@@ -26,6 +26,14 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
   e.cooldown -= dt;
   applyKnockback(world, e, dt);
 
+  // Test dummies never chase or attack; they only take hits.
+  if (e.def.behavior === "dummy") {
+    e.state = "idle";
+    e.attack = null;
+    e.aggro = false;
+    return;
+  }
+
   if (e.state === "idle") {
     if (shouldAggro(world, e)) alert(world, e);
     return;

@@ -23,7 +23,8 @@ game is moderately fast-paced; reaction time and attack timing matter.
 
 ## Core User Flow
 
-1. Host opens the game URL and clicks "Create game".
+1. Host opens the game URL, picks a game mode (Default or Testing
+   zone), and clicks "Create game".
 2. The game shows a 4-letter room code; host shares URL and code.
 3. Friends open the URL, enter a name and the room code, click "Join".
 4. In the lobby, each player picks a hero (unique per team).

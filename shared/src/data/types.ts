@@ -73,9 +73,12 @@ export interface HeroDef {
   description: string;
 }
 
-export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "boss";
+export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "boss" | "dummy";
 
-export type EnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "gas" | "hooker" | "ogre";
+/** Combat enemies that appear in missions and on testing-zone summon pads. */
+export type CombatEnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "gas" | "hooker" | "ogre";
+
+export type EnemyId = CombatEnemyId | "dummy" | "dummyArmored";
 
 export interface EnemyDef {
   id: EnemyId;

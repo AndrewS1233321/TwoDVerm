@@ -10,7 +10,7 @@
 | Server         | Node.js + Colyseus                  | Rooms, room codes, joining, state sync over WebSockets        |
 | State sync     | @colyseus/schema                    | Declares synced state; sends only changes each tick           |
 | Server runtime | tsx                                 | Runs TypeScript server directly in dev and production         |
-| Levels         | ASCII map in `shared/src/levels/`   | Level layout, walls, spawn and zone markers (one char a tile) |
+| Levels         | ASCII map in `shared/src/levels/`   | Level layout, walls, spawn and zone markers (one char a tile); `default` mission or `testing` zone via game mode |
 | Menus          | HTML/CSS overlay (`client/index.html`, `client/src/ui/overlay.ts`) | Main menu, lobby, results, pause, settings |
 | Hosting        | Fly.io (single region near players) | Serves the built client and runs the game server on one URL   |
 | Repo layout    | npm workspaces                      | `client`, `server`, `shared` packages in one repository       |

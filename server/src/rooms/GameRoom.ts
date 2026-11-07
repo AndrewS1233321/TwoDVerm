@@ -6,6 +6,7 @@ import {
   isHeroId,
   MAX_PLAYERS,
   MSG,
+  sanitizeGameMode,
   sanitizeInput,
   sanitizeName,
   TICK_MS,
@@ -22,10 +23,14 @@ const RECONNECT_SECONDS = 30;
 export class GameRoom extends Room<GameState> {
   maxClients = MAX_PLAYERS;
   state = new GameState();
-  private world = new World(Math.floor(Math.random() * 2 ** 31));
+  private world!: World;
   private code = "";
 
-  onCreate(): void {
+  onCreate(options: unknown): void {
+    const mode = sanitizeGameMode((options as { gameMode?: unknown } | null)?.gameMode);
+    this.world = new World(Math.floor(Math.random() * 2 ** 31), mode);
+    this.state.gameMode = mode;
+
     this.code = claimRoomCode();
     this.roomId = this.code;
     this.state.code = this.code;
@@ -56,7 +61,7 @@ export class GameRoom extends Room<GameState> {
       if ([...this.state.players.values()].some((p) => !p.heroId)) return;
       this.world.startMission();
       this.syncAll();
-      console.log(`Mission started in room ${this.code} with ${this.state.players.size} players`);
+      console.log(`Mission started in room ${this.code} (${this.state.gameMode}) with ${this.state.players.size} players`);
     });
 
     this.onMessage(MSG.returnToLobby, (client) => {
@@ -68,7 +73,7 @@ export class GameRoom extends Room<GameState> {
       this.syncAll();
     });
 
-    console.log(`Room ${this.code} created`);
+    console.log(`Room ${this.code} created (${mode})`);
   }
 
   onJoin(client: Client, options: unknown): void {

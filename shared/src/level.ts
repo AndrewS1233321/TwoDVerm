@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "./constants";
+import type { EnemyId } from "./data/types";
 
 export const TILE_FLOOR = 0;
 export const TILE_WALL = 1;
@@ -8,7 +9,36 @@ export const DECOR_PLAIN = 0;
 export const DECOR_COBBLE = 1;
 export const DECOR_SEWER = 2;
 
+/** ASCII digit → combat enemy for testing-zone summon pads. */
+export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
+  "1": "slave",
+  "2": "clanrat",
+  "3": "stormvermin",
+  "4": "gunner",
+  "5": "gas",
+  "6": "hooker",
+  "7": "ogre",
+};
+
 export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface SummonPad {
+  type: EnemyId;
+  x: number;
+  y: number;
+}
+
+export interface DummySpawn {
+  armored: boolean;
+  x: number;
+  y: number;
+}
+
+export interface RoomLabel {
+  name: string;
   x: number;
   y: number;
 }
@@ -31,6 +61,9 @@ export interface Level {
   ogreSpawn: Point | null;
   ammoCrates: Point[];
   medKits: Point[];
+  dummySpawns: DummySpawn[];
+  summonPads: SummonPad[];
+  roomLabels: RoomLabel[];
 }
 
 export function tileCenter(tx: number, ty: number): Point {
@@ -58,6 +91,9 @@ export function parseLevel(rows: readonly string[]): Level {
     ogreSpawn: null,
     ammoCrates: [],
     medKits: [],
+    dummySpawns: [],
+    summonPads: [],
+    roomLabels: [],
   };
 
   for (let ty = 0; ty < height; ty++) {
@@ -72,6 +108,11 @@ export function parseLevel(rows: readonly string[]): Level {
       }
       tiles[i] = TILE_FLOOR;
       const c = tileCenter(tx, ty);
+      const summonType = SUMMON_PAD_MARKERS[ch];
+      if (summonType) {
+        level.summonPads.push({ type: summonType, x: c.x, y: c.y });
+        continue;
+      }
       switch (ch) {
         case ",": decor[i] = DECOR_COBBLE; break;
         case "_": decor[i] = DECOR_SEWER; break;
@@ -86,6 +127,8 @@ export function parseLevel(rows: readonly string[]): Level {
         case "O": level.ogreSpawn = c; break;
         case "A": level.ammoCrates.push(c); break;
         case "M": level.medKits.push(c); break;
+        case "D": level.dummySpawns.push({ armored: false, x: c.x, y: c.y }); break;
+        case "F": level.dummySpawns.push({ armored: true, x: c.x, y: c.y }); break;
       }
     }
   }

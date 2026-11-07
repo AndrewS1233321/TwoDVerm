@@ -1,9 +1,18 @@
-import { HERO_IDS, HEROES, MAX_PLAYERS, isHeroId, type HeroId } from "@twodverm/shared";
+import {
+  GAME_MODE_LABELS,
+  HERO_IDS,
+  HEROES,
+  MAX_PLAYERS,
+  isGameMode,
+  isHeroId,
+  type GameMode,
+  type HeroId,
+} from "@twodverm/shared";
 import type { GameStateView } from "../net/types";
 import { getSettings, updateSettings } from "../settings";
 
 export interface OverlayHandlers {
-  onCreate(name: string): void;
+  onCreate(name: string, gameMode: GameMode): void;
   onJoin(code: string, name: string): void;
   onPickHero(heroId: HeroId): void;
   onStart(): void;
@@ -32,6 +41,7 @@ export class Overlay {
   private toastTimer = 0;
   private readonly nameInput = el<HTMLInputElement>("name-input");
   private readonly codeInput = el<HTMLInputElement>("code-input");
+  private readonly modeSelect = el<HTMLSelectElement>("mode-select");
 
   constructor(private readonly h: OverlayHandlers) {
     const s = getSettings();
@@ -40,7 +50,7 @@ export class Overlay {
     const code = params.get("code");
     if (code) this.codeInput.value = code.toUpperCase().slice(0, 4);
 
-    el("create-btn").onclick = () => this.submit(() => this.h.onCreate(this.name()));
+    el("create-btn").onclick = () => this.submit(() => this.h.onCreate(this.name(), this.mode()));
     el("join-btn").onclick = () => this.join();
     this.codeInput.onkeydown = (e) => {
       if (e.key === "Enter") this.join();
@@ -77,6 +87,11 @@ export class Overlay {
     const n = this.nameInput.value.trim();
     updateSettings({ name: n });
     return n || "Hero";
+  }
+
+  private mode(): GameMode {
+    const v = this.modeSelect.value;
+    return isGameMode(v) ? v : "default";
   }
 
   private join(): void {
@@ -145,7 +160,7 @@ export class Overlay {
       this.currentPhase = state.phase;
     }
     const players = [...state.players.values()];
-    const sig = [state.phase, state.hostId, state.code, ...players.map((p) => `${p.id}:${p.name}:${p.heroId}:${p.connected}:${state.phase === "lobby" ? "" : `${p.kills}:${p.damageDealt}`}`)].join("|");
+    const sig = [state.phase, state.hostId, state.code, state.gameMode, ...players.map((p) => `${p.id}:${p.name}:${p.heroId}:${p.connected}:${state.phase === "lobby" ? "" : `${p.kills}:${p.damageDealt}`}`)].join("|");
     if (sig === this.signature) return;
     this.signature = sig;
 
@@ -157,6 +172,8 @@ export class Overlay {
   private renderLobby(state: GameStateView, localId: string): void {
     this.show("lobby");
     el("lobby-code").textContent = state.code;
+    const mode = isGameMode(state.gameMode) ? state.gameMode : "default";
+    el("lobby-mode").textContent = GAME_MODE_LABELS[mode];
     const players = [...state.players.values()];
     const me = state.players.get(localId);
     el("lobby-players").innerHTML = players
