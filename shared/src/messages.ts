@@ -7,6 +7,10 @@ export const MSG = {
   selectHero: "selectHero",
   start: "start",
   returnToLobby: "returnToLobby",
+  /** Gingey Wastes: vote for a Holseher's Map location. */
+  voteLocation: "voteLocation",
+  /** Gingey Wastes: host confirms travel after votes. */
+  travel: "travel",
   fx: "fx",
 } as const;
 
@@ -39,7 +43,7 @@ export interface JoinOptions {
   gameMode?: GameMode;
 }
 
-export type GamePhase = "lobby" | "playing" | "victory" | "defeat";
+export type GamePhase = "lobby" | "expedition" | "playing" | "victory" | "defeat";
 
 export type HitSide = "front" | "side" | "back";
 

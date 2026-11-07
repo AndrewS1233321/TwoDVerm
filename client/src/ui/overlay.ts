@@ -1,10 +1,14 @@
 import {
+  EXPEDITION_LOCATIONS,
   GAME_MODE_LABELS,
   HERO_IDS,
   HEROES,
   MAX_PLAYERS,
+  isExpeditionLocationId,
   isGameMode,
   isHeroId,
+  type ExpeditionLocation,
+  type ExpeditionLocationId,
   type GameMode,
   type HeroId,
 } from "@twodverm/shared";
@@ -16,12 +20,14 @@ export interface OverlayHandlers {
   onJoin(code: string, name: string): void;
   onPickHero(heroId: HeroId): void;
   onStart(): void;
+  onVoteLocation(locationId: ExpeditionLocationId): void;
+  onTravel(): void;
   onReturnToLobby(): void;
   onLeave(): void;
   onPauseChange(paused: boolean): void;
 }
 
-type ScreenId = "menu" | "lobby" | "results" | "pause" | "settings";
+type ScreenId = "menu" | "lobby" | "expedition" | "results" | "pause" | "settings";
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const e = document.getElementById(id);
@@ -39,6 +45,7 @@ export class Overlay {
   private busy = false;
   private signature = "";
   private toastTimer = 0;
+  private inspected: ExpeditionLocationId | null = null;
   private readonly nameInput = el<HTMLInputElement>("name-input");
   private readonly codeInput = el<HTMLInputElement>("code-input");
   private readonly modeSelect = el<HTMLSelectElement>("mode-select");
@@ -61,6 +68,8 @@ export class Overlay {
     el("copy-link-btn").onclick = () => this.copyLink();
     el("start-btn").onclick = () => this.h.onStart();
     el("lobby-leave-btn").onclick = () => this.h.onLeave();
+    el("expedition-leave-btn").onclick = () => this.h.onLeave();
+    el("travel-btn").onclick = () => this.h.onTravel();
     el("results-leave-btn").onclick = () => this.h.onLeave();
     el("return-btn").onclick = () => this.h.onReturnToLobby();
     el("resume-btn").onclick = () => this.setPaused(false);
@@ -128,7 +137,7 @@ export class Overlay {
   }
 
   private show(id: ScreenId | null): void {
-    for (const s of ["menu", "lobby", "results", "pause"] as const) el(s).classList.toggle("show", s === id);
+    for (const s of ["menu", "lobby", "expedition", "results", "pause"] as const) el(s).classList.toggle("show", s === id);
   }
 
   showMenu(error = ""): void {
@@ -136,6 +145,7 @@ export class Overlay {
     this.paused = false;
     this.signature = "";
     this.currentPhase = "";
+    this.inspected = null;
     this.setBusy(false);
     this.error(error);
     this.show("menu");
@@ -157,14 +167,29 @@ export class Overlay {
     this.code = state.code;
     if (state.phase !== this.currentPhase) {
       if (this.paused && state.phase !== "playing") this.setPaused(false);
+      if (state.phase === "expedition") this.inspected = null;
       this.currentPhase = state.phase;
     }
     const players = [...state.players.values()];
-    const sig = [state.phase, state.hostId, state.code, state.gameMode, ...players.map((p) => `${p.id}:${p.name}:${p.heroId}:${p.connected}:${state.phase === "lobby" ? "" : `${p.kills}:${p.damageDealt}`}`)].join("|");
+    const sig = [
+      state.phase,
+      state.hostId,
+      state.code,
+      state.gameMode,
+      state.levelId,
+      state.expeditionOptionA,
+      state.expeditionOptionB,
+      this.inspected ?? "",
+      ...players.map(
+        (p) =>
+          `${p.id}:${p.name}:${p.heroId}:${p.connected}:${p.vote}:${state.phase === "lobby" || state.phase === "expedition" ? "" : `${p.kills}:${p.damageDealt}`}`,
+      ),
+    ].join("|");
     if (sig === this.signature) return;
     this.signature = sig;
 
     if (state.phase === "lobby") this.renderLobby(state, localId);
+    else if (state.phase === "expedition") this.renderExpedition(state, localId);
     else if (state.phase === "victory" || state.phase === "defeat") this.renderResults(state, localId);
     else if (!this.paused) this.show(null);
   }
@@ -176,14 +201,15 @@ export class Overlay {
     el("lobby-mode").textContent = GAME_MODE_LABELS[mode];
     const players = [...state.players.values()];
     const me = state.players.get(localId);
-    el("lobby-players").innerHTML = players
-      .map((p) => {
-        const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "choosing...";
-        const host = p.id === state.hostId ? " (host)" : "";
-        const off = p.connected ? "" : " - reconnecting";
-        return `<span class="player-chip${p.id === localId ? " me" : ""}">${escapeHtml(p.name)}${host}: ${hero}${off}</span>`;
-      })
-      .join("") + `<span class="muted" style="align-self:center">${players.length}/${MAX_PLAYERS}</span>`;
+    el("lobby-players").innerHTML =
+      players
+        .map((p) => {
+          const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "choosing...";
+          const host = p.id === state.hostId ? " (host)" : "";
+          const off = p.connected ? "" : " - reconnecting";
+          return `<span class="player-chip${p.id === localId ? " me" : ""}">${escapeHtml(p.name)}${host}: ${hero}${off}</span>`;
+        })
+        .join("") + `<span class="muted" style="align-self:center">${players.length}/${MAX_PLAYERS}</span>`;
 
     const heroes = el("lobby-heroes");
     heroes.innerHTML = "";
@@ -208,13 +234,98 @@ export class Overlay {
     const start = el<HTMLButtonElement>("start-btn");
     start.style.display = isHost ? "" : "none";
     start.disabled = !allPicked;
+    start.textContent = mode === "wastes" ? "Open Gingey's Map" : "Start mission";
     el("lobby-status").textContent = !me?.heroId
       ? "Pick a hero"
       : isHost
         ? allPicked
-          ? "Everyone is ready"
+          ? mode === "wastes"
+            ? "Open the map when ready"
+            : "Everyone is ready"
           : "Waiting for everyone to pick a hero"
-        : "Waiting for the host to start";
+        : mode === "wastes"
+          ? "Waiting for the host to open the map"
+          : "Waiting for the host to start";
+  }
+
+  private renderExpedition(state: GameStateView, localId: string): void {
+    this.show("expedition");
+    const optionA = isExpeditionLocationId(state.expeditionOptionA) ? state.expeditionOptionA : null;
+    const optionB = isExpeditionLocationId(state.expeditionOptionB) ? state.expeditionOptionB : null;
+    const players = [...state.players.values()];
+    const me = state.players.get(localId);
+    const myVote = isExpeditionLocationId(me?.vote) ? me.vote : null;
+
+    if (!this.inspected) this.inspected = myVote ?? optionA;
+
+    const voteCount = (id: string) => players.filter((p) => p.vote === id).length;
+
+    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-a"), optionA, myVote, voteCount);
+    this.fillLocationNode(el<HTMLButtonElement>("expedition-option-b"), optionB, myVote, voteCount);
+
+    const detail = this.inspected && isExpeditionLocationId(this.inspected) ? EXPEDITION_LOCATIONS[this.inspected] : null;
+    el("expedition-detail").innerHTML = detail ? this.locationDetailHtml(detail) : `<div class="muted">Select a location to inspect its dangers and rewards.</div>`;
+
+    el("expedition-votes").innerHTML = players
+      .map((p) => {
+        const choice = isExpeditionLocationId(p.vote) ? EXPEDITION_LOCATIONS[p.vote].name : "deciding...";
+        return `<span class="player-chip${p.id === localId ? " me" : ""}">${escapeHtml(p.name)}: ${escapeHtml(choice)}</span>`;
+      })
+      .join("");
+
+    const isHost = state.hostId === localId;
+    const anyVote = players.some((p) => !!p.vote);
+    const allVoted = players.filter((p) => p.connected).every((p) => !!p.vote);
+    const travel = el<HTMLButtonElement>("travel-btn");
+    travel.style.display = isHost ? "" : "none";
+    travel.disabled = !anyVote;
+    el("expedition-status").textContent = !myVote
+      ? "Click a path to cast your vote"
+      : isHost
+        ? allVoted
+          ? "All voted — Travel, or wait for auto-depart"
+          : "Waiting for votes — Travel uses majority of votes cast"
+        : allVoted
+          ? "All voted — departing soon"
+          : "Waiting for the rest of the party";
+  }
+
+  private fillLocationNode(
+    btn: HTMLButtonElement,
+    id: ExpeditionLocationId | null,
+    myVote: ExpeditionLocationId | null,
+    voteCount: (id: string) => number,
+  ): void {
+    if (!id) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="loc-name">Unknown path</span>`;
+      btn.onclick = null;
+      return;
+    }
+    const loc = EXPEDITION_LOCATIONS[id];
+    btn.disabled = false;
+    btn.classList.toggle("selected", myVote === id || this.inspected === id);
+    btn.innerHTML = `<span class="loc-name">${escapeHtml(loc.name)}</span>
+      <span class="loc-curse${loc.curse ? "" : " none"}">${loc.curse ? `Curse: ${escapeHtml(loc.curse)}` : "Uncursed"}</span>
+      <span class="muted">${escapeHtml(loc.factions)}</span>
+      <span class="loc-votes">${voteCount(id)} vote${voteCount(id) === 1 ? "" : "s"}</span>`;
+    btn.onclick = () => {
+      this.inspected = id;
+      el("expedition-detail").innerHTML = this.locationDetailHtml(loc);
+      el("expedition-option-a").classList.toggle("selected", id === el("expedition-option-a").dataset.locId);
+      el("expedition-option-b").classList.toggle("selected", id === el("expedition-option-b").dataset.locId);
+      this.h.onVoteLocation(id);
+    };
+    btn.dataset.locId = id;
+  }
+
+  private locationDetailHtml(loc: ExpeditionLocation): string {
+    return `<h3>${escapeHtml(loc.name)}</h3>
+      <div class="detail-line">${escapeHtml(loc.description)}</div>
+      <div class="detail-line"><b>Factions:</b> ${escapeHtml(loc.factions)}</div>
+      <div class="detail-line"><b>Curse:</b> ${loc.curse ? escapeHtml(loc.curse) : "None"}</div>
+      <div class="detail-line"><b>Modifiers:</b> ${loc.modifiers.map(escapeHtml).join(" · ")}</div>
+      <div class="detail-line"><b>Completion reward:</b> ${escapeHtml(loc.reward)}</div>`;
   }
 
   private renderResults(state: GameStateView, localId: string): void {
@@ -222,7 +333,11 @@ export class Overlay {
     const win = state.phase === "victory";
     el("results-title").textContent = win ? "Victory" : "Defeat";
     el("results-title").style.color = win ? "var(--accent)" : "#ff8a70";
-    el("results-subtitle").textContent = win ? "You escaped the city. The rats will remember this." : "The horde overwhelmed you.";
+    el("results-subtitle").textContent = win
+      ? state.gameMode === "wastes"
+        ? "This stretch of the Wastes is behind you."
+        : "You escaped the city. The rats will remember this."
+      : "The horde overwhelmed you.";
     el("results-body").innerHTML = [...state.players.values()]
       .map((p) => {
         const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "-";

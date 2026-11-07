@@ -8,11 +8,16 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Playtest Default and Testing zone modes; collect feel notes
-  (attack timings, horde size, damage) for tuning in `shared/`.
+- Playtest Default, Testing zone, and The Gingey Wastes map vote;
+  expand wastes levels beyond bare shells.
 
 ## Completed
 
+- **The Gingey Wastes** game mode: Chaos Wastes–style Holseher's Map
+  (Gingey's Map) after lobby. Two random location forks with
+  placeholder info (factions, curse, modifiers, reward); majority
+  vote (ties random); host Travel or auto-depart when all vote;
+  loads a bare unfinished level for the winner.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
   central room (starts + unarmoured/armoured dummies) and a summon
@@ -62,9 +67,10 @@ Update this file after every meaningful implementation change.
 ## Architecture Decisions
 
 - Game mode is chosen by the host at create time and stored on the
-  room (`default` | `testing`). Joiners inherit it; the same World
-  loads `MISSION_1` or `TESTING_ZONE`. Testing disables the Director
-  and uses edge-triggered summon pads instead of horde pacing.
+  room (`default` | `testing` | `wastes`). Joiners inherit it.
+  Wastes uses phase `expedition` for map voting, then `loadLevel`
+  swaps the ASCII map before `startMission`. Testing disables the
+  Director and uses edge-triggered summon pads instead of horde pacing.
 - Q toggles melee / ranged. While ranged is drawn, left click fires
   (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting

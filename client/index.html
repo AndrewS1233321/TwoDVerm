@@ -214,6 +214,115 @@
         font-size: 12px;
         margin-top: auto;
       }
+      .expedition-map {
+        position: relative;
+        background:
+          radial-gradient(ellipse at 30% 40%, rgba(80, 50, 30, 0.35), transparent 55%),
+          radial-gradient(ellipse at 70% 60%, rgba(40, 55, 40, 0.3), transparent 50%),
+          linear-gradient(160deg, #1a1612 0%, #12100e 100%);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 28px 20px 20px;
+        min-height: 220px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      .expedition-map::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(201, 161, 74, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(201, 161, 74, 0.05) 1px, transparent 1px);
+        background-size: 28px 28px;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .expedition-fork {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 48px 1fr;
+        gap: 8px;
+        align-items: center;
+        z-index: 1;
+      }
+      .expedition-start {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-bottom: 8px;
+        color: var(--accent);
+        font-family: Georgia, serif;
+        font-size: 15px;
+        letter-spacing: 1px;
+      }
+      .expedition-spine {
+        height: 4px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.55;
+        border-radius: 2px;
+      }
+      .loc-node {
+        text-align: left;
+        padding: 14px 16px;
+        min-height: 110px;
+        border: 1px solid var(--border);
+        background: rgba(28, 25, 23, 0.92);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .loc-node:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      .loc-node.selected {
+        outline: 2px solid var(--accent);
+        box-shadow: 0 0 0 1px rgba(201, 161, 74, 0.35);
+        background: #3a3128;
+      }
+      .loc-node .loc-name {
+        font-family: Georgia, serif;
+        font-size: 18px;
+        color: var(--text-primary);
+      }
+      .loc-node .loc-curse {
+        font-size: 12px;
+        color: #9d7cff;
+      }
+      .loc-node .loc-curse.none {
+        color: var(--text-muted);
+      }
+      .loc-node .loc-votes {
+        margin-top: auto;
+        font-size: 12px;
+        color: var(--accent);
+      }
+      .expedition-detail {
+        background: var(--bg-base);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        min-height: 120px;
+      }
+      .expedition-detail h3 {
+        margin: 0 0 6px;
+        font-size: 20px;
+      }
+      .expedition-detail .detail-line {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin: 4px 0;
+      }
+      .expedition-detail .detail-line b {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+      .expedition-votes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
       .hero-card.selected {
         outline: 2px solid var(--accent);
         background: #3a3128;
@@ -298,6 +407,7 @@
         <select id="mode-select">
           <option value="default" selected>Default</option>
           <option value="testing">Testing zone</option>
+          <option value="wastes">The Gingey Wastes</option>
         </select>
         <div class="stack">
           <button id="create-btn" class="primary">Create game</button>
@@ -333,6 +443,31 @@
           <button id="lobby-leave-btn">Leave</button>
           <span id="lobby-status" class="muted"></span>
           <button id="start-btn" class="primary">Start mission</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="expedition" class="screen">
+      <div class="panel">
+        <h1 style="font-size: 34px">Gingey's Map</h1>
+        <p class="subtitle">Vote on the next path through the Wastes. Majority decides; ties are broken by fate.</p>
+        <div class="expedition-map">
+          <div class="expedition-start">Expedition camp — choose your road</div>
+          <div class="expedition-fork">
+            <button type="button" id="expedition-option-a" class="loc-node"></button>
+            <div class="expedition-spine" aria-hidden="true"></div>
+            <button type="button" id="expedition-option-b" class="loc-node"></button>
+          </div>
+        </div>
+        <div id="expedition-detail" class="expedition-detail">
+          <div class="muted">Select a location to inspect its dangers and rewards.</div>
+        </div>
+        <h3>Votes</h3>
+        <div id="expedition-votes" class="expedition-votes"></div>
+        <div class="actions">
+          <button id="expedition-leave-btn">Leave</button>
+          <span id="expedition-status" class="muted"></span>
+          <button id="travel-btn" class="primary">Travel</button>
         </div>
       </div>
     </div>

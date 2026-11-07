@@ -48,6 +48,8 @@ export interface PlayerView {
   ackSeq: number;
   kills: number;
   damageDealt: number;
+  /** Gingey Wastes vote (location id) or "". */
+  vote: string;
 }
 
 export interface EnemyView {
@@ -89,6 +91,9 @@ export interface GameStateView {
   hostId: string;
   code: string;
   gameMode: string;
+  levelId: string;
+  expeditionOptionA: string;
+  expeditionOptionB: string;
   gateOpen: boolean;
   eventActive: boolean;
   eventDone: boolean;

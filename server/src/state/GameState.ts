@@ -49,6 +49,9 @@ export class PlayerState extends Schema {
 
   @type("uint16") kills = 0;
   @type("uint32") damageDealt = 0;
+
+  /** Gingey Wastes Holseher's Map vote (location id) or "". */
+  @type("string") vote = "";
 }
 
 export class EnemyState extends Schema {
@@ -90,8 +93,14 @@ export class GameState extends Schema {
   @type("string") phase = "lobby";
   @type("string") hostId = "";
   @type("string") code = "";
-  /** "default" mission or "testing" zone. Set once when the room is created. */
+  /** "default" | "testing" | "wastes". Set once when the room is created. */
   @type("string") gameMode = "default";
+  /** Current playable level id (mission, testing zone, or expedition location). */
+  @type("string") levelId = "default";
+  /** Holseher's Map fork option A (expedition location id). */
+  @type("string") expeditionOptionA = "";
+  /** Holseher's Map fork option B (expedition location id). */
+  @type("string") expeditionOptionB = "";
   @type("boolean") gateOpen = false;
   @type("boolean") eventActive = false;
   @type("boolean") eventDone = false;

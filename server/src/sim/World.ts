@@ -3,9 +3,10 @@ import {
   createRng,
   dist,
   ENEMIES,
+  initialLevelIdForMode,
   isInZone,
   MAX_ENEMIES,
-  parseLevelForMode,
+  parseLevelById,
   tileIndexAt,
   type EnemyId,
   type FxEvent,
@@ -28,13 +29,14 @@ const LONELY_DESPAWN_TIME = 10;
 
 export class World {
   readonly mode: GameMode;
-  readonly level: Level;
+  levelId: string;
+  level: Level;
   readonly heroes = new Map<string, Hero>();
   readonly enemies = new Map<string, Enemy>();
   readonly hazards = new Map<string, Hazard>();
   readonly pickups = new Map<string, Pickup>();
-  readonly flowSmall: FlowField;
-  readonly flowWide: FlowField;
+  flowSmall: FlowField;
+  flowWide: FlowField;
   readonly director: Director;
   readonly rng: () => number;
 
@@ -55,11 +57,20 @@ export class World {
 
   constructor(seed: number, mode: GameMode = "default") {
     this.mode = mode;
-    this.level = parseLevelForMode(mode);
+    this.levelId = initialLevelIdForMode(mode);
+    this.level = parseLevelById(this.levelId);
     this.flowSmall = new FlowField(this.level, false);
     this.flowWide = new FlowField(this.level, true);
     this.director = new Director(this);
     this.rng = createRng(seed);
+  }
+
+  /** Swap the playable map (Gingey Wastes after a Holseher's Map vote). */
+  loadLevel(levelId: string): void {
+    this.levelId = levelId;
+    this.level = parseLevelById(levelId);
+    this.flowSmall = new FlowField(this.level, false);
+    this.flowWide = new FlowField(this.level, true);
   }
 
   newId(prefix: string): string {
@@ -91,7 +102,7 @@ export class World {
     this.hazards.clear();
     this.pickups.clear();
     this.fx = [];
-    this.gateOpen = this.mode === "testing";
+    this.gateOpen = this.mode === "testing" || this.mode === "wastes";
     this.eventActive = false;
     this.eventDone = false;
     this.eventTimeLeft = 0;
@@ -107,7 +118,7 @@ export class World {
     for (const p of this.level.ammoCrates) this.addPickup("ammo", p.x, p.y);
     for (const p of this.level.medKits) this.addPickup("med", p.x, p.y);
     if (this.mode === "testing") this.setupTestingZone();
-    else this.director.reset();
+    else if (this.mode !== "wastes") this.director.reset();
     this.rebuildFlow();
     this.phase = "playing";
   }
@@ -211,7 +222,7 @@ export class World {
     updateHazards(this, dt);
     separateCreatures(this);
     if (this.mode === "testing") this.updateSummonPads();
-    else this.director.step(dt);
+    else if (this.mode !== "wastes") this.director.step(dt);
     this.checkMissionEnd();
   }
 

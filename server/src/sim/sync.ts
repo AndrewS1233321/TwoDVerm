@@ -52,6 +52,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
 
 export function syncWorld(world: World, state: GameState): void {
   state.phase = world.phase;
+  state.levelId = world.levelId;
   state.gateOpen = world.gateOpen;
   state.eventActive = world.eventActive;
   state.eventDone = world.eventDone;

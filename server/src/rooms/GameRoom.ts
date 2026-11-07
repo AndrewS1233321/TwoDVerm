@@ -1,8 +1,10 @@
 import { Room, type Client } from "colyseus";
 import {
   DT,
+  EXPEDITION_LOCATION_IDS,
   HERO_IDS,
   HEROES,
+  isExpeditionLocationId,
   isHeroId,
   MAX_PLAYERS,
   MSG,
@@ -10,6 +12,7 @@ import {
   sanitizeInput,
   sanitizeName,
   TICK_MS,
+  type ExpeditionLocationId,
   type HeroId,
 } from "@twodverm/shared";
 import { GameState, PlayerState } from "../state/GameState";
@@ -30,6 +33,7 @@ export class GameRoom extends Room<GameState> {
     const mode = sanitizeGameMode((options as { gameMode?: unknown } | null)?.gameMode);
     this.world = new World(Math.floor(Math.random() * 2 ** 31), mode);
     this.state.gameMode = mode;
+    this.state.levelId = this.world.levelId;
 
     this.code = claimRoomCode();
     this.roomId = this.code;
@@ -59,9 +63,32 @@ export class GameRoom extends Room<GameState> {
     this.onMessage(MSG.start, (client) => {
       if (client.sessionId !== this.state.hostId || this.state.phase !== "lobby") return;
       if ([...this.state.players.values()].some((p) => !p.heroId)) return;
-      this.world.startMission();
-      this.syncAll();
-      console.log(`Mission started in room ${this.code} (${this.state.gameMode}) with ${this.state.players.size} players`);
+      if (this.state.gameMode === "wastes") {
+        this.beginExpeditionVote();
+        console.log(`Expedition map opened in room ${this.code}`);
+      } else {
+        this.world.startMission();
+        this.syncAll();
+        console.log(`Mission started in room ${this.code} (${this.state.gameMode}) with ${this.state.players.size} players`);
+      }
+    });
+
+    this.onMessage(MSG.voteLocation, (client, raw: unknown) => {
+      if (this.state.phase !== "expedition") return;
+      const locationId = (raw as { locationId?: unknown } | null)?.locationId;
+      if (!isExpeditionLocationId(locationId)) return;
+      if (locationId !== this.state.expeditionOptionA && locationId !== this.state.expeditionOptionB) return;
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      player.vote = locationId;
+      if (this.allConnectedVoted()) this.resolveExpeditionAndStart();
+    });
+
+    this.onMessage(MSG.travel, (client) => {
+      if (client.sessionId !== this.state.hostId || this.state.phase !== "expedition") return;
+      const anyVote = [...this.state.players.values()].some((p) => p.vote);
+      if (!anyVote) return;
+      this.resolveExpeditionAndStart();
     });
 
     this.onMessage(MSG.returnToLobby, (client) => {
@@ -70,6 +97,9 @@ export class GameRoom extends Room<GameState> {
       this.world.phase = "lobby";
       this.world.enemies.clear();
       this.world.hazards.clear();
+      this.state.expeditionOptionA = "";
+      this.state.expeditionOptionB = "";
+      for (const p of this.state.players.values()) p.vote = "";
       this.syncAll();
     });
 
@@ -84,7 +114,7 @@ export class GameRoom extends Room<GameState> {
     this.state.players.set(client.sessionId, player);
     if (!this.state.hostId) this.state.hostId = client.sessionId;
 
-    if (this.state.phase !== "lobby") {
+    if (this.state.phase !== "lobby" && this.state.phase !== "expedition") {
       const heroId = this.freeHeroId();
       if (heroId) {
         player.heroId = heroId;
@@ -115,6 +145,56 @@ export class GameRoom extends Room<GameState> {
   onDispose(): void {
     releaseRoomCode(this.code);
     console.log(`Room ${this.code} disposed`);
+  }
+
+  /** Opens Holseher's Map with two random forked locations (Chaos Wastes style). */
+  private beginExpeditionVote(): void {
+    const [a, b] = this.pickForkOptions();
+    this.state.expeditionOptionA = a;
+    this.state.expeditionOptionB = b;
+    for (const p of this.state.players.values()) p.vote = "";
+    this.world.phase = "expedition";
+    this.syncAll();
+  }
+
+  private pickForkOptions(): [ExpeditionLocationId, ExpeditionLocationId] {
+    const pool = [...EXPEDITION_LOCATION_IDS];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(this.world.rng() * (i + 1));
+      [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+    }
+    return [pool[0]!, pool[1]!];
+  }
+
+  private allConnectedVoted(): boolean {
+    const connected = [...this.state.players.values()].filter((p) => p.connected);
+    return connected.length > 0 && connected.every((p) => !!p.vote);
+  }
+
+  /** Majority vote wins; ties broken at random (Chaos Wastes style). */
+  private resolveExpeditionAndStart(): void {
+    if (this.state.phase !== "expedition") return;
+    const winner = this.tallyVotes();
+    if (!winner) return;
+    this.world.loadLevel(winner);
+    this.state.levelId = winner;
+    this.world.startMission();
+    this.syncAll();
+    console.log(`Expedition traveled to ${winner} in room ${this.code}`);
+  }
+
+  private tallyVotes(): ExpeditionLocationId | null {
+    const counts = new Map<string, number>();
+    for (const p of this.state.players.values()) {
+      if (!p.vote) continue;
+      counts.set(p.vote, (counts.get(p.vote) ?? 0) + 1);
+    }
+    if (counts.size === 0) return null;
+    let best = 0;
+    for (const n of counts.values()) best = Math.max(best, n);
+    const tied = [...counts.entries()].filter(([, n]) => n === best).map(([id]) => id);
+    const pick = tied[Math.floor(this.world.rng() * tied.length)]!;
+    return isExpeditionLocationId(pick) ? pick : null;
   }
 
   private removePlayer(sessionId: string): void {

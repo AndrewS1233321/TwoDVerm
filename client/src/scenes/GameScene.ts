@@ -4,14 +4,12 @@ import {
   clamp,
   ENEMIES,
   HEROES,
-  isGameMode,
   isHeroId,
   MSG,
-  parseLevelForMode,
+  parseLevelById,
   TICK_MS,
   type EnemyId,
   type FxEvent,
-  type GameMode,
   type InputMessage,
   type Level,
 } from "@twodverm/shared";
@@ -40,7 +38,7 @@ export interface Announcement {
 }
 
 export class GameScene extends Phaser.Scene {
-  level: Level = parseLevelForMode("default");
+  level: Level = parseLevelById("default");
   readonly music = new Music();
   readonly hud = new Phaser.Events.EventEmitter();
   room: GameRoom | null = null;
@@ -63,7 +61,7 @@ export class GameScene extends Phaser.Scene {
   private inputAcc = 0;
   private lastPhase = "";
   private backdropT = 0;
-  private gameMode: GameMode = "default";
+  private activeLevelId = "default";
   private readonly lagMs = Number(new URLSearchParams(location.search).get("lag") ?? 0);
 
   constructor() {
@@ -99,7 +97,7 @@ export class GameScene extends Phaser.Scene {
     this.lastPhase = "";
     room.onStateChange(() => this.onPatch());
     room.onMessage(MSG.fx, (list: FxEvent[]) => this.handleFx(list));
-    if (hasState(room) && isGameMode(room.state.gameMode)) this.setGameMode(room.state.gameMode);
+    if (hasState(room) && room.state.levelId) this.setActiveLevel(room.state.levelId);
   }
 
   detach(): void {
@@ -115,11 +113,11 @@ export class GameScene extends Phaser.Scene {
     this.levelRenderer?.setGateOpen(false);
   }
 
-  /** Rebuilds the world map when the room's game mode is known or changes. */
-  private setGameMode(mode: GameMode): void {
-    if (mode === this.gameMode && this.levelRenderer) return;
-    this.gameMode = mode;
-    this.level = parseLevelForMode(mode);
+  /** Rebuilds the world map when the synced level id changes (mode or expedition vote). */
+  private setActiveLevel(levelId: string): void {
+    if (levelId === this.activeLevelId && this.levelRenderer) return;
+    this.activeLevelId = levelId;
+    this.level = parseLevelById(levelId);
     this.levelRenderer?.destroy();
     this.summonPads?.destroy();
     this.levelRenderer = new LevelRenderer(this, this.level);
@@ -162,7 +160,7 @@ export class GameScene extends Phaser.Scene {
     const room = this.room;
     if (!hasState(room)) return;
     const state = room.state;
-    if (isGameMode(state.gameMode)) this.setGameMode(state.gameMode);
+    if (state.levelId) this.setActiveLevel(state.levelId);
     const now = performance.now();
     if (state.phase !== this.lastPhase) {
       if (state.phase === "playing") {

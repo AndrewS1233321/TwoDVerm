@@ -23,16 +23,19 @@ game is moderately fast-paced; reaction time and attack timing matter.
 
 ## Core User Flow
 
-1. Host opens the game URL, picks a game mode (Default or Testing
-   zone), and clicks "Create game".
+1. Host opens the game URL, picks a game mode (Default, Testing
+   zone, or The Gingey Wastes), and clicks "Create game".
 2. The game shows a 4-letter room code; host shares URL and code.
 3. Friends open the URL, enter a name and the room code, click "Join".
 4. In the lobby, each player picks a hero (unique per team).
-5. Host starts the mission; all players spawn at the start zone.
-6. Players fight through the level; the Director spawns hordes,
-   specials and a boss.
-7. Downed players can be revived by teammates.
-8. Mission ends in victory (all living players reach the end zone)
+5. Host starts: Default/Testing enter the mission; Gingey Wastes
+   opens Gingey's Map so the party votes on a forked path (Chaos
+   Wastes style), then loads the winning location.
+6. All players spawn at the start zone of the chosen level.
+7. Players fight through the level; the Director spawns hordes,
+   specials and a boss (Default mission).
+8. Downed players can be revived by teammates.
+9. Mission ends in victory (all living players reach the end zone)
    or defeat (all players downed). Results screen, then back to lobby.
 
 ## Features

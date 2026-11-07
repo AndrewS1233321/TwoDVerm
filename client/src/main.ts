@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { MSG, type HeroId } from "@twodverm/shared";
+import { MSG, type ExpeditionLocationId, type HeroId } from "@twodverm/shared";
 import { unlockAudio } from "./audio/sfx";
 import { createGame, forgetRoom, friendlyError, joinGame, tryReconnect, type GameRoom } from "./net/connection";
 import { GameScene } from "./scenes/GameScene";
@@ -26,6 +26,8 @@ const overlay = new Overlay({
   onJoin: (code, name) => connect(() => joinGame(code, { name })),
   onPickHero: (heroId: HeroId) => room?.send(MSG.selectHero, { heroId }),
   onStart: () => room?.send(MSG.start),
+  onVoteLocation: (locationId: ExpeditionLocationId) => room?.send(MSG.voteLocation, { locationId }),
+  onTravel: () => room?.send(MSG.travel),
   onReturnToLobby: () => room?.send(MSG.returnToLobby),
   onLeave: () => leave(),
   onPauseChange: (paused) => (scene().inputBlocked = paused),

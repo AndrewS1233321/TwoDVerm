@@ -13,5 +13,8 @@ export * from "./data/enemies";
 export * from "./data/attacks";
 export { MISSION_1 } from "./levels/mission1";
 export { TESTING_ZONE } from "./levels/testingZone";
+export { WASTES_CAMP } from "./levels/wastesCamp";
+export * from "./levels/expeditionLevels";
+export * from "./data/expedition";
 export * from "./gameMode";
 
