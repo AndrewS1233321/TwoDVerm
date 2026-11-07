@@ -221,10 +221,18 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     const objRoom = sr.find((r) => r.isObjective)!;
     const isFinal = s === sectionCount - 1;
     const kind = isFinal ? "boss" : rng() < 0.5 ? "hold" : "mini_boss";
+    // Boss uses the entire room footprint; other objectives keep an inset zone.
     const zone: number[] = [];
-    for (let ty = objRoom.y + 1; ty < objRoom.y + objRoom.h - 1; ty++) {
-      for (let tx = objRoom.x + 1; tx < objRoom.x + objRoom.w - 1; tx++) {
-        zone.push(ty * width + tx);
+    const y0 = isFinal ? objRoom.y : objRoom.y + 1;
+    const y1 = isFinal ? objRoom.y + objRoom.h : objRoom.y + objRoom.h - 1;
+    const x0 = isFinal ? objRoom.x : objRoom.x + 1;
+    const x1 = isFinal ? objRoom.x + objRoom.w : objRoom.x + objRoom.w - 1;
+    for (let ty = y0; ty < y1; ty++) {
+      for (let tx = x0; tx < x1; tx++) {
+        const i = ty * width + tx;
+        const t = tiles[i]!;
+        if (t === TILE_WALL) continue;
+        zone.push(i);
       }
     }
     const center = tileCenter(objRoom.x + Math.floor(objRoom.w / 2), objRoom.y + Math.floor(objRoom.h / 2));

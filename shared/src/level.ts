@@ -168,8 +168,9 @@ export function computeBossRoom(level: Level): Set<number> {
     return room;
   }
 
-  // Hand maps: flood from spawn; trigger strip + exit tiles form the soft wall.
-  const blocked = new Set<number>([...level.bossTrigger, ...level.endZone]);
+  // Hand maps: flood from spawn; exit tiles form the soft wall. Include the
+  // trigger strip so the boss area covers the whole chamber up to the doorway.
+  const blocked = new Set<number>([...level.endZone]);
   const q = [start];
   room.add(start);
   while (q.length > 0) {
@@ -192,6 +193,15 @@ export function computeBossRoom(level: Level): Set<number> {
       room.add(j);
       q.push(j);
     }
+  }
+  // Cap westward spill: keep tiles at/after the trigger column when present.
+  if (level.bossTrigger.size > 0) {
+    let minTx = Infinity;
+    for (const i of level.bossTrigger) minTx = Math.min(minTx, i % level.width);
+    for (const i of [...room]) {
+      if (i % level.width < minTx) room.delete(i);
+    }
+    for (const i of level.bossTrigger) room.add(i);
   }
   return room;
 }
