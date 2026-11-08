@@ -1,5 +1,6 @@
 import { collideCircle } from "../collision";
 import type { Level, Point } from "../level";
+import type { HeroId } from "./types";
 
 /** Destructible / throwable barrels placed in procedural rooms. */
 export const BARREL = {
@@ -22,12 +23,26 @@ export const BARREL = {
   /** Constant flight speed toward the landing point (px/s). */
   throwFlightSpeed: 380,
   /** Damage / blast when a thrown barrel breaks. */
-  throwDamage: 55,
+  throwDamage: 110,
   throwRadius: 52,
   throwStagger: 2.5,
   /** Melee/ranged hits deal at least this much so light swings still chip. */
   minHitDamage: 8,
 } as const;
+
+/** Bardin's built-in barrel handling: quicker release, full carry speed. */
+export const BARDIN_BARREL = {
+  throwMinHold: 0.35,
+  carrySpeedMul: 1,
+} as const;
+
+export function barrelThrowMinHold(heroId?: HeroId | string): number {
+  return heroId === "dwarf" ? BARDIN_BARREL.throwMinHold : BARREL.throwMinHold;
+}
+
+export function barrelCarrySpeedMul(heroId?: HeroId | string): number {
+  return heroId === "dwarf" ? BARDIN_BARREL.carrySpeedMul : BARREL.carrySpeedMul;
+}
 
 /** Player “length” for throw range (rough body size). */
 export function playerLength(heroRadius: number): number {
@@ -40,17 +55,22 @@ export function barrelMaxThrowDistance(heroRadius: number): number {
 
 /**
  * Throw distance along aim for a charge hold time.
- * Below min hold → 0. From min→max hold, distance grows linearly to full range.
+ * Default: below min hold → 0; min→max hold grows linearly to full range.
+ * Bardin: range grows from the first moment of the hold (0 → max over throwMaxHold).
  */
-export function barrelThrowDistance(holdSeconds: number, heroRadius: number): number {
+export function barrelThrowDistance(holdSeconds: number, heroRadius: number, heroId?: HeroId | string): number {
+  if (heroId === "dwarf") {
+    const t = Math.min(1, Math.max(0, holdSeconds) / BARREL.throwMaxHold);
+    return barrelMaxThrowDistance(heroRadius) * t;
+  }
   if (holdSeconds < BARREL.throwMinHold) return 0;
   const span = BARREL.throwMaxHold - BARREL.throwMinHold;
   const t = Math.min(1, (holdSeconds - BARREL.throwMinHold) / span);
   return barrelMaxThrowDistance(heroRadius) * t;
 }
 
-export function barrelThrowReady(holdSeconds: number): boolean {
-  return holdSeconds >= BARREL.throwMinHold;
+export function barrelThrowReady(holdSeconds: number, heroId?: HeroId | string): boolean {
+  return holdSeconds >= barrelThrowMinHold(heroId);
 }
 
 /** Walk a charged throw along facing and stop early on walls. */

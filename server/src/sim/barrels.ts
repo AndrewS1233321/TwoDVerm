@@ -218,7 +218,7 @@ export function throwBarrel(world: World, hero: Hero): void {
     hero.barrelCharge = 0;
     return;
   }
-  const distance = barrelThrowDistance(hero.barrelCharge, hero.radius);
+  const distance = barrelThrowDistance(hero.barrelCharge, hero.radius, hero.def.id);
   if (distance <= 0) {
     hero.barrelCharge = 0;
     return;

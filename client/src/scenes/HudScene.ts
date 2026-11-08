@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   BARREL,
+  barrelThrowMinHold,
   barrelThrowReady,
   clamp,
   dist,
@@ -192,17 +193,19 @@ export class HudScene extends Phaser.Scene {
     t.ultName!.setOrigin(1, 0.5).setPosition(ux - 26, uy).setText(def.ultName);
 
     if (me.carryingBarrel) {
-      const throwReady = barrelThrowReady(me.barrelCharge * BARREL.throwMaxHold);
+      const hold = me.barrelCharge * BARREL.throwMaxHold;
+      const throwReady = barrelThrowReady(hold, me.heroId);
+      const minHold = barrelThrowMinHold(me.heroId);
       t.ammo!.setOrigin(0, 0.5).setPosition(ammoX, y + 43).setText("Barrel").setColor(palette.accent);
       t.ammoName!
         .setOrigin(0, 0)
         .setPosition(ammoX, y + 62)
         .setColor(palette.textMuted)
-        .setText(throwReady ? "Release to throw" : "Hold 1s+ to throw");
+        .setText(throwReady ? "Release to throw" : `Hold ${minHold}s+ to throw`);
       if (me.barrelCharge > 0) {
         const chargeW = 120;
         const chargeY = y + 84;
-        const minMark = (BARREL.throwMinHold / BARREL.throwMaxHold) * chargeW;
+        const minMark = (minHold / BARREL.throwMaxHold) * chargeW;
         g.fillStyle(0x000000, 0.55);
         g.fillRect(ammoX, chargeY, chargeW, 10);
         g.fillStyle(throwReady ? colors.accent : colors.textMuted, 1);
@@ -328,11 +331,12 @@ export class HudScene extends Phaser.Scene {
       });
       if (!prompt && me.carryingBarrel) {
         const hold = me.barrelCharge * BARREL.throwMaxHold;
-        prompt = barrelThrowReady(hold)
+        const minHold = barrelThrowMinHold(me.heroId);
+        prompt = barrelThrowReady(hold, me.heroId)
           ? "Release to throw"
           : me.barrelCharge > 0
-            ? `Charging… ${Math.ceil(BARREL.throwMinHold - hold)}s`
-            : "Hold left click 1s+ to throw · Q to drop";
+            ? `Charging… ${Math.max(0, minHold - hold).toFixed(1)}s`
+            : `Hold left click ${minHold}s+ to throw · Q to drop`;
       }
       if (!prompt && room.state.phase === "merchant") {
         room.state.enemies.forEach((e) => {

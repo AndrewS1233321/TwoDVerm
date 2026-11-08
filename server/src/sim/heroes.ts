@@ -1,5 +1,7 @@
 import {
   BARREL,
+  barrelCarrySpeedMul,
+  barrelThrowReady,
   BLOCK,
   collideCircle,
   DODGE,
@@ -125,7 +127,7 @@ export function heroMoveMods(hero: Hero): MoveMods {
     !hero.rangedMode &&
     (key === "windup" || key === "active" || key === "recovery" || key === "charging");
   let speed = hero.def.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
-  if (hero.carryingBarrelId) speed *= BARREL.carrySpeedMul;
+  if (hero.carryingBarrelId) speed *= barrelCarrySpeedMul(hero.def.id);
   const turnRate = HERO_TURN_RATE * (HERO_STATE_TURN[key] ?? 1);
   const stateAllowsDodge =
     hero.state === "idle" ||
@@ -438,7 +440,7 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
   if (hero.carryingBarrelId) {
     if (hero.held.attack) hero.barrelCharge = Math.min(BARREL.throwMaxHold, hero.barrelCharge + dt);
     if (hero.edges.attackReleased) {
-      if (hero.barrelCharge >= BARREL.throwMinHold) throwBarrel(world, hero);
+      if (barrelThrowReady(hero.barrelCharge, hero.def.id)) throwBarrel(world, hero);
       else hero.barrelCharge = 0;
       return;
     }

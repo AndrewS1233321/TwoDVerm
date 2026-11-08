@@ -290,8 +290,8 @@ export class GameScene extends Phaser.Scene {
     const pointer = this.input.activePointer;
     pointer.updateWorldPoint(this.cameras.main);
     const facing = angleTo(pos.x, pos.y, pointer.worldX, pointer.worldY);
-    const distance = barrelThrowDistance(this.localBarrelCharge, def.radius);
-    const ready = barrelThrowReady(this.localBarrelCharge);
+    const distance = barrelThrowDistance(this.localBarrelCharge, def.radius, me.heroId);
+    const ready = barrelThrowReady(this.localBarrelCharge, me.heroId);
     const startX = pos.x + Math.cos(facing) * (def.radius + BARREL.radius);
     const startY = pos.y + Math.sin(facing) * (def.radius + BARREL.radius);
     const land =
