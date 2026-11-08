@@ -524,6 +524,32 @@ function drawPickups(scene: Phaser.Scene, g: G): void {
   g.fillStyle(0x9a7a40);
   g.fillRect(bw * 0.35, 0, bw * 0.3, 4 * S);
   finish(scene, g, "barrel", bw, bh);
+
+  // Forest foliage stand-ins for barrels (same footprint, greener read).
+  const fw = 22 * S;
+  const fh = 24 * S;
+  g.fillStyle(0x2f5a28);
+  g.fillCircle(fw * 0.35, fh * 0.55, 7 * S);
+  g.fillCircle(fw * 0.62, fh * 0.5, 8 * S);
+  g.fillCircle(fw * 0.5, fh * 0.35, 7 * S);
+  g.fillStyle(0x4f9a4a);
+  g.fillCircle(fw * 0.48, fh * 0.42, 5 * S);
+  g.fillStyle(0x3a2818);
+  g.fillRect(fw * 0.42, fh * 0.7, fw * 0.16, fh * 0.28);
+  finish(scene, g, "bush", fw, fh);
+
+  const tw = 22 * S;
+  const th = 28 * S;
+  g.fillStyle(0x4a3220);
+  g.fillRect(tw * 0.42, th * 0.45, tw * 0.16, th * 0.55);
+  g.fillStyle(0x2a5524);
+  g.fillCircle(tw * 0.5, th * 0.32, 9 * S);
+  g.fillStyle(0x3f7a38);
+  g.fillCircle(tw * 0.38, th * 0.38, 6 * S);
+  g.fillCircle(tw * 0.62, th * 0.36, 6 * S);
+  g.fillStyle(0x6fbf5f, 0.85);
+  g.fillCircle(tw * 0.5, th * 0.26, 4 * S);
+  finish(scene, g, "foliage_tree", tw, th);
 }
 
 function drawMisc(scene: Phaser.Scene, g: G): void {

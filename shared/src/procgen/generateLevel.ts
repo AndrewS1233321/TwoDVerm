@@ -3,6 +3,7 @@ import { createRng } from "../math";
 import {
   computeBossRoom,
   DECOR_COBBLE,
+  DECOR_FOREST,
   DECOR_PLAIN,
   DECOR_SEWER,
   TILE_FLOOR,
@@ -24,6 +25,7 @@ import type {
 
 const CASTLE_ROLES = ["feast hall", "barracks", "quarters", "armoury", "corridor", "courtyard", "chapel"];
 const DUNGEON_ROLES = ["cell block", "torture chamber", "store room", "guard post", "hallway", "crypt"];
+const FOREST_ROLES = ["clearing", "glade", "thicket", "grove", "hollow"];
 
 export interface GenerateLevelResult {
   level: Level;
@@ -34,29 +36,37 @@ export interface GenerateLevelResult {
 export function generateLevel(props: LevelProperties, seed: number): GenerateLevelResult {
   const rng = createRng(seed >>> 0);
   const budgets = budgetsFromDifficulty(props.difficulty);
-  // Race pool resolution (non-skaven falls back inside enemiesForRaces).
   const pools = enemiesForRaces(props);
 
   const isSewer = props.levelType === "sewer";
-  const sectionCount = budgets.sectionCount;
+  const isForest = props.levelType === "forest";
+
+  // Forest: 3–5 rooms total; shrink section count so every section still gets ≥1 room.
+  const forestTotalRooms = isForest ? 3 + Math.floor(rng() * 3) : 0;
+  const sectionCount = isForest ? Math.min(budgets.sectionCount, forestTotalRooms) : budgets.sectionCount;
+  const forestRoomsPerSection = isForest ? distributeRoomCounts(forestTotalRooms, sectionCount) : null;
+
   const margin = 2;
   const gap = 3;
-  /** Sewer tunnels: 2 tiles wide; others stay 1-wide. */
-  const corridorWidth = isSewer ? 2 : 1;
+  const maxCorridorWidth = isForest ? 5 : isSewer ? 2 : 1;
 
   const rooms: ProcRoom[] = [];
   let nextId = 0;
   let cursorX = margin;
 
   for (let s = 0; s < sectionCount; s++) {
-    // Sewer: each section rolls its own room count (5–12). Others use difficulty budget.
-    const roomsPer = isSewer ? 5 + Math.floor(rng() * 8) : budgets.roomsPerSection;
+    const roomsPer = isSewer
+      ? 5 + Math.floor(rng() * 8)
+      : isForest
+        ? forestRoomsPerSection![s]!
+        : budgets.roomsPerSection;
     const sectionRoomIds: number[] = [];
     let prev: ProcRoom | null = null;
 
     for (let r = 0; r < roomsPer; r++) {
-      const w = 7 + Math.floor(rng() * 3);
-      const h = 6 + Math.floor(rng() * 3);
+      const dims = isForest
+        ? forestRoomDims(rng)
+        : { w: 7 + Math.floor(rng() * 3), h: 6 + Math.floor(rng() * 3) };
       let localX: number;
       let localY: number;
 
@@ -65,8 +75,16 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
         localY = margin + (s % 2) * 2;
       } else if (isSewer) {
         const tunnel = sewerCorridorLength(rng);
-        // Snake: every 3rd room drops via a long vertical tunnel, else continue right.
         if (r % 3 === 0) {
+          localX = prev.x;
+          localY = prev.y + prev.h + tunnel;
+        } else {
+          localX = prev.x + prev.w + tunnel;
+          localY = prev.y;
+        }
+      } else if (isForest) {
+        const tunnel = forestCorridorLength(rng);
+        if (r % 2 === 0) {
           localX = prev.x;
           localY = prev.y + prev.h + tunnel;
         } else {
@@ -86,8 +104,8 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
         id: nextId++,
         x: localX,
         y: localY,
-        w,
-        h,
+        w: dims.w,
+        h: dims.h,
         role: pickRole(props.levelType, rng),
         sectionIndex: s,
         isObjective: false,
@@ -100,29 +118,38 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     const obj = rooms[rooms.length - 1]!;
     obj.isObjective = true;
     obj.role = s === sectionCount - 1 ? "boss arena" : "objective chamber";
-    obj.w = Math.max(obj.w, 9);
-    obj.h = Math.max(obj.h, 8);
+    if (isForest) {
+      obj.w = Math.max(obj.w, 10);
+      obj.h = Math.max(obj.h, 9);
+    } else {
+      obj.w = Math.max(obj.w, 9);
+      obj.h = Math.max(obj.h, 8);
+    }
 
     const sectionRight = Math.max(...rooms.filter((rm) => rm.sectionIndex === s).map((rm) => rm.x + rm.w));
-    cursorX = sectionRight + (isSewer ? sewerCorridorLength(rng) : gap * 3);
+    const betweenSections = isSewer
+      ? sewerCorridorLength(rng)
+      : isForest
+        ? forestCorridorLength(rng)
+        : gap * 3;
+    cursorX = sectionRight + betweenSections;
   }
 
   const lastObj = rooms.filter((r) => r.isObjective).sort((a, b) => a.sectionIndex - b.sectionIndex).at(-1)!;
-  const exitGap = isSewer ? sewerCorridorLength(rng) : gap + 1;
+  const exitGap = isSewer ? sewerCorridorLength(rng) : isForest ? forestCorridorLength(rng) : gap + 1;
   const exitRoom: ProcRoom = {
     id: nextId++,
     x: lastObj.x + lastObj.w + exitGap,
     y: lastObj.y,
-    w: 6,
-    h: 6,
+    w: isForest ? 8 : 6,
+    h: isForest ? 8 : 6,
     role: "exit",
     sectionIndex: sectionCount - 1,
     isObjective: false,
   };
   rooms.push(exitRoom);
 
-  // Extra pad so 2-wide sewer tunnels / gates stay inside the tile grid.
-  const pad = margin + 2 + (isSewer ? 1 : 0);
+  const pad = margin + 2 + maxCorridorWidth;
   const width = Math.max(...rooms.map((r) => r.x + r.w)) + pad;
   const height = Math.max(...rooms.map((r) => r.y + r.h)) + pad;
 
@@ -149,17 +176,17 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     decor[i] = decorId;
   };
 
-  /** L-shaped tunnel; `corridorWidth` 2 carves a parallel neighbour so sewers stay narrow but walkable. */
-  const carveCorridor = (x0: number, y0: number, x1: number, y1: number) => {
+  /** L-shaped tunnel thickened to `cWidth` tiles perpendicular to travel. */
+  const carveCorridor = (x0: number, y0: number, x1: number, y1: number, cWidth: number) => {
     let x = clamp(Math.floor(x0), 1, width - 2);
     let y = clamp(Math.floor(y0), 1, height - 2);
     const tx = clamp(Math.floor(x1), 1, width - 2);
     const ty = clamp(Math.floor(y1), 1, height - 2);
     const stroke = (px: number, py: number, horizontal: boolean) => {
-      paintFloor(px, py);
-      if (corridorWidth < 2) return;
-      if (horizontal) paintFloor(px, py + 1);
-      else paintFloor(px + 1, py);
+      for (let i = 0; i < cWidth; i++) {
+        if (horizontal) paintFloor(px, py + i);
+        else paintFloor(px + i, py);
+      }
     };
     while (x !== tx) {
       stroke(x, y, true);
@@ -169,12 +196,11 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
       stroke(x, y, false);
       y += y < ty ? 1 : -1;
     }
-    // Ensure the bend / endpoint is fully 2-wide.
     stroke(tx, ty, true);
-    if (corridorWidth >= 2) stroke(tx, ty, false);
+    if (cWidth >= 2) stroke(tx, ty, false);
   };
 
-  const placeGateBand = (mx: number, my: number): number[] => {
+  const placeGateBand = (mx: number, my: number, cWidth: number): number[] => {
     const indices: number[] = [];
     const mark = (tx: number, ty: number) => {
       if (tx < 1 || ty < 1 || tx >= width - 1 || ty >= height - 1) return;
@@ -182,12 +208,17 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
       tiles[i] = TILE_GATE;
       indices.push(i);
     };
-    mark(mx, my);
-    if (corridorWidth >= 2) {
-      mark(mx, my + 1);
-      mark(mx + 1, my);
+    for (let i = 0; i < cWidth; i++) {
+      mark(mx, my + i);
+      mark(mx + i, my);
     }
     return indices;
+  };
+
+  const corridorWidthAt = (): number => {
+    if (isForest) return forestCorridorWidth(rng);
+    if (isSewer) return 2;
+    return 1;
   };
 
   const centerOf = (r: ProcRoom) => ({
@@ -202,26 +233,28 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     for (let i = 0; i < sr.length - 1; i++) {
       const a = centerOf(sr[i]!);
       const b = centerOf(sr[i + 1]!);
-      carveCorridor(a.x, a.y, b.x, b.y);
+      carveCorridor(a.x, a.y, b.x, b.y, corridorWidthAt());
     }
     if (s < sectionCount - 1) {
       const from = sr[sr.length - 1]!;
       const next = rooms.filter((r) => r.sectionIndex === s + 1 && r.role !== "exit").sort((a, b) => a.id - b.id)[0]!;
       const a = centerOf(from);
       const b = centerOf(next);
-      carveCorridor(a.x, a.y, b.x, b.y);
+      const cWidth = corridorWidthAt();
+      carveCorridor(a.x, a.y, b.x, b.y, cWidth);
       const mx = clamp(Math.floor((a.x + b.x) / 2), 1, width - 2);
       const my = clamp(Math.floor((a.y + b.y) / 2), 1, height - 2);
-      sectionGates.push(placeGateBand(mx, my));
+      sectionGates.push(placeGateBand(mx, my, cWidth));
     }
   }
 
   const exitCenter = centerOf(exitRoom);
   const bossCenter = centerOf(lastObj);
-  carveCorridor(bossCenter.x, bossCenter.y, exitCenter.x, exitCenter.y);
+  const exitCWidth = corridorWidthAt();
+  carveCorridor(bossCenter.x, bossCenter.y, exitCenter.x, exitCenter.y, exitCWidth);
   const exitGateX = clamp(Math.floor((bossCenter.x + exitCenter.x) / 2), 1, width - 2);
   const exitGateY = clamp(Math.floor((bossCenter.y + exitCenter.y) / 2), 1, height - 2);
-  sectionGates.push(placeGateBand(exitGateX, exitGateY));
+  sectionGates.push(placeGateBand(exitGateX, exitGateY, exitCWidth));
 
   const level: Level = {
     width,
@@ -268,7 +301,6 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     const objRoom = sr.find((r) => r.isObjective)!;
     const isFinal = s === sectionCount - 1;
     const kind = isFinal ? "boss" : rng() < 0.5 ? "hold" : "mini_boss";
-    // Boss uses the entire room footprint; other objectives keep an inset zone.
     const zone: number[] = [];
     const y0 = isFinal ? objRoom.y : objRoom.y + 1;
     const y1 = isFinal ? objRoom.y + objRoom.h : objRoom.y + objRoom.h - 1;
@@ -312,11 +344,32 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
 
   const spawnRooms = rooms.filter((r) => r.role !== "exit" && r.id !== startRoom.id);
   for (const r of spawnRooms) {
+    const area = r.w * r.h;
+    // Forest clearings are ~75 tiles; scale spawns vs a typical ~48-tile room.
+    const density = isForest ? Math.max(1.5, area / 48) : 1;
     const c = tileCenter(r.x + Math.floor(r.w / 2), r.y + Math.floor(r.h / 2));
-    if (rng() < 0.55) level.hordeSpawns.push(c);
-    if (rng() < 0.4) level.specialSpawns.push({ x: c.x + 20, y: c.y });
-    if (rng() < 0.5) level.ambientRats.push({ x: c.x - 16, y: c.y + 10 });
-    if (rng() < budgets.eliteChance) level.ambientElites.push({ x: c.x + 16, y: c.y - 10 });
+    if (rng() < Math.min(0.95, 0.55 * density)) level.hordeSpawns.push(c);
+    if (isForest && rng() < 0.55) {
+      level.hordeSpawns.push(
+        tileCenter(r.x + 2 + Math.floor(rng() * Math.max(1, r.w - 4)), r.y + 2 + Math.floor(rng() * Math.max(1, r.h - 4))),
+      );
+    }
+    if (rng() < Math.min(0.85, 0.4 * density)) level.specialSpawns.push({ x: c.x + 20, y: c.y });
+    const ambientN = isForest ? 2 + Math.floor(rng() * 3) : 1;
+    for (let i = 0; i < ambientN; i++) {
+      const p = tileCenter(
+        r.x + 2 + Math.floor(rng() * Math.max(1, r.w - 4)),
+        r.y + 2 + Math.floor(rng() * Math.max(1, r.h - 4)),
+      );
+      if (i === 0 && !isForest) {
+        if (rng() < 0.5) level.ambientRats.push({ x: c.x - 16, y: c.y + 10 });
+        if (rng() < budgets.eliteChance) level.ambientElites.push({ x: c.x + 16, y: c.y - 10 });
+      } else if (rng() < budgets.eliteChance * (isForest ? 1.25 : 1)) {
+        level.ambientElites.push(p);
+      } else if (isForest || rng() < 0.5) {
+        level.ambientRats.push(p);
+      }
+    }
     if (rng() < 0.25) level.ammoCrates.push({ x: r.x * TILE_SIZE + 48, y: r.y * TILE_SIZE + 48 });
     if (rng() < 0.2) level.medKits.push({ x: (r.x + r.w) * TILE_SIZE - 48, y: (r.y + r.h) * TILE_SIZE - 48 });
   }
@@ -333,7 +386,8 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     }
   }
 
-  while (level.ambientRats.length + level.ambientElites.length < budgets.ambientCount && spawnRooms.length > 0) {
+  const ambientTarget = isForest ? Math.round(budgets.ambientCount * 1.75) : budgets.ambientCount;
+  while (level.ambientRats.length + level.ambientElites.length < ambientTarget && spawnRooms.length > 0) {
     const r = spawnRooms[Math.floor(rng() * spawnRooms.length)]!;
     const p = tileCenter(
       r.x + 2 + Math.floor(rng() * Math.max(1, r.w - 4)),
@@ -345,14 +399,13 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
 
   for (const r of rooms) {
     if (r.isObjective || r.role === "exit") continue;
-    if (props.levelType === "castle" || props.levelType === "dungeon") {
+    if (props.levelType === "castle" || props.levelType === "dungeon" || props.levelType === "forest") {
       const c = tileCenter(r.x + Math.floor(r.w / 2), r.y + Math.floor(r.h / 2));
       level.roomLabels.push({ name: r.role, x: c.x, y: c.y - 24 });
     }
   }
 
-  // Barrels: per room density roll (exit/start skipped for clear staging).
-  // Sewers spawn about half as many.
+  // Barrels (forest: same spawns, rendered as bushes/trees on the client).
   const barrelDensity = isSewer ? 0.5 : 1;
   for (const r of rooms) {
     if (r.role === "exit" || r.id === startRoom.id) continue;
@@ -362,9 +415,9 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   level.bossRoom = computeBossRoom(level);
 
   const meta: GeneratedLevelMeta = {
-    props,
+    props: { ...props },
     seed,
-    budgets,
+    budgets: { ...budgets, sectionCount, roomsPerSection: isForest ? forestTotalRooms : budgets.roomsPerSection },
     rooms,
     sections,
     objectives,
@@ -381,6 +434,37 @@ function clamp(v: number, lo: number, hi: number): number {
 /** Inclusive tunnel length between sewer room edges (tiles). */
 function sewerCorridorLength(rng: () => number): number {
   return 10 + Math.floor(rng() * 16);
+}
+
+/** Forest paths: 4–10 tiles long. */
+function forestCorridorLength(rng: () => number): number {
+  return 4 + Math.floor(rng() * 7);
+}
+
+/** Forest paths: 3–5 tiles wide. */
+function forestCorridorWidth(rng: () => number): number {
+  return 3 + Math.floor(rng() * 3);
+}
+
+/** Room footprint targeting ~75 tiles (rolls 60–90). */
+function forestRoomDims(rng: () => number): { w: number; h: number } {
+  const area = 60 + Math.floor(rng() * 31);
+  const w = 8 + Math.floor(rng() * 5);
+  const h = Math.max(7, Math.round(area / w));
+  return { w, h };
+}
+
+/** Spread `total` rooms across `sections` (≥1 each). */
+function distributeRoomCounts(total: number, sections: number): number[] {
+  const counts = Array.from({ length: sections }, () => 1);
+  let rem = Math.max(0, total - sections);
+  let i = 0;
+  while (rem > 0) {
+    counts[i % sections]!++;
+    rem--;
+    i++;
+  }
+  return counts;
 }
 
 /**
@@ -425,13 +509,16 @@ function decorForType(t: LevelType): number {
       return DECOR_COBBLE;
     case "sewer":
       return DECOR_SEWER;
+    case "forest":
+      return DECOR_FOREST;
     default:
       return DECOR_PLAIN;
   }
 }
 
 function pickRole(t: LevelType, rng: () => number): string {
-  const list = t === "castle" ? CASTLE_ROLES : t === "dungeon" ? DUNGEON_ROLES : ["chamber", "passage", "hollow"];
+  const list =
+    t === "castle" ? CASTLE_ROLES : t === "dungeon" ? DUNGEON_ROLES : t === "forest" ? FOREST_ROLES : ["chamber", "passage", "hollow"];
   return list[Math.floor(rng() * list.length)]!;
 }
 

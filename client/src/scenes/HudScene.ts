@@ -366,7 +366,9 @@ export class HudScene extends Phaser.Scene {
       if (!prompt && !me.carryingBarrel && room.state.barrels) {
         room.state.barrels.forEach((b) => {
           if (b.carriedBy || b.flying) return;
-          if (dist(pos.x, pos.y, b.x, b.y) <= BARREL.pickupRange) prompt = "E: Pick up barrel";
+          if (dist(pos.x, pos.y, b.x, b.y) <= BARREL.pickupRange) {
+            prompt = this.game_.procMeta?.props.levelType === "forest" ? "E: Pick up foliage" : "E: Pick up barrel";
+          }
         });
       }
       if (!prompt) {

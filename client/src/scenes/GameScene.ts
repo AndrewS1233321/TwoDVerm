@@ -72,7 +72,7 @@ export class GameScene extends Phaser.Scene {
   private backdropT = 0;
   private activeProcKey = "";
   private appliedProcProgress = -1;
-  private procMeta: GeneratedLevelMeta | null = null;
+  procMeta: GeneratedLevelMeta | null = null;
   /** Local barrel charge timer for throw preview (seconds). */
   private localBarrelCharge = 0;
   private onShopOpen: (() => void) | null = null;
@@ -514,12 +514,14 @@ export class GameScene extends Phaser.Scene {
   private syncBarrels(): void {
     const state = this.room!.state;
     if (!state.barrels) return;
+    const forest = this.procMeta?.props.levelType === "forest";
     const seen = new Set<string>();
     state.barrels.forEach((b) => {
       seen.add(b.id);
       let img = this.barrelViews.get(b.id);
       if (!img) {
-        img = this.add.image(b.x, b.y, "barrel").setScale(0.5).setDepth(b.flying ? 8 : 4);
+        const tex = forest ? (foliageKey(b.id)) : "barrel";
+        img = this.add.image(b.x, b.y, tex).setScale(0.5).setDepth(b.flying ? 8 : 4);
         this.barrelViews.set(b.id, img);
       }
       img.setPosition(b.x, b.y);
@@ -719,4 +721,11 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
+}
+
+/** Stable bush vs small-tree pick for forest barrel stand-ins. */
+function foliageKey(id: string): "bush" | "foliage_tree" {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return (h & 1) === 0 ? "bush" : "foliage_tree";
 }

@@ -3,7 +3,6 @@
  * asserts reachability (gates open), section/objective counts, and starts/exit.
  */
 import {
-  budgetsFromDifficulty,
   generateLevel,
   LEVEL_TYPES,
   TILE_SIZE,
@@ -16,14 +15,14 @@ const problems: string[] = [];
 
 function check(props: LevelProperties, seed: number): void {
   const { level, meta } = generateLevel(props, seed);
-  const budgets = budgetsFromDifficulty(props.difficulty);
   const tag = `${props.levelType}@d${props.difficulty} seed=${seed}`;
 
-  if (meta.sections.length !== budgets.sectionCount) {
-    problems.push(`${tag}: expected ${budgets.sectionCount} sections, got ${meta.sections.length}`);
+  // Forest may shrink section count to fit its 3–5 room budget (see meta.budgets).
+  if (meta.sections.length !== meta.budgets.sectionCount) {
+    problems.push(`${tag}: expected ${meta.budgets.sectionCount} sections, got ${meta.sections.length}`);
   }
-  if (meta.objectives.length !== budgets.sectionCount) {
-    problems.push(`${tag}: expected ${budgets.sectionCount} objectives, got ${meta.objectives.length}`);
+  if (meta.objectives.length !== meta.budgets.sectionCount) {
+    problems.push(`${tag}: expected ${meta.budgets.sectionCount} objectives, got ${meta.objectives.length}`);
   }
   if (level.playerStarts.length < 1) problems.push(`${tag}: no player starts`);
   if (level.endZone.size === 0) problems.push(`${tag}: no exit zone`);
@@ -50,6 +49,17 @@ function check(props: LevelProperties, seed: number): void {
       if (n < 5 || n > 12) {
         problems.push(`${tag}: section ${section.index} has ${n} rooms (want 5–12)`);
       }
+    }
+  }
+  if (props.levelType === "forest") {
+    const playable = meta.rooms.filter((r) => r.role !== "exit").length;
+    if (playable < 3 || playable > 5) {
+      problems.push(`${tag}: forest has ${playable} rooms (want 3–5)`);
+    }
+    const areas = meta.rooms.filter((r) => r.role !== "exit").map((r) => r.w * r.h);
+    const avg = areas.reduce((a, b) => a + b, 0) / Math.max(1, areas.length);
+    if (avg < 50 || avg > 110) {
+      problems.push(`${tag}: forest avg room area ${avg.toFixed(1)} (want ~75)`);
     }
   }
 

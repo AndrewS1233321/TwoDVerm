@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   DECOR_COBBLE,
+  DECOR_FOREST,
   DECOR_SEWER,
   TILE_FLOOR,
   TILE_GATE,
@@ -29,6 +30,7 @@ export class LevelRenderer {
   private gateShown = true;
   private exitLabel: Phaser.GameObjects.Text | null = null;
   exitUnlocked = false;
+  private readonly forest: boolean;
   private readonly disposables: Phaser.GameObjects.GameObject[] = [];
 
   constructor(
@@ -37,6 +39,7 @@ export class LevelRenderer {
     options: LevelRendererOptions = {},
   ) {
     this.exitUnlocked = !options.exitLocked;
+    this.forest = level.decor.includes(DECOR_FOREST);
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
     const worldW = level.width * TILE_SIZE;
     const worldH = level.height * TILE_SIZE;
@@ -123,18 +126,23 @@ export class LevelRenderer {
             g.fillRect(x, y, T, T);
             continue;
           }
-          g.fillStyle(shade(colors.wall, 0.85 + r * 0.25));
+          const wall = this.forest ? 0x1e3a1c : colors.wall;
+          g.fillStyle(shade(wall, 0.85 + r * 0.25));
           g.fillRect(x, y, T, T);
-          g.fillStyle(shade(colors.wall, 1.3), 0.8);
+          g.fillStyle(shade(wall, this.forest ? 1.15 : 1.3), 0.8);
           g.fillRect(x, y, T, 3);
           g.fillRect(x, y, 3, T);
-          g.fillStyle(shade(colors.wall, 0.55), 0.9);
+          g.fillStyle(shade(wall, 0.55), 0.9);
           g.fillRect(x, y + T - 3, T, 3);
           g.fillRect(x + T - 3, y, 3, T);
-          g.lineStyle(1, shade(colors.wall, 0.6), 0.6);
+          g.lineStyle(1, shade(wall, 0.6), 0.6);
           g.lineBetween(x + 3, y + T / 2, x + T - 3, y + T / 2);
           const off = ty % 2 === 0 ? T / 2 : T / 4;
           g.lineBetween(x + off, y + 3, x + off, y + T / 2);
+          if (this.forest && r > 0.7) {
+            g.fillStyle(0x3d6b35, 0.35);
+            g.fillCircle(x + T * r, y + 6, 4);
+          }
           continue;
         }
         const decor = this.level.decor[ty * this.level.width + tx];
@@ -153,6 +161,20 @@ export class LevelRenderer {
           }
           g.fillStyle(0x4f7a3a, 0.12);
           if (r > 0.7) g.fillCircle(x + T * r, y + T * (1 - r), 6);
+        } else if (decor === DECOR_FOREST) {
+          // Lush mossy clearing — layered greens with soft grass flecks.
+          g.fillStyle(shade(0x2a4a28, 0.95 + r * 0.2));
+          g.fillRect(x, y, T, T);
+          g.fillStyle(shade(0x3d6b35, 0.85 + hash(tx + 3, ty + 5) * 0.35), 0.85);
+          g.fillCircle(x + T * (0.3 + r * 0.4), y + T * (0.35 + hash(tx, ty + 1) * 0.35), 4 + r * 5);
+          if (r > 0.55) {
+            g.fillStyle(0x6fbf5f, 0.22);
+            g.fillCircle(x + T * hash(tx + 9, ty), y + T * hash(ty + 2, tx), 3 + r * 3);
+          }
+          if (r < 0.18) {
+            g.fillStyle(0x1e331c, 0.35);
+            g.fillRect(x + 4, y + T - 6, T - 8, 3);
+          }
         } else {
           g.fillStyle(shade(colors.floor, 0.9 + r * 0.22));
           g.fillRect(x, y, T, T);

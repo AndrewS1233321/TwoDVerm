@@ -16,6 +16,9 @@ Update this file after every meaningful implementation change.
 - **Sewer layout**: each section rolls 5–12 rooms; tunnels between
   rooms / sections are 10–25 tiles long and 2 wide; barrel density
   halved vs other level types.
+- **Forest layout**: 3–5 large clearings (~75 tiles each), short wide
+  paths (4–10 long, 3–5 wide), lush green decor, barrels render as
+  bushes/small trees, higher ambient/horde density in clearings.
 - **Boss room lock**: Rat Ogre only spawns when every living hero is in
   the boss arena; while `bossActive`, heroes are confined to that room
   until the ogre dies (Default + Wastes proc). Boss area covers the
