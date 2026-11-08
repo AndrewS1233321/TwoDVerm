@@ -543,11 +543,23 @@ function firePrecisionShot(
 ): void {
   let tx = hero.aimX;
   let ty = hero.aimY;
-  const reach = dist(hero.x, hero.y, tx, ty);
+  const angle = Math.atan2(ty - hero.y, tx - hero.x);
+  let reach = dist(hero.x, hero.y, tx, ty);
   if (reach > range) {
-    const a = Math.atan2(ty - hero.y, tx - hero.x);
-    tx = hero.x + Math.cos(a) * range;
-    ty = hero.y + Math.sin(a) * range;
+    reach = range;
+    tx = hero.x + Math.cos(angle) * range;
+    ty = hero.y + Math.sin(angle) * range;
+  }
+  const clear = raycastWalls(world.level, world.gateOpen, hero.x, hero.y, angle, reach);
+  if (clear < reach - 0.5) {
+    // Blocked by a wall — impact on the wall, no target damage.
+    world.emit({
+      t: "impact",
+      x: hero.x + Math.cos(angle) * clear,
+      y: hero.y + Math.sin(angle) * clear,
+      kind,
+    });
+    return;
   }
   // No travel path — flash at the aim point only.
   world.emit({ t: "impact", x: tx, y: ty, kind });
