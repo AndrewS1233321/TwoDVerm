@@ -197,6 +197,7 @@ export class HudScene extends Phaser.Scene {
       t.ammoName!
         .setOrigin(0, 0)
         .setPosition(ammoX, y + 62)
+        .setColor(palette.textMuted)
         .setText(throwReady ? "Release to throw" : "Hold 1s+ to throw");
       if (me.barrelCharge > 0) {
         const chargeW = 120;
@@ -214,12 +215,13 @@ export class HudScene extends Phaser.Scene {
       t.ammo!
         .setOrigin(0, 0.5)
         .setPosition(ammoX, y + 43)
-        .setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : def.weapon.name)
-        .setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textPrimary);
+        .setText(ranged ? def.ranged.name : def.weapon.name)
+        .setColor(palette.textPrimary);
       t.ammoName!
         .setOrigin(0, 0)
         .setPosition(ammoX, y + 62)
-        .setText(ranged ? `Fire · Q: ${def.weapon.name}` : `Q: ${def.ranged.name}`);
+        .setColor(ranged && me.ammo === 0 ? "#ff6b5a" : palette.textMuted)
+        .setText(ranged ? `${me.ammo} / ${me.maxAmmo}` : `Q: ${def.ranged.name}`);
     }
   }
 
