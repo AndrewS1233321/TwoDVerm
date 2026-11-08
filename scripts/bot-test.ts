@@ -16,7 +16,7 @@ function inputLoop(room: AnyRoom, make: (seq: number) => Partial<InputMessage>):
   let seq = 0;
   const timer = setInterval(() => {
     seq++;
-    const base: InputMessage = { seq, mx: 0, my: 0, aim: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false };
+    const base: InputMessage = { seq, mx: 0, my: 0, aim: 0, aimX: 0, aimY: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false };
     room.send(MSG.input, { ...base, ...make(seq) });
   }, 1000 / 30);
   return () => clearInterval(timer);

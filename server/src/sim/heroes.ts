@@ -17,6 +17,7 @@ import {
   MED_HEAL_FRACTION,
   MELEE,
   moveCircle,
+  PRECISION_SHOT,
   PUSH,
   raycastWalls,
   stepMovement,
@@ -88,6 +89,8 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     grabbedBy: "",
     inputs: [],
     lastInput: null,
+    aimX: x,
+    aimY: y,
     held: { attack: false, block: false, interact: false },
     edges: { dodgeStarted: false, fire: false, ult: false, interact: false, attackPressed: false, attackReleased: false },
     ackSeq: 0,
@@ -180,6 +183,8 @@ export function processHeroInputs(world: World, hero: Hero): void {
     }
     if (input.ult) hero.edges.ult = true;
     if (input.interact && !hero.held.interact) hero.edges.interact = true;
+    hero.aimX = input.aimX;
+    hero.aimY = input.aimY;
     hero.held = { attack: input.attack, block: input.block, interact: input.interact };
 
     const started = stepMovement(hero, input, mods, world.level, world.gateOpen, DT);
@@ -258,8 +263,14 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       break;
     case "shooting":
       hero.stateT -= dt;
-      if (hero.rangedMode && hero.held.attack) shoot(world, hero);
-      else if (hero.stateT <= 0) hero.state = "idle";
+      if (hero.rangedMode && hero.held.block) {
+        if (hero.edges.attackPressed) shoot(world, hero, true);
+        else if (hero.stateT <= 0) hero.state = "idle";
+      } else if (hero.rangedMode && hero.held.attack) {
+        shoot(world, hero, false);
+      } else if (hero.stateT <= 0) {
+        hero.state = "idle";
+      }
       break;
     case "idle":
       updateIdle(world, hero, dt);
@@ -272,6 +283,8 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 
 /** Right-click block cuts off the current action and raises the guard this tick. */
 function tryInterruptToBlock(world: World, hero: Hero): boolean {
+  // Ranged: RMB is precision aim, not block.
+  if (hero.rangedMode) return false;
   if (!hero.held.block || hero.guardBrokenT > 0) return false;
   if (hero.state === "blocking") return false;
   if (
@@ -429,7 +442,7 @@ function toggleRanged(hero: Hero): void {
   hero.lightBufferT = 0;
   hero.attackHeldT = 0;
   hero.heavyQueued = false;
-  if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting") {
+  if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting" || hero.state === "blocking" || hero.state === "pushing") {
     hero.attack = null;
     hero.state = "idle";
     hero.actionSeq++;
@@ -448,16 +461,21 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
     if (hero.held.interact) tryInteract(world, hero);
     return;
   }
-  if (hero.held.block && hero.guardBrokenT <= 0) {
+  if (!hero.rangedMode && hero.held.block && hero.guardBrokenT <= 0) {
     hero.state = "blocking";
     hero.actionSeq++;
     return;
   }
   if (hero.rangedMode) {
     hero.lightBufferT = 0;
+    if (hero.held.block) {
+      // Precision aim: fire once per click at the cursor, not a ray.
+      if (hero.edges.attackPressed) shoot(world, hero, true);
+      return;
+    }
     // Held left click keeps firing whenever the weapon is ready.
     if (hero.held.attack) {
-      shoot(world, hero);
+      shoot(world, hero, false);
       return;
     }
   } else if (tryStartAttack(hero)) {
@@ -493,7 +511,7 @@ function tryPush(world: World, hero: Hero): void {
   }
 }
 
-function shoot(world: World, hero: Hero): void {
+function shoot(world: World, hero: Hero, precision = false): void {
   const r = hero.def.ranged;
   if (hero.ammo <= 0 || hero.shotCd > 0) return;
   hero.ammo--;
@@ -501,8 +519,57 @@ function shoot(world: World, hero: Hero): void {
   hero.state = "shooting";
   hero.stateT = SHOOT_RECOVERY;
   hero.actionSeq++;
+  const kind = r.id === "longbow" ? "arrow" : "gun";
+  if (precision) {
+    firePrecisionShot(world, hero, r.damage, r.armorPierce, r.stagger, r.range, kind);
+    return;
+  }
   const angle = hero.facing + (world.rng() - 0.5) * 2 * r.spread;
-  fireRay(world, hero, angle, r.range, r.pierce, r.damage, r.armorPierce, r.stagger, r.id === "longbow" ? "arrow" : "gun");
+  fireRay(world, hero, angle, r.range, r.pierce, r.damage, r.armorPierce, r.stagger, kind);
+}
+
+/**
+ * Instant hit at the cursor: no travel path, only enemies inside a tiny radius
+ * around the aim point. Head hotspot = double damage.
+ */
+function firePrecisionShot(
+  world: World,
+  hero: Hero,
+  damage: number,
+  armorPierce: boolean,
+  stagger: number,
+  range: number,
+  kind: "arrow" | "gun",
+): void {
+  let tx = hero.aimX;
+  let ty = hero.aimY;
+  const reach = dist(hero.x, hero.y, tx, ty);
+  if (reach > range) {
+    const a = Math.atan2(ty - hero.y, tx - hero.x);
+    tx = hero.x + Math.cos(a) * range;
+    ty = hero.y + Math.sin(a) * range;
+  }
+  // No travel path — flash at the aim point only.
+  world.emit({ t: "impact", x: tx, y: ty, kind });
+
+  for (const e of world.enemies.values()) {
+    if (dist(tx, ty, e.x, e.y) > PRECISION_SHOT.radius + e.radius) continue;
+    const headX = e.x;
+    const headY = e.y - e.radius * PRECISION_SHOT.headOffset;
+    const headshot = dist(tx, ty, headX, headY) <= PRECISION_SHOT.headRadius;
+    damageEnemy(world, hero, e, {
+      damage: damage * (headshot ? PRECISION_SHOT.headDamageMul : 1),
+      stagger,
+      armorPierce,
+      srcX: hero.x,
+      srcY: hero.y,
+    });
+  }
+  for (const b of world.barrels.values()) {
+    if (b.carriedBy || b.flying) continue;
+    if (dist(tx, ty, b.x, b.y) > PRECISION_SHOT.radius + BARREL.radius) continue;
+    damageBarrel(world, b, damage, hero.id);
+  }
 }
 
 function fireRay(

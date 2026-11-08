@@ -274,12 +274,23 @@ export class GameScene extends Phaser.Scene {
     this.followCamera();
   }
 
+  /** True while local ranged + RMB precision aim is held. */
+  precisionAiming(me: PlayerView | undefined): boolean {
+    if (!me?.rangedMode || me.carryingBarrel) return false;
+    if (me.state === "dead" || me.state === "downed" || me.state === "grabbed") return false;
+    return this.controls.enabled && this.controls.rightDown();
+  }
+
+  get aimScreen(): { x: number; y: number } {
+    return { x: this.controls.screenX, y: this.controls.screenY };
+  }
+
   private updateBarrelThrowPreview(dt: number, me: PlayerView | undefined): void {
     if (!me?.carryingBarrel || me.state === "dead" || me.state === "downed") {
       this.localBarrelCharge = 0;
       return;
     }
-    const holding = this.controls.enabled && this.input.activePointer.leftButtonDown();
+    const holding = this.controls.enabled && this.controls.leftDown();
     if (holding) this.localBarrelCharge = Math.min(BARREL.throwMaxHold, this.localBarrelCharge + dt);
     else this.localBarrelCharge = 0;
 
@@ -328,11 +339,21 @@ export class GameScene extends Phaser.Scene {
     if (!room) return;
     this.controls.enabled = !this.inputBlocked;
     const s = this.controls.sample();
-    const pointer = this.input.activePointer;
-    pointer.updateWorldPoint(this.cameras.main);
     const body = this.predictor.body;
-    const input: InputMessage = { seq: this.predictor.nextSeq(), aim: angleTo(body.x, body.y, pointer.worldX, pointer.worldY), ...s };
-    if (this.inputBlocked) input.aim = body.facing;
+    const aimX = this.controls.aimX;
+    const aimY = this.controls.aimY;
+    const input: InputMessage = {
+      seq: this.predictor.nextSeq(),
+      aim: angleTo(body.x, body.y, aimX, aimY),
+      aimX,
+      aimY,
+      ...s,
+    };
+    if (this.inputBlocked) {
+      input.aim = body.facing;
+      input.aimX = body.x;
+      input.aimY = body.y;
+    }
     if (s.fire && !this.inputBlocked) playSfx("click", { volume: 0.6 });
     this.sendTimes.set(input.seq, performance.now());
     if (this.lagMs > 0) setTimeout(() => room.send(MSG.input, input), this.lagMs);
@@ -630,6 +651,10 @@ export class GameScene extends Phaser.Scene {
         case "tracer":
           this.effects.tracer(e.x1, e.y1, e.x2, e.y2, e.kind);
           this.sfxAt(e.kind === "bullet" ? "bullet" : e.kind === "arrow" ? "arrow" : "gun", { x: e.x1, y: e.y1 }, e.kind === "bullet" ? 0.4 : 0.8);
+          break;
+        case "impact":
+          this.effects.impact(e.x, e.y, e.kind);
+          this.sfxAt(e.kind === "arrow" ? "arrow" : "gun", e, 0.85);
           break;
         case "push":
           this.effects.pushArc(e.x, e.y, e.facing);

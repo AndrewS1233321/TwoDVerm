@@ -31,7 +31,7 @@ interface S {
 }
 
 function think(room: Room<S>, seq: number, mode: { ranged: boolean }): InputMessage {
-  const input: InputMessage = { seq, mx: 0, my: 0, aim: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false };
+  const input: InputMessage = { seq, mx: 0, my: 0, aim: 0, aimX: 0, aimY: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false };
   const me = room.state.players.get(room.sessionId);
   if (!me || room.state.phase !== "playing") return input;
   const others = [...room.state.players.values()].filter((p) => p.id !== me.id && p.state !== "dead");

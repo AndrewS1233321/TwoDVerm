@@ -24,7 +24,7 @@ function setup(heroId: HeroId): { world: World; hero: Hero } {
 }
 
 function tick(world: World, hero: Hero, input: Partial<InputMessage> = {}): FxEvent[] {
-  hero.inputs.push({ seq: ++seq, mx: 0, my: 0, aim: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false, ...input });
+  hero.inputs.push({ seq: ++seq, mx: 0, my: 0, aim: 0, aimX: 0, aimY: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false, ...input });
   world.fx = [];
   world.step(DT);
   return world.fx;

@@ -26,6 +26,9 @@ export interface InputMessage {
   my: number;
   /** World-space aim angle in radians. */
   aim: number;
+  /** World-space cursor position (used for precision ranged shots). */
+  aimX: number;
+  aimY: number;
   /** Held buttons. */
   attack: boolean;
   block: boolean;
@@ -58,6 +61,8 @@ export type FxEvent =
   | { t: "dodge"; id: string }
   | { t: "death"; id: string; x: number; y: number; kind: string; by: string }
   | { t: "tracer"; x1: number; y1: number; x2: number; y2: number; kind: "bullet" | "arrow" | "gun" }
+  /** Precision shot impact at the aim point (no travel path). */
+  | { t: "impact"; x: number; y: number; kind: "arrow" | "gun" }
   | { t: "push"; id: string; x: number; y: number; facing: number }
   | { t: "down"; id: string }
   | { t: "revive"; id: string }
@@ -84,11 +89,15 @@ export function sanitizeInput(raw: unknown): InputMessage | null {
     mx /= len;
     my /= len;
   }
+  const aimX = isFiniteNumber(r.aimX) ? r.aimX : 0;
+  const aimY = isFiniteNumber(r.aimY) ? r.aimY : 0;
   return {
     seq: Math.floor(r.seq),
     mx,
     my,
     aim: r.aim,
+    aimX,
+    aimY,
     attack: r.attack === true,
     block: r.block === true,
     interact: r.interact === true,

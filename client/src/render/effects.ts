@@ -57,6 +57,23 @@ export class Effects {
     this.scene.tweens.add({ targets: g, alpha: 0, duration: kind === "arrow" ? 260 : 120, onComplete: () => g.destroy() });
   }
 
+  /** Precision shot: flash at the aim point only (no travel line). */
+  impact(x: number, y: number, kind: string): void {
+    const color = kind === "arrow" ? 0xe8e0d0 : 0xfff0b0;
+    const g = this.scene.add.graphics().setDepth(27);
+    g.lineStyle(1.5, color, 1);
+    g.strokeCircle(x, y, 4);
+    g.fillStyle(color, 0.9);
+    g.fillCircle(x, y, 1.5);
+    this.sparks(x, y, color, kind === "gun" ? 10 : 6, 140);
+    this.scene.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 180,
+      onComplete: () => g.destroy(),
+    });
+  }
+
   corpse(x: number, y: number, texture: string, rotation: number): void {
     const pool = this.scene.add.circle(x, y, 8 + Math.random() * 6, 0x4a0d0d, 0.6).setDepth(1);
     const body = this.scene.add.image(x, y, texture).setScale(1 / TEX_SCALE).setRotation(rotation + (Math.random() - 0.5)).setTint(0x5a4040).setAlpha(0.85).setDepth(2);

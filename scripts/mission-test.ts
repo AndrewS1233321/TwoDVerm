@@ -23,7 +23,7 @@ function setup(ids: HeroId[], keepEnemies = false): { world: World; heroes: Hero
   return { world, heroes };
 }
 
-const idle = (): InputMessage => ({ seq: ++seq, mx: 0, my: 0, aim: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false });
+const idle = (): InputMessage => ({ seq: ++seq, mx: 0, my: 0, aim: 0, aimX: 0, aimY: 0, attack: false, block: false, interact: false, dodge: false, fire: false, ult: false });
 
 /** Steps the world; `each` runs before every tick and can set inputs or keep heroes alive. */
 function run(world: World, seconds: number, each?: () => void): FxEvent[] {

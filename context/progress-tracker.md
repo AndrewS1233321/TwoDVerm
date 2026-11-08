@@ -35,6 +35,10 @@ Update this file after every meaningful implementation change.
   charge / shoot / push / revive / barrel charge and raises guard.
 - **Bardin barrel handling**: built-in — 0.35s throw release (range
   charges from hold start), full move speed while carrying.
+- **Ranged precision aim**: with a ranged weapon drawn, RMB no longer
+  blocks — screen-space cursor crosshair; LMB fires an instant point-hit
+  (tiny radius, impact FX only — no travel tracer). Head hotspot = 2×
+  (`PRECISION_SHOT`).
 - **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit

@@ -92,6 +92,9 @@ export interface Hero extends MoveBody {
 
   inputs: InputMessage[];
   lastInput: InputMessage | null;
+  /** Latest world-space cursor aim (precision shots). */
+  aimX: number;
+  aimY: number;
   held: { attack: boolean; block: boolean; interact: boolean };
   edges: HeroEdges;
   ackSeq: number;

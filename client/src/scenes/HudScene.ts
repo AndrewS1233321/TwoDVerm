@@ -108,6 +108,7 @@ export class HudScene extends Phaser.Scene {
     this.drawCenter(W, H);
     this.drawPrompt(me, W, H);
     this.drawOffscreen(me);
+    this.drawPrecisionCrosshair(me);
     const t = this.texts;
     t.info!
       .setPosition(W - 12, 10)
@@ -117,7 +118,24 @@ export class HudScene extends Phaser.Scene {
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)
-      .setText("Left click: attack (hold for heavy)   Right click: block (+ left click: push)   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up barrel   Esc: menu");
+      .setText("Left click: attack (hold for heavy)   Right click: block / ranged precision aim   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up barrel   Esc: menu");
+  }
+
+  /** Screen-space reticle glued to the cursor while ranged + RMB. */
+  private drawPrecisionCrosshair(me: PlayerView): void {
+    if (!this.game_.precisionAiming(me)) return;
+    const { x, y } = this.game_.aimScreen;
+    const g = this.g;
+    const pulse = 0.65 + 0.25 * Math.sin(performance.now() * 0.012);
+    g.lineStyle(2, colors.accent, pulse);
+    g.strokeCircle(x, y, 12);
+    g.lineStyle(1.5, 0xffffff, pulse);
+    g.lineBetween(x - 18, y, x - 6, y);
+    g.lineBetween(x + 6, y, x + 18, y);
+    g.lineBetween(x, y - 18, x, y - 6);
+    g.lineBetween(x, y + 6, x, y + 18);
+    g.fillStyle(colors.accent, 0.95);
+    g.fillCircle(x, y, 2);
   }
 
   private drawSelf(me: PlayerView, W: number, H: number): void {
