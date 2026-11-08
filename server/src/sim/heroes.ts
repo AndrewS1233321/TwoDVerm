@@ -221,6 +221,19 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       hero.staggerT -= dt;
       if (hero.staggerT <= 0) hero.state = "idle";
       return;
+    default:
+      break;
+  }
+
+  // Block cancels attacks, charge, shots, pushes, revive, and barrel throw charge immediately.
+  if (tryInterruptToBlock(world, hero)) {
+    if (hero.edges.attackPressed && !hero.rangedMode && !hero.carryingBarrelId) tryPush(world, hero);
+    if (hero.edges.ult) tryUlt(world, hero);
+    if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+    return;
+  }
+
+  switch (hero.state) {
     case "reviving":
       updateReviving(world, hero, dt);
       return;
@@ -250,6 +263,39 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 
   if (hero.edges.ult) tryUlt(world, hero);
   if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+}
+
+/** Right-click block cuts off the current action and raises the guard this tick. */
+function tryInterruptToBlock(world: World, hero: Hero): boolean {
+  if (!hero.held.block || hero.guardBrokenT > 0) return false;
+  if (hero.state === "blocking") return false;
+  if (
+    hero.state !== "attack" &&
+    hero.state !== "charging" &&
+    hero.state !== "shooting" &&
+    hero.state !== "pushing" &&
+    hero.state !== "reviving" &&
+    hero.state !== "idle"
+  ) {
+    return false;
+  }
+  // Idle with no throw charge can fall through to updateIdle's block path.
+  if (hero.state === "idle" && !hero.carryingBarrelId) return false;
+
+  if (hero.state === "reviving") {
+    const target = world.heroes.get(hero.reviveTargetId);
+    if (target) target.reviveT = 0;
+    hero.reviveT = 0;
+    hero.reviveTargetId = "";
+  }
+  hero.attack = null;
+  hero.heavyQueued = false;
+  hero.lightBufferT = 0;
+  hero.attackHeldT = 0;
+  hero.barrelCharge = 0;
+  hero.state = "blocking";
+  hero.actionSeq++;
+  return true;
 }
 
 function tickTimers(hero: Hero, dt: number): void {

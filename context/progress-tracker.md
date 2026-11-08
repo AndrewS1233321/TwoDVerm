@@ -31,6 +31,8 @@ Update this file after every meaningful implementation change.
   `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
   damage per stack via `shopDamageMul`); stacks shown under the
   explosion icon. Economy resets when a new run starts.
+- **Block interrupt**: holding block immediately cancels attack /
+  charge / shoot / push / revive / barrel charge and raises guard.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
