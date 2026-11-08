@@ -108,10 +108,12 @@ export const MED_HEAL_FRACTION = 0.6;
 export const PRECISION_SHOT = {
   /** Hit radius around the aim point (no ray; only targets in this circle). */
   radius: 3,
-  /** Aim must land this close to the enemy head hotspot for a headshot. */
+  /** Minimum head hotspot radius (small rats). */
   headRadius: 4,
-  /** Head hotspot sits this fraction of radius above the enemy centre. */
-  headOffset: 0.4,
+  /** Head hotspot also grows with body: at least radius × this. */
+  headRadiusScale: 0.35,
+  /** Head sits this fraction of radius along the enemy's facing (sprites face +X). */
+  headOffset: 0.45,
   /** Damage multiplier when the aim hits the head hotspot. */
   headDamageMul: 2,
 } as const;

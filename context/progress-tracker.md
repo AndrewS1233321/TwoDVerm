@@ -38,7 +38,8 @@ Update this file after every meaningful implementation change.
 - **Ranged precision aim**: with a ranged weapon drawn, RMB no longer
   blocks — screen-space cursor crosshair; LMB fires an instant point-hit
   (tiny radius, impact FX only — no travel tracer). Walls block LOS (shot
-  fails). Head hotspot = 2× (`PRECISION_SHOT`).
+  fails). Head hotspot along facing (scales with body size) = 2×
+  (`PRECISION_SHOT`).
 - **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit

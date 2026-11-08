@@ -566,9 +566,12 @@ function firePrecisionShot(
 
   for (const e of world.enemies.values()) {
     if (dist(tx, ty, e.x, e.y) > PRECISION_SHOT.radius + e.radius) continue;
-    const headX = e.x;
-    const headY = e.y - e.radius * PRECISION_SHOT.headOffset;
-    const headshot = dist(tx, ty, headX, headY) <= PRECISION_SHOT.headRadius;
+    // Sprites face +X locally and rotate with facing — head is forward, not screen-up.
+    const headDist = e.radius * PRECISION_SHOT.headOffset;
+    const headX = e.x + Math.cos(e.facing) * headDist;
+    const headY = e.y + Math.sin(e.facing) * headDist;
+    const headR = Math.max(PRECISION_SHOT.headRadius, e.radius * PRECISION_SHOT.headRadiusScale);
+    const headshot = dist(tx, ty, headX, headY) <= headR;
     damageEnemy(world, hero, e, {
       damage: damage * (headshot ? PRECISION_SHOT.headDamageMul : 1),
       stagger,
