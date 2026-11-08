@@ -458,7 +458,15 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
       return;
     }
     if (!hero.held.attack) hero.barrelCharge = 0;
-    if (hero.held.interact) tryInteract(world, hero);
+    if (hero.edges.interact) {
+      const barrel = world.barrels.get(hero.carryingBarrelId);
+      if (barrel) dropBarrel(world, barrel, hero);
+      else {
+        hero.carryingBarrelId = "";
+        hero.barrelCharge = 0;
+      }
+      return;
+    }
     return;
   }
   if (!hero.rangedMode && hero.held.block && hero.guardBrokenT <= 0) {

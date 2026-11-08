@@ -118,7 +118,7 @@ export class HudScene extends Phaser.Scene {
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)
-      .setText("Left click: attack (hold for heavy)   Right click: block / ranged precision aim   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up barrel   Esc: menu");
+      .setText("Left click: attack (hold for heavy)   Right click: block / ranged precision aim   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up or drop barrel   Esc: menu");
   }
 
   /** Screen-space reticle glued to the cursor while ranged + RMB. */
@@ -354,7 +354,7 @@ export class HudScene extends Phaser.Scene {
           ? "Release to throw"
           : me.barrelCharge > 0
             ? `Charging… ${Math.max(0, minHold - hold).toFixed(1)}s`
-            : `Hold left click ${minHold}s+ to throw · Q to drop`;
+            : `Hold left click ${minHold}s+ to throw · E to drop`;
       }
       if (!prompt && room.state.phase === "merchant") {
         room.state.enemies.forEach((e) => {
