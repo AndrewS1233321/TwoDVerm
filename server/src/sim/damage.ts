@@ -7,6 +7,7 @@ import {
   hitSide,
   MELEE,
   rollGoldDrop,
+  shopDamageMul,
   splitGoldEvenly,
   type EnemyId,
 } from "@twodverm/shared";
@@ -37,7 +38,7 @@ export type HeroHitResult = "dodged" | "blocked" | "hit" | "ignored";
 
 export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: EnemyHit): void {
   if (!world.enemies.has(enemy.id)) return;
-  // Merchant is invulnerable (shop UI comes later).
+  // Merchant is invulnerable; trade with E instead.
   if (enemy.def.id === "merchant") {
     world.emit({
       t: "hit",
@@ -57,6 +58,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   if (side === "back") mul *= hit.backstabMul ?? 1;
   const armor = enemy.def.armored && !hit.armorPierce && side !== "back";
   if (armor) mul *= ARMOR_NON_PIERCE_MUL;
+  if (hero) mul *= shopDamageMul(hero.dmgUpStacks);
   const dmg = hit.damage * mul;
 
   enemy.hp -= dmg;

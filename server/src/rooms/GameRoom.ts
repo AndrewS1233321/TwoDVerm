@@ -71,6 +71,7 @@ export class GameRoom extends Room<GameState> {
     this.onMessage(MSG.start, (client) => {
       if (client.sessionId !== this.state.hostId || this.state.phase !== "lobby") return;
       if ([...this.state.players.values()].some((p) => !p.heroId)) return;
+      this.world.resetRunEconomy();
       if (this.state.gameMode === "wastes") {
         this.beginExpeditionVote();
         console.log(`Expedition map opened in room ${this.code}`);
@@ -79,6 +80,12 @@ export class GameRoom extends Room<GameState> {
         this.syncAll();
         console.log(`Mission started in room ${this.code} (${this.state.gameMode}) with ${this.state.players.size} players`);
       }
+    });
+
+    this.onMessage(MSG.buyShopItem, (client, raw: unknown) => {
+      const itemId = (raw as { itemId?: unknown } | null)?.itemId;
+      if (typeof itemId !== "string") return;
+      if (this.world.buyShopItem(client.sessionId, itemId)) this.syncAll();
     });
 
     this.onMessage(MSG.voteLocation, (client, raw: unknown) => {
@@ -121,6 +128,7 @@ export class GameRoom extends Room<GameState> {
     this.playedLocations = [];
     this.state.expeditionStop = 0;
     this.lastPhase = "lobby";
+    this.world.resetRunEconomy();
   }
 
   onJoin(client: Client, options: unknown): void {

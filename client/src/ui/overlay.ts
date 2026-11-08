@@ -6,6 +6,7 @@ import {
   HEROES,
   LEVEL_TYPE_LABELS,
   MAX_PLAYERS,
+  SHOP_ITEMS,
   WASTES_EXPEDITION_STOPS,
   isExpeditionLocationId,
   isGameMode,
@@ -16,6 +17,7 @@ import {
   type GameMode,
   type HeroId,
   type LevelProperties,
+  type ShopItemId,
 } from "@twodverm/shared";
 import type { GameStateView } from "../net/types";
 import { getSettings, updateSettings } from "../settings";
@@ -30,9 +32,10 @@ export interface OverlayHandlers {
   onReturnToLobby(): void;
   onLeave(): void;
   onPauseChange(paused: boolean): void;
+  onBuyShopItem(itemId: ShopItemId): void;
 }
 
-type ScreenId = "menu" | "lobby" | "expedition" | "results" | "pause" | "settings";
+type ScreenId = "menu" | "lobby" | "expedition" | "results" | "pause" | "settings" | "shop";
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const e = document.getElementById(id);
@@ -47,9 +50,12 @@ function escapeHtml(s: string): string {
 export class Overlay {
   private inRoom = false;
   private paused = false;
+  private shopOpen = false;
   private busy = false;
   private signature = "";
   private toastTimer = 0;
+  private localId = "";
+  private lastState: GameStateView | null = null;
   private inspected: ExpeditionLocationId | null = null;
   private readonly nameInput = el<HTMLInputElement>("name-input");
   private readonly codeInput = el<HTMLInputElement>("code-input");
@@ -86,13 +92,31 @@ export class Overlay {
     el("menu-settings-btn").onclick = () => this.openSettings();
     el("pause-settings-btn").onclick = () => this.openSettings();
     el("settings-close-btn").onclick = () => el("settings").classList.remove("show");
+    el("shop-close-btn").onclick = () => this.closeShop();
+    el("shop-buy-dmg").onclick = () => this.h.onBuyShopItem("dmg_up");
     this.bindSettings();
 
     window.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (el("settings").classList.contains("show")) el("settings").classList.remove("show");
+      else if (this.shopOpen) this.closeShop();
       else if (this.inRoom && (this.currentPhase === "playing" || this.currentPhase === "merchant")) this.setPaused(!this.paused);
     });
+  }
+
+  openShop(): void {
+    if (!this.inRoom || this.currentPhase !== "merchant") return;
+    this.shopOpen = true;
+    el("shop").classList.add("show");
+    this.h.onPauseChange(true);
+    this.refreshShop();
+  }
+
+  closeShop(): void {
+    if (!this.shopOpen) return;
+    this.shopOpen = false;
+    el("shop").classList.remove("show");
+    if (!this.paused) this.h.onPauseChange(false);
   }
 
   private currentPhase = "";
@@ -149,9 +173,11 @@ export class Overlay {
   showMenu(error = ""): void {
     this.inRoom = false;
     this.paused = false;
+    this.closeShop();
     this.signature = "";
     this.currentPhase = "";
     this.inspected = null;
+    this.lastState = null;
     this.setBusy(false);
     this.error(error);
     this.show("menu");
@@ -163,19 +189,36 @@ export class Overlay {
 
   private setPaused(p: boolean): void {
     this.paused = p;
-    this.h.onPauseChange(p);
+    this.h.onPauseChange(p || this.shopOpen);
     this.show(p ? "pause" : null);
+  }
+
+  private refreshShop(): void {
+    if (!this.shopOpen || !this.lastState) return;
+    const me = this.lastState.players.get(this.localId);
+    const gold = me?.gold ?? 0;
+    const stacks = me?.dmgUpStacks ?? 0;
+    const item = SHOP_ITEMS.dmg_up;
+    el("shop-gold").textContent = `${gold} GP`;
+    el("shop-dmg-stacks").textContent = `Stacks: ${stacks}`;
+    const buy = el<HTMLButtonElement>("shop-buy-dmg");
+    buy.disabled = gold < item.cost;
+    buy.textContent = gold < item.cost ? "Need gold" : "Buy";
   }
 
   /** Called on every state patch; only rebuilds the DOM when something visible changed. */
   render(state: GameStateView, localId: string): void {
     this.inRoom = true;
+    this.localId = localId;
+    this.lastState = state;
     this.code = state.code;
     if (state.phase !== this.currentPhase) {
-      if (this.paused && state.phase !== "playing") this.setPaused(false);
+      if (this.paused && state.phase !== "playing" && state.phase !== "merchant") this.setPaused(false);
+      if (state.phase !== "merchant") this.closeShop();
       if (state.phase === "expedition") this.inspected = null;
       this.currentPhase = state.phase;
     }
+    if (this.shopOpen) this.refreshShop();
     const players = [...state.players.values()];
     const sig = [
       state.phase,
@@ -191,7 +234,7 @@ export class Overlay {
       this.inspected ?? "",
       ...players.map(
         (p) =>
-          `${p.id}:${p.name}:${p.heroId}:${p.connected}:${p.vote}:${state.phase === "lobby" || state.phase === "expedition" ? "" : `${p.kills}:${p.damageDealt}:${p.gold ?? 0}`}`,
+          `${p.id}:${p.name}:${p.heroId}:${p.connected}:${p.vote}:${state.phase === "lobby" || state.phase === "expedition" ? "" : `${p.kills}:${p.damageDealt}:${p.gold ?? 0}:${p.dmgUpStacks ?? 0}`}`,
       ),
     ].join("|");
     if (sig === this.signature) return;

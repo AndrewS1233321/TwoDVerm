@@ -100,6 +100,8 @@ export interface Hero extends MoveBody {
   damageDealt: number;
   /** Personal gold purse (GP) for merchant spending; persists across wastes stops. */
   gold: number;
+  /** Stacks of merchant "dmg up +10%"; persists for the whole run. */
+  dmgUpStacks: number;
 }
 
 export type EnemyAiState =

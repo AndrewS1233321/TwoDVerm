@@ -50,6 +50,8 @@ export interface PlayerView {
   damageDealt: number;
   /** Personal gold purse (GP). */
   gold: number;
+  /** Merchant dmg-up stacks this run. */
+  dmgUpStacks: number;
   /** Gingey Wastes vote (location id) or "". */
   vote: string;
   carryingBarrel: boolean;

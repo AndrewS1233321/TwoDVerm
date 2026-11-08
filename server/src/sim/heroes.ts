@@ -92,6 +92,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     kills: 0,
     damageDealt: 0,
     gold: 0,
+    dmgUpStacks: 0,
   };
   return hero;
 }
@@ -102,6 +103,7 @@ export function resetHeroForMission(hero: Hero, x: number, y: number): void {
   fresh.ackSeq = hero.ackSeq;
   fresh.actionSeq = hero.actionSeq + 1;
   fresh.gold = hero.gold;
+  fresh.dmgUpStacks = hero.dmgUpStacks;
   Object.assign(hero, fresh);
 }
 
@@ -498,6 +500,17 @@ function fireRay(
   world.emit({ t: "tracer", x1: sx, y1: sy, x2: sx + cos * end, y2: sy + sin * end, kind });
 }
 
+function tryOpenMerchantShop(world: World, hero: Hero): boolean {
+  if (world.phase !== "merchant") return false;
+  for (const e of world.enemies.values()) {
+    if (e.def.id !== "merchant") continue;
+    if (dist(hero.x, hero.y, e.x, e.y) > INTERACT_RANGE + e.radius) continue;
+    world.emit({ t: "shop", id: hero.id });
+    return true;
+  }
+  return false;
+}
+
 function tryInteract(world: World, hero: Hero): void {
   for (const other of world.heroes.values()) {
     if (other.id === hero.id || other.state !== "downed") continue;
@@ -509,6 +522,7 @@ function tryInteract(world: World, hero: Hero): void {
     return;
   }
   if (!hero.edges.interact) return;
+  if (tryOpenMerchantShop(world, hero)) return;
   if (tryPickupBarrel(world, hero)) return;
   for (const p of world.pickups.values()) {
     if (p.used || dist(hero.x, hero.y, p.x, p.y) > INTERACT_RANGE) continue;

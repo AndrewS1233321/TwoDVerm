@@ -424,6 +424,66 @@
       #settings {
         z-index: 20;
       }
+      #shop {
+        z-index: 15;
+      }
+      .shop-gold {
+        text-align: center;
+        color: var(--accent);
+        font-size: 18px;
+        margin: 0 0 18px;
+      }
+      .shop-item {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(14, 12, 11, 0.55);
+      }
+      .shop-item-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        background: #1a1210;
+        border: 1px solid #5a4030;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .shop-item-icon svg {
+        width: 52px;
+        height: 52px;
+      }
+      .shop-item-name {
+        font-family: Georgia, serif;
+        font-size: 20px;
+        color: var(--accent);
+        margin: 0 0 4px;
+      }
+      .shop-item-desc {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin: 0 0 6px;
+      }
+      .shop-item-stacks {
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+      .shop-item-buy {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        min-width: 110px;
+      }
+      .shop-item-cost {
+        text-align: center;
+        color: var(--accent);
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
@@ -558,6 +618,45 @@
         <div class="setting"><span>Damage numbers</span><input id="set-numbers" type="checkbox" /></div>
         <div class="setting"><span>Screen shake</span><input id="set-shake" type="checkbox" /></div>
         <div class="stack"><button id="settings-close-btn" class="primary">Done</button></div>
+      </div>
+    </div>
+
+    <div id="shop" class="screen">
+      <div class="panel narrow">
+        <h2 style="text-align: center">Merchant</h2>
+        <p class="subtitle">Spend your gold. Upgrades last for this run.</p>
+        <div id="shop-gold" class="shop-gold">0 GP</div>
+        <div class="shop-item">
+          <div class="shop-item-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="10" fill="#f2c14e" />
+              <circle cx="32" cy="32" r="6" fill="#fff3c4" />
+              <path d="M32 6 L36 22 L32 18 L28 22 Z" fill="#e85d04" />
+              <path d="M32 58 L28 42 L32 46 L36 42 Z" fill="#e85d04" />
+              <path d="M6 32 L22 28 L18 32 L22 36 Z" fill="#f48c06" />
+              <path d="M58 32 L42 36 L46 32 L42 28 Z" fill="#f48c06" />
+              <path d="M14 14 L26 24 L22 22 L24 26 Z" fill="#dc2f02" />
+              <path d="M50 14 L40 26 L42 22 L38 24 Z" fill="#dc2f02" />
+              <path d="M14 50 L26 40 L22 42 L24 38 Z" fill="#dc2f02" />
+              <path d="M50 50 L38 40 L42 42 L40 38 Z" fill="#dc2f02" />
+              <path d="M24 8 L30 20 L28 18" fill="none" stroke="#ffba08" stroke-width="3" stroke-linecap="round" />
+              <path d="M44 10 L38 22" fill="none" stroke="#faa307" stroke-width="3" stroke-linecap="round" />
+              <path d="M52 24 L40 30" fill="none" stroke="#f48c06" stroke-width="3" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div>
+            <div class="shop-item-name">dmg up +10%</div>
+            <p class="shop-item-desc">+10% melee, ranged, and ultimate damage. Stackable.</p>
+            <div id="shop-dmg-stacks" class="shop-item-stacks">Stacks: 0</div>
+          </div>
+          <div class="shop-item-buy">
+            <div class="shop-item-cost">50 GP</div>
+            <button id="shop-buy-dmg" class="primary">Buy</button>
+          </div>
+        </div>
+        <div class="stack" style="margin-top: 18px">
+          <button id="shop-close-btn">Close</button>
+        </div>
       </div>
     </div>
 

@@ -54,6 +54,8 @@ export class PlayerState extends Schema {
   @type("uint32") damageDealt = 0;
   /** Personal gold purse (GP). */
   @type("uint32") gold = 0;
+  /** Merchant "dmg up +10%" stacks owned this run. */
+  @type("uint16") dmgUpStacks = 0;
 
   /** Gingey Wastes Holseher's Map vote (location id) or "". */
   @type("string") vote = "";

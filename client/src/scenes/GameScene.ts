@@ -75,6 +75,7 @@ export class GameScene extends Phaser.Scene {
   private procMeta: GeneratedLevelMeta | null = null;
   /** Local barrel charge timer for throw preview (seconds). */
   private localBarrelCharge = 0;
+  private onShopOpen: (() => void) | null = null;
   private readonly lagMs = Number(new URLSearchParams(location.search).get("lag") ?? 0);
 
   constructor() {
@@ -102,10 +103,11 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(clamp(this.scale.height / 640, 1, 2.2));
   }
 
-  attach(room: GameRoom): void {
+  attach(room: GameRoom, hooks?: { onShopOpen?: () => void }): void {
     this.detach();
     this.room = room;
     this.localId = room.sessionId;
+    this.onShopOpen = hooks?.onShopOpen ?? null;
     this.predictor.reset();
     this.lastPhase = "";
     room.onStateChange(() => this.onPatch());
@@ -125,6 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.interp.clear();
     this.room = null;
     this.localId = "";
+    this.onShopOpen = null;
     this.levelRenderer?.setGateOpen(false);
   }
 
@@ -657,6 +660,9 @@ export class GameScene extends Phaser.Scene {
         case "gold":
           this.effects.damageNumber(e.x, e.y - 12, `+${e.amount} GP`, palette.accent, e.amount >= 100);
           playSfx("pickup", { volume: 0.55 });
+          break;
+        case "shop":
+          if (e.id === this.localId) this.onShopOpen?.();
           break;
         case "gasburst":
           this.effects.gasBurst(e.x, e.y, 72);

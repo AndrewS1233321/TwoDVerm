@@ -6,10 +6,13 @@ import {
   dist,
   ENEMIES,
   initialLevelIdForMode,
+  INTERACT_RANGE,
   isInZone,
+  isShopItemId,
   MAX_ENEMIES,
   MERCHANT_EXIT_HOLD,
   parseLevelById,
+  SHOP_ITEMS,
   TILE_FLOOR,
   tileIndexAt,
   WASTES_MERCHANT_LEVEL_ID,
@@ -149,6 +152,32 @@ export class World {
     return hero;
   }
 
+  /** Clear gold and shop upgrades at the start of a fresh run. */
+  resetRunEconomy(): void {
+    for (const hero of this.heroes.values()) {
+      hero.gold = 0;
+      hero.dmgUpStacks = 0;
+    }
+  }
+
+  /** Spend gold on a merchant item. Returns false if the buy is rejected. */
+  buyShopItem(heroId: string, itemId: string): boolean {
+    if (this.phase !== "merchant") return false;
+    if (!isShopItemId(itemId)) return false;
+    const hero = this.heroes.get(heroId);
+    if (!hero || hero.state === "dead" || hero.state === "downed") return false;
+    const nearMerchant = [...this.enemies.values()].some(
+      (e) => e.def.id === "merchant" && dist(hero.x, hero.y, e.x, e.y) <= INTERACT_RANGE + e.radius + 24,
+    );
+    if (!nearMerchant) return false;
+    const item = SHOP_ITEMS[itemId];
+    if (hero.gold < item.cost) return false;
+    hero.gold -= item.cost;
+    if (itemId === "dmg_up") hero.dmgUpStacks += 1;
+    this.emit({ t: "pickup", id: hero.id, kind: "shop" });
+    return true;
+  }
+
   /** Puts a hero who joins mid-mission next to a standing teammate. */
   placeLateJoiner(hero: Hero): void {
     const buddy = this.standingHeroes().find((h) => h.id !== hero.id);
@@ -239,7 +268,7 @@ export class World {
     this.phase = "merchant";
     this.emit({
       t: "announce",
-      text: "A merchant waits. Gather at the exit to continue.",
+      text: "A merchant waits. Press E to trade, then gather at the exit.",
       kind: "info",
     });
   }

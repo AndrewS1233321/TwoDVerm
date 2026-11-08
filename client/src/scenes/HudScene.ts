@@ -334,6 +334,13 @@ export class HudScene extends Phaser.Scene {
             ? `Charging… ${Math.ceil(BARREL.throwMinHold - hold)}s`
             : "Hold left click 1s+ to throw · Q to drop";
       }
+      if (!prompt && room.state.phase === "merchant") {
+        room.state.enemies.forEach((e) => {
+          if (e.type !== "merchant") return;
+          const reach = INTERACT_RANGE + (ENEMIES.merchant?.radius ?? 16);
+          if (dist(pos.x, pos.y, e.x, e.y) <= reach) prompt = "E: Trade";
+        });
+      }
       if (!prompt && !me.carryingBarrel && room.state.barrels) {
         room.state.barrels.forEach((b) => {
           if (b.carriedBy || b.flying) return;

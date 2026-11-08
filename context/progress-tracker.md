@@ -27,6 +27,10 @@ Update this file after every meaningful implementation change.
   special 50% → 1–5 GP; Rat Ogre 100% → 100–200 GP). Drop is split
   evenly across every hero’s personal purse (remainder distributed);
   gold persists across wastes stops for merchant spending.
+- **Merchant shop**: E near the merchant opens a buy menu. Item
+  `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
+  damage per stack via `shopDamageMul`); stacks shown under the
+  explosion icon. Economy resets when a new run starts.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
@@ -40,8 +44,8 @@ Update this file after every meaningful implementation change.
   rolled props. `npm run check:procgen`.
 - **The Gingey Wastes** game mode: Chaos Wastes–style Holseher's Map
   after lobby; majority vote on randomised forks; after each clear,
-  party enters a merchant hall (invulnerable non-functional merchant
-  NPC + exit hold 10s) then next map vote; 4 stops then results.
+  party enters a merchant hall (shop NPC + exit hold 10s) then next
+  map vote; 4 stops then results.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
   central room (starts + unarmoured/armoured dummies) and a summon

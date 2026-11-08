@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { MSG, type ExpeditionLocationId, type HeroId } from "@twodverm/shared";
+import { MSG, type ExpeditionLocationId, type HeroId, type ShopItemId } from "@twodverm/shared";
 import { unlockAudio } from "./audio/sfx";
 import { createGame, forgetRoom, friendlyError, joinGame, tryReconnect, type GameRoom } from "./net/connection";
 import { GameScene } from "./scenes/GameScene";
@@ -31,6 +31,7 @@ const overlay = new Overlay({
   onReturnToLobby: () => room?.send(MSG.returnToLobby),
   onLeave: () => leave(),
   onPauseChange: (paused) => (scene().inputBlocked = paused),
+  onBuyShopItem: (itemId: ShopItemId) => room?.send(MSG.buyShopItem, { itemId }),
 });
 
 async function connect(open: () => Promise<GameRoom>): Promise<void> {
@@ -47,7 +48,9 @@ async function connect(open: () => Promise<GameRoom>): Promise<void> {
 function enter(r: GameRoom): void {
   room = r;
   leaving = false;
-  scene().attach(r);
+  scene().attach(r, {
+    onShopOpen: () => overlay.openShop(),
+  });
   r.onStateChange((state) => overlay.render(state, r.sessionId));
   r.onLeave(() => {
     if (room !== r) return;

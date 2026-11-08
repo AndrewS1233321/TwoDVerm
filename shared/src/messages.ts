@@ -11,6 +11,8 @@ export const MSG = {
   voteLocation: "voteLocation",
   /** Gingey Wastes: host confirms travel after votes. */
   travel: "travel",
+  /** Merchant hall: buy a shop item by id. */
+  buyShopItem: "buyShopItem",
   fx: "fx",
 } as const;
 
@@ -63,6 +65,8 @@ export type FxEvent =
   | { t: "pickup"; id: string; kind: string }
   | { t: "gasburst"; x: number; y: number }
   | { t: "gold"; x: number; y: number; amount: number }
+  /** Opens the merchant shop UI for this player. */
+  | { t: "shop"; id: string }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {
