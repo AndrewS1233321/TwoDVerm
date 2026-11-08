@@ -37,31 +37,47 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   // Race pool resolution (non-skaven falls back inside enemiesForRaces).
   const pools = enemiesForRaces(props);
 
+  const isSewer = props.levelType === "sewer";
   const sectionCount = budgets.sectionCount;
-  const roomsPer = budgets.roomsPerSection;
   const margin = 2;
   const gap = 3;
+  /** Sewer tunnels: 2 tiles wide; others stay 1-wide. */
+  const corridorWidth = isSewer ? 2 : 1;
 
   const rooms: ProcRoom[] = [];
   let nextId = 0;
   let cursorX = margin;
 
   for (let s = 0; s < sectionCount; s++) {
-    let localX = cursorX;
-    let localY = margin;
+    // Sewer: each section rolls its own room count (5–12). Others use difficulty budget.
+    const roomsPer = isSewer ? 5 + Math.floor(rng() * 8) : budgets.roomsPerSection;
     const sectionRoomIds: number[] = [];
+    let prev: ProcRoom | null = null;
 
     for (let r = 0; r < roomsPer; r++) {
       const w = 7 + Math.floor(rng() * 3);
       const h = 6 + Math.floor(rng() * 3);
-      // Snake: even index go right on top row, odd drop and go right on bottom offset
-      if (r === 0) {
+      let localX: number;
+      let localY: number;
+
+      if (!prev) {
         localX = cursorX;
         localY = margin + (s % 2) * 2;
-      } else {
-        localX += gap + 7;
+      } else if (isSewer) {
+        const tunnel = sewerCorridorLength(rng);
+        // Snake: every 3rd room drops via a long vertical tunnel, else continue right.
         if (r % 3 === 0) {
-          localY += gap + 6;
+          localX = prev.x;
+          localY = prev.y + prev.h + tunnel;
+        } else {
+          localX = prev.x + prev.w + tunnel;
+          localY = prev.y;
+        }
+      } else {
+        localX = prev.x + prev.w + gap;
+        localY = prev.y;
+        if (r % 3 === 0) {
+          localY = prev.y + prev.h + gap;
           localX = cursorX + Math.floor(r / 3) * 2;
         }
       }
@@ -78,6 +94,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
       };
       rooms.push(room);
       sectionRoomIds.push(room.id);
+      prev = room;
     }
 
     const obj = rooms[rooms.length - 1]!;
@@ -87,13 +104,14 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     obj.h = Math.max(obj.h, 8);
 
     const sectionRight = Math.max(...rooms.filter((rm) => rm.sectionIndex === s).map((rm) => rm.x + rm.w));
-    cursorX = sectionRight + gap * 3;
+    cursorX = sectionRight + (isSewer ? sewerCorridorLength(rng) : gap * 3);
   }
 
   const lastObj = rooms.filter((r) => r.isObjective).sort((a, b) => a.sectionIndex - b.sectionIndex).at(-1)!;
+  const exitGap = isSewer ? sewerCorridorLength(rng) : gap + 1;
   const exitRoom: ProcRoom = {
     id: nextId++,
-    x: lastObj.x + lastObj.w + gap + 1,
+    x: lastObj.x + lastObj.w + exitGap,
     y: lastObj.y,
     w: 6,
     h: 6,
@@ -103,8 +121,10 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   };
   rooms.push(exitRoom);
 
-  const width = Math.max(...rooms.map((r) => r.x + r.w)) + margin + 2;
-  const height = Math.max(...rooms.map((r) => r.y + r.h)) + margin + 2;
+  // Extra pad so 2-wide sewer tunnels / gates stay inside the tile grid.
+  const pad = margin + 2 + (isSewer ? 1 : 0);
+  const width = Math.max(...rooms.map((r) => r.x + r.w)) + pad;
+  const height = Math.max(...rooms.map((r) => r.y + r.h)) + pad;
 
   const tiles = new Uint8Array(width * height).fill(TILE_WALL);
   const decor = new Uint8Array(width * height);
@@ -122,21 +142,52 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   };
   for (const r of rooms) carveRoom(r);
 
+  const paintFloor = (tx: number, ty: number) => {
+    if (tx < 1 || ty < 1 || tx >= width - 1 || ty >= height - 1) return;
+    const i = ty * width + tx;
+    tiles[i] = TILE_FLOOR;
+    decor[i] = decorId;
+  };
+
+  /** L-shaped tunnel; `corridorWidth` 2 carves a parallel neighbour so sewers stay narrow but walkable. */
   const carveCorridor = (x0: number, y0: number, x1: number, y1: number) => {
     let x = clamp(Math.floor(x0), 1, width - 2);
     let y = clamp(Math.floor(y0), 1, height - 2);
     const tx = clamp(Math.floor(x1), 1, width - 2);
     const ty = clamp(Math.floor(y1), 1, height - 2);
+    const stroke = (px: number, py: number, horizontal: boolean) => {
+      paintFloor(px, py);
+      if (corridorWidth < 2) return;
+      if (horizontal) paintFloor(px, py + 1);
+      else paintFloor(px + 1, py);
+    };
     while (x !== tx) {
-      tiles[y * width + x] = TILE_FLOOR;
-      decor[y * width + x] = decorId;
+      stroke(x, y, true);
       x += x < tx ? 1 : -1;
     }
     while (y !== ty) {
-      tiles[y * width + x] = TILE_FLOOR;
-      decor[y * width + x] = decorId;
+      stroke(x, y, false);
       y += y < ty ? 1 : -1;
     }
+    // Ensure the bend / endpoint is fully 2-wide.
+    stroke(tx, ty, true);
+    if (corridorWidth >= 2) stroke(tx, ty, false);
+  };
+
+  const placeGateBand = (mx: number, my: number): number[] => {
+    const indices: number[] = [];
+    const mark = (tx: number, ty: number) => {
+      if (tx < 1 || ty < 1 || tx >= width - 1 || ty >= height - 1) return;
+      const i = ty * width + tx;
+      tiles[i] = TILE_GATE;
+      indices.push(i);
+    };
+    mark(mx, my);
+    if (corridorWidth >= 2) {
+      mark(mx, my + 1);
+      mark(mx + 1, my);
+    }
+    return indices;
   };
 
   const centerOf = (r: ProcRoom) => ({
@@ -161,9 +212,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
       carveCorridor(a.x, a.y, b.x, b.y);
       const mx = clamp(Math.floor((a.x + b.x) / 2), 1, width - 2);
       const my = clamp(Math.floor((a.y + b.y) / 2), 1, height - 2);
-      const gi = my * width + mx;
-      tiles[gi] = TILE_GATE;
-      sectionGates.push([gi]);
+      sectionGates.push(placeGateBand(mx, my));
     }
   }
 
@@ -172,9 +221,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   carveCorridor(bossCenter.x, bossCenter.y, exitCenter.x, exitCenter.y);
   const exitGateX = clamp(Math.floor((bossCenter.x + exitCenter.x) / 2), 1, width - 2);
   const exitGateY = clamp(Math.floor((bossCenter.y + exitCenter.y) / 2), 1, height - 2);
-  const exitGateI = exitGateY * width + exitGateX;
-  tiles[exitGateI] = TILE_GATE;
-  sectionGates.push([exitGateI]);
+  sectionGates.push(placeGateBand(exitGateX, exitGateY));
 
   const level: Level = {
     width,
@@ -305,9 +352,11 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
   }
 
   // Barrels: per room density roll (exit/start skipped for clear staging).
+  // Sewers spawn about half as many.
+  const barrelDensity = isSewer ? 0.5 : 1;
   for (const r of rooms) {
     if (r.role === "exit" || r.id === startRoom.id) continue;
-    placeBarrelsInRoom(level, r, rng);
+    placeBarrelsInRoom(level, r, rng, barrelDensity);
   }
 
   level.bossRoom = computeBossRoom(level);
@@ -329,11 +378,17 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
+/** Inclusive tunnel length between sewer room edges (tiles). */
+function sewerCorridorLength(rng: () => number): number {
+  return 10 + Math.floor(rng() * 16);
+}
+
 /**
  * 50% none, 25% few (1–3 or 3% fill), 15% many (4–5 or 7%), 10% lots (6–9 or 15%).
  * Fill uses room tile count; one barrel ≈ one tile of footprint.
+ * `density` scales the final count (sewers use 0.5).
  */
-function placeBarrelsInRoom(level: Level, r: ProcRoom, rng: () => number): void {
+function placeBarrelsInRoom(level: Level, r: ProcRoom, rng: () => number, density = 1): void {
   const roll = rng();
   let count = 0;
   const tiles = Math.max(1, r.w * r.h);
@@ -348,6 +403,8 @@ function placeBarrelsInRoom(level: Level, r: ProcRoom, rng: () => number): void 
     const ranged = 6 + Math.floor(rng() * 4);
     count = Math.max(ranged, Math.ceil(tiles * 0.15));
   }
+  count = Math.floor(count * density);
+  if (count <= 0) return;
   const placed: { x: number; y: number }[] = [];
   const minDist = 28;
   for (let attempt = 0; attempt < count * 8 && placed.length < count; attempt++) {

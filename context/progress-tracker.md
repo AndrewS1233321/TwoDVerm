@@ -13,6 +13,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Sewer layout**: each section rolls 5–12 rooms; tunnels between
+  rooms / sections are 10–25 tiles long and 2 wide; barrel density
+  halved vs other level types.
 - **Boss room lock**: Rat Ogre only spawns when every living hero is in
   the boss arena; while `bossActive`, heroes are confined to that room
   until the ogre dies (Default + Wastes proc). Boss area covers the

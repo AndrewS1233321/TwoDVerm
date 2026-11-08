@@ -44,6 +44,15 @@ function check(props: LevelProperties, seed: number): void {
   const last = meta.objectives[meta.objectives.length - 1];
   if (!last || last.kind !== "boss") problems.push(`${tag}: final objective is not boss`);
 
+  if (props.levelType === "sewer") {
+    for (const section of meta.sections) {
+      const n = section.roomIds.length;
+      if (n < 5 || n > 12) {
+        problems.push(`${tag}: section ${section.index} has ${n} rooms (want 5–12)`);
+      }
+    }
+  }
+
   console.log(
     `OK ${tag}: ${level.width}x${level.height}, ${meta.rooms.length} rooms, ${meta.objectives.length} objs, reachable=${open.reachable}`,
   );
