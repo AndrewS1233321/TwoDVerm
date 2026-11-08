@@ -361,7 +361,7 @@ function updateHooker(world: World, e: Enemy, target: Hero | undefined, dt: numb
     if (done) {
       e.attack = null;
       e.state = "chase";
-      e.cooldown = 1.5;
+      e.cooldown = 0.75;
     }
     return;
   }

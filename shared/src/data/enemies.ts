@@ -104,7 +104,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     elite: false,
     race: "skaven",
     attacks: [
-      { id: "hook_grab", windup: 0.5, active: 0.15, recovery: 1, reach: 28, arc: deg(60), damage: 0, cleave: 1, stagger: 0, blockCost: 0, swing: { from: 0, to: 0, thrust: 20 } },
+      { id: "hook_grab", windup: 0.25, active: 0.12, recovery: 0.5, reach: 34, arc: deg(60), damage: 0, cleave: 1, stagger: 0, blockCost: 0, swing: { from: 0, to: 0, thrust: 24 } },
     ],
   },
   ogre: {
