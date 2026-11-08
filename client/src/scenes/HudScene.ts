@@ -108,7 +108,11 @@ export class HudScene extends Phaser.Scene {
     this.drawPrompt(me, W, H);
     this.drawOffscreen(me);
     const t = this.texts;
-    t.info!.setPosition(W - 12, 10).setText(`Ping ${this.game_.ping} ms   Kills ${me.kills}   Team ${room.state.totalKills}   ${formatTime(room.state.missionTime)}`);
+    t.info!
+      .setPosition(W - 12, 10)
+      .setText(
+        `${me.gold} GP   Ping ${this.game_.ping} ms   Kills ${me.kills}   Team ${room.state.totalKills}   ${formatTime(room.state.missionTime)}`,
+      );
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)

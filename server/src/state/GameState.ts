@@ -52,6 +52,8 @@ export class PlayerState extends Schema {
 
   @type("uint16") kills = 0;
   @type("uint32") damageDealt = 0;
+  /** Personal gold purse (GP). */
+  @type("uint32") gold = 0;
 
   /** Gingey Wastes Holseher's Map vote (location id) or "". */
   @type("string") vote = "";

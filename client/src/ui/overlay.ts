@@ -191,7 +191,7 @@ export class Overlay {
       this.inspected ?? "",
       ...players.map(
         (p) =>
-          `${p.id}:${p.name}:${p.heroId}:${p.connected}:${p.vote}:${state.phase === "lobby" || state.phase === "expedition" ? "" : `${p.kills}:${p.damageDealt}`}`,
+          `${p.id}:${p.name}:${p.heroId}:${p.connected}:${p.vote}:${state.phase === "lobby" || state.phase === "expedition" ? "" : `${p.kills}:${p.damageDealt}:${p.gold ?? 0}`}`,
       ),
     ].join("|");
     if (sig === this.signature) return;
@@ -417,7 +417,7 @@ export class Overlay {
     el("results-body").innerHTML = [...state.players.values()]
       .map((p) => {
         const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "-";
-        return `<tr><td>${escapeHtml(p.name)}${p.id === localId ? " (you)" : ""}</td><td>${hero}</td><td>${p.kills}</td><td>${Math.round(p.damageDealt)}</td></tr>`;
+        return `<tr><td>${escapeHtml(p.name)}${p.id === localId ? " (you)" : ""}</td><td>${hero}</td><td>${p.kills}</td><td>${Math.round(p.damageDealt)}</td><td>${p.gold ?? 0} GP</td></tr>`;
       })
       .join("");
     const isHost = state.hostId === localId;

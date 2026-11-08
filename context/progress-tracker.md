@@ -23,6 +23,10 @@ Update this file after every meaningful implementation change.
   size (`hordeSize() * 2`).
 - **Merchant exit countdown**: HudScene runs in `merchant` phase so the
   centered exit hold timer matches mission / wastes exits.
+- **Gold drops**: kills can drop GP (slave 5%, clanrat 10%, elite 15%,
+  special 50% → 1–5 GP; Rat Ogre 100% → 100–200 GP). Drop is split
+  evenly across every hero’s personal purse (remainder distributed);
+  gold persists across wastes stops for merchant spending.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;

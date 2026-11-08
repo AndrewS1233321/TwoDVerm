@@ -30,7 +30,7 @@ import { Predictor } from "../net/prediction";
 import type { EnemyView, PlayerView } from "../net/types";
 import { Effects } from "../render/effects";
 import { LevelRenderer } from "../render/levelRenderer";
-import { colors } from "../render/palette";
+import { colors, palette } from "../render/palette";
 import { SummonPadRenderer } from "../render/summonPads";
 import { enemyTextureKey, enemyWeaponStyle, generateTextures, heroTextureKey, rangedWeaponStyle } from "../render/textures";
 import { CreatureView, type PoseInfo } from "../render/views";
@@ -653,6 +653,10 @@ export class GameScene extends Phaser.Scene {
         }
         case "pickup":
           if (e.id === this.localId) playSfx("pickup", { volume: 0.8 });
+          break;
+        case "gold":
+          this.effects.damageNumber(e.x, e.y - 12, `+${e.amount} GP`, palette.accent, e.amount >= 100);
+          playSfx("pickup", { volume: 0.55 });
           break;
         case "gasburst":
           this.effects.gasBurst(e.x, e.y, 72);

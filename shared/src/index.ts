@@ -12,6 +12,7 @@ export * from "./data/heroes";
 export * from "./data/enemies";
 export * from "./data/attacks";
 export * from "./data/barrels";
+export * from "./data/gold";
 export { MISSION_1 } from "./levels/mission1";
 export { TESTING_ZONE } from "./levels/testingZone";
 export { WASTES_CAMP } from "./levels/wastesCamp";

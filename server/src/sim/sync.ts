@@ -50,6 +50,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.ackSeq = hero.ackSeq;
   s.kills = hero.kills;
   s.damageDealt = Math.round(hero.damageDealt);
+  s.gold = Math.max(0, Math.floor(hero.gold));
 }
 
 export function syncWorld(world: World, state: GameState): void {

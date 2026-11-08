@@ -62,6 +62,7 @@ export type FxEvent =
   | { t: "ult"; id: string; ult: string; x: number; y: number }
   | { t: "pickup"; id: string; kind: string }
   | { t: "gasburst"; x: number; y: number }
+  | { t: "gold"; x: number; y: number; amount: number }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {

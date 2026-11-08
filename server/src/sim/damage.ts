@@ -6,6 +6,9 @@ import {
   HERO_DAMAGE_TAKEN,
   hitSide,
   MELEE,
+  rollGoldDrop,
+  splitGoldEvenly,
+  type EnemyId,
 } from "@twodverm/shared";
 import type { Enemy, Hero } from "./types";
 import type { World } from "./World";
@@ -93,10 +96,22 @@ export function killEnemy(world: World, enemy: Enemy, hero: Hero | null): void {
   world.totalKills++;
   if (hero) hero.kills++;
   world.emit({ t: "death", id: enemy.id, x: enemy.x, y: enemy.y, kind: enemy.def.id, by: hero?.id ?? "" });
+  awardGoldOnKill(world, enemy.def.id, enemy.x, enemy.y);
   if (enemy.def.behavior === "boss") {
     world.bossActive = false;
     world.emit({ t: "announce", text: "The Rat Ogre is slain!", kind: "boss" });
   }
+}
+
+/** Roll a gold drop and split it evenly across every hero's personal purse. */
+function awardGoldOnKill(world: World, enemyId: EnemyId, x: number, y: number): void {
+  const amount = rollGoldDrop(enemyId, world.rng);
+  if (amount <= 0) return;
+  const heroes = [...world.heroes.values()];
+  const shares = splitGoldEvenly(amount, heroes.length);
+  if (shares.length === 0) return;
+  for (let i = 0; i < heroes.length; i++) heroes[i]!.gold += shares[i]!;
+  world.emit({ t: "gold", x, y, amount });
 }
 
 export function releaseGrab(world: World, enemy: Enemy): void {

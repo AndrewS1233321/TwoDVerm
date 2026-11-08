@@ -48,6 +48,8 @@ export interface PlayerView {
   ackSeq: number;
   kills: number;
   damageDealt: number;
+  /** Personal gold purse (GP). */
+  gold: number;
   /** Gingey Wastes vote (location id) or "". */
   vote: string;
   carryingBarrel: boolean;

@@ -91,6 +91,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     ackSeq: 0,
     kills: 0,
     damageDealt: 0,
+    gold: 0,
   };
   return hero;
 }
@@ -100,6 +101,7 @@ export function resetHeroForMission(hero: Hero, x: number, y: number): void {
   fresh.connected = hero.connected;
   fresh.ackSeq = hero.ackSeq;
   fresh.actionSeq = hero.actionSeq + 1;
+  fresh.gold = hero.gold;
   Object.assign(hero, fresh);
 }
 
