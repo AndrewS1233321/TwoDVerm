@@ -116,7 +116,12 @@ export function queueInput(hero: Hero, input: InputMessage): void {
 /** The movement limits for this hero's current state. Also synced to the client for prediction. */
 export function heroMoveMods(hero: Hero): MoveMods {
   const key = hero.state === "attack" && hero.attack ? hero.attack.phase : hero.state;
-  let speed = hero.def.speed * (HERO_STATE_SPEED[key] ?? 1);
+  // Kerri's daggers keep full move speed through windup / active / recovery / charge.
+  const daggerFullSpeed =
+    hero.def.weapon.style === "daggers" &&
+    !hero.rangedMode &&
+    (key === "windup" || key === "active" || key === "recovery" || key === "charging");
+  let speed = hero.def.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
   if (hero.carryingBarrelId) speed *= BARREL.carrySpeedMul;
   const turnRate = HERO_TURN_RATE * (HERO_STATE_TURN[key] ?? 1);
   const stateAllowsDodge =
