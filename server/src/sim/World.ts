@@ -8,10 +8,12 @@ import {
   initialLevelIdForMode,
   INTERACT_RANGE,
   isInZone,
+  isPerkId,
   isShopItemId,
   MAX_ENEMIES,
   MERCHANT_EXIT_HOLD,
   parseLevelById,
+  perksOfferedFor,
   SHOP_ITEMS,
   TILE_FLOOR,
   tileIndexAt,
@@ -157,19 +159,41 @@ export class World {
     for (const hero of this.heroes.values()) {
       hero.gold = 0;
       hero.dmgUpStacks = 0;
+      hero.perks.clear();
+      hero.wardCd = 0;
     }
+  }
+
+  /** Hero who may trade right now (merchant phase, standing, next to the merchant). */
+  private shopper(heroId: string): Hero | null {
+    if (this.phase !== "merchant") return null;
+    const hero = this.heroes.get(heroId);
+    if (!hero || hero.state === "dead" || hero.state === "downed") return null;
+    const nearMerchant = [...this.enemies.values()].some(
+      (e) => e.def.id === "merchant" && dist(hero.x, hero.y, e.x, e.y) <= INTERACT_RANGE + e.radius + 24,
+    );
+    return nearMerchant ? hero : null;
+  }
+
+  /** Buy a one-time hero perk. Returns false if the buy is rejected. */
+  buyPerk(heroId: string, perkId: string): boolean {
+    if (!isPerkId(perkId)) return false;
+    const hero = this.shopper(heroId);
+    if (!hero) return false;
+    const perk = perksOfferedFor(hero.def.id, hero.perks).find((p) => p.id === perkId);
+    if (!perk || hero.gold < perk.cost) return false;
+    hero.gold -= perk.cost;
+    hero.perks.add(perk.id);
+    if (perk.id === "rune_ward") hero.wardCd = 0;
+    this.emit({ t: "pickup", id: hero.id, kind: "shop" });
+    return true;
   }
 
   /** Spend gold on a merchant item. Returns false if the buy is rejected. */
   buyShopItem(heroId: string, itemId: string): boolean {
-    if (this.phase !== "merchant") return false;
     if (!isShopItemId(itemId)) return false;
-    const hero = this.heroes.get(heroId);
-    if (!hero || hero.state === "dead" || hero.state === "downed") return false;
-    const nearMerchant = [...this.enemies.values()].some(
-      (e) => e.def.id === "merchant" && dist(hero.x, hero.y, e.x, e.y) <= INTERACT_RANGE + e.radius + 24,
-    );
-    if (!nearMerchant) return false;
+    const hero = this.shopper(heroId);
+    if (!hero) return false;
     const item = SHOP_ITEMS[itemId];
     if (hero.gold < item.cost) return false;
     hero.gold -= item.cost;

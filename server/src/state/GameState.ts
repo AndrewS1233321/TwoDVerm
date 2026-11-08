@@ -56,6 +56,10 @@ export class PlayerState extends Schema {
   @type("uint32") gold = 0;
   /** Merchant "dmg up +10%" stacks owned this run. */
   @type("uint16") dmgUpStacks = 0;
+  /** Comma-separated owned perk ids. */
+  @type("string") perks = "";
+  /** True while Rune Ward is charged (drives the glow). */
+  @type("boolean") wardReady = false;
 
   /** Gingey Wastes Holseher's Map vote (location id) or "". */
   @type("string") vote = "";

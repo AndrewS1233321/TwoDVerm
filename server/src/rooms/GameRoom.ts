@@ -88,6 +88,12 @@ export class GameRoom extends Room<GameState> {
       if (this.world.buyShopItem(client.sessionId, itemId)) this.syncAll();
     });
 
+    this.onMessage(MSG.buyPerk, (client, raw: unknown) => {
+      const perkId = (raw as { perkId?: unknown } | null)?.perkId;
+      if (typeof perkId !== "string") return;
+      if (this.world.buyPerk(client.sessionId, perkId)) this.syncAll();
+    });
+
     this.onMessage(MSG.voteLocation, (client, raw: unknown) => {
       if (this.state.phase !== "expedition") return;
       const locationId = (raw as { locationId?: unknown } | null)?.locationId;

@@ -93,6 +93,8 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     damageDealt: 0,
     gold: 0,
     dmgUpStacks: 0,
+    perks: new Set(),
+    wardCd: 0,
   };
   return hero;
 }
@@ -104,6 +106,7 @@ export function resetHeroForMission(hero: Hero, x: number, y: number): void {
   fresh.actionSeq = hero.actionSeq + 1;
   fresh.gold = hero.gold;
   fresh.dmgUpStacks = hero.dmgUpStacks;
+  fresh.perks = hero.perks;
   Object.assign(hero, fresh);
 }
 
@@ -307,6 +310,7 @@ function tickTimers(hero: Hero, dt: number): void {
   hero.ultActiveT = Math.max(0, hero.ultActiveT - dt);
   hero.guardBrokenT = Math.max(0, hero.guardBrokenT - dt);
   hero.lightBufferT = Math.max(0, hero.lightBufferT - dt);
+  hero.wardCd = Math.max(0, hero.wardCd - dt);
   if (hero.state !== "attack" && hero.state !== "charging") {
     hero.comboT += dt;
     if (hero.comboT > MELEE.comboResetTime) {

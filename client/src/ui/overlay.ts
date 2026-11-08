@@ -6,6 +6,9 @@ import {
   HEROES,
   LEVEL_TYPE_LABELS,
   MAX_PLAYERS,
+  parsePerks,
+  perksForHero,
+  perksOfferedFor,
   SHOP_ITEMS,
   WASTES_EXPEDITION_STOPS,
   isExpeditionLocationId,
@@ -17,6 +20,7 @@ import {
   type GameMode,
   type HeroId,
   type LevelProperties,
+  type PerkId,
   type ShopItemId,
 } from "@twodverm/shared";
 import type { GameStateView } from "../net/types";
@@ -33,7 +37,13 @@ export interface OverlayHandlers {
   onLeave(): void;
   onPauseChange(paused: boolean): void;
   onBuyShopItem(itemId: ShopItemId): void;
+  onBuyPerk(perkId: PerkId): void;
 }
+
+const PERK_ICON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <path d="M32 6 L54 14 V32 C54 46 44 54 32 58 C20 54 10 46 10 32 V14 Z" fill="#16303f" stroke="#8fd3ff" stroke-width="3" />
+  <path d="M32 18 V46 M22 26 L32 34 L42 26 M24 40 L32 34 L40 40" fill="none" stroke="#bfe8ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</svg>`;
 
 type ScreenId = "menu" | "lobby" | "expedition" | "results" | "pause" | "settings" | "shop";
 
@@ -94,6 +104,11 @@ export class Overlay {
     el("settings-close-btn").onclick = () => el("settings").classList.remove("show");
     el("shop-close-btn").onclick = () => this.closeShop();
     el("shop-buy-dmg").onclick = () => this.h.onBuyShopItem("dmg_up");
+    el("shop-perks").onclick = (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-perk]");
+      const id = btn?.dataset.perk;
+      if (btn && !btn.disabled && id) this.h.onBuyPerk(id as PerkId);
+    };
     this.bindSettings();
 
     window.addEventListener("keydown", (e) => {
@@ -107,6 +122,7 @@ export class Overlay {
   openShop(): void {
     if (!this.inRoom || this.currentPhase !== "merchant") return;
     this.shopOpen = true;
+    this.perkSignature = "";
     el("shop").classList.add("show");
     this.h.onPauseChange(true);
     this.refreshShop();
@@ -204,6 +220,41 @@ export class Overlay {
     const buy = el<HTMLButtonElement>("shop-buy-dmg");
     buy.disabled = gold < item.cost;
     buy.textContent = gold < item.cost ? "Need gold" : "Buy";
+    this.renderShopPerks(me?.heroId ?? "", me?.perks ?? "", gold);
+  }
+
+  private perkSignature = "";
+
+  /** Owned perks stay listed as "Owned"; offered perks get a Buy button. */
+  private renderShopPerks(heroId: string, perksRaw: string, gold: number): void {
+    const owned = parsePerks(perksRaw);
+    const offered = new Set(perksOfferedFor(heroId, owned).map((p) => p.id));
+    const listed = perksForHero(heroId).filter((p) => owned.has(p.id) || offered.has(p.id));
+    const sig = `${heroId}|${perksRaw}|${listed.map((p) => `${p.id}:${gold >= p.cost}`).join(",")}`;
+    if (sig === this.perkSignature) return;
+    this.perkSignature = sig;
+    const box = el("shop-perks");
+    if (listed.length === 0) {
+      box.innerHTML = `<div class="shop-empty">No perks available</div>`;
+      return;
+    }
+    box.innerHTML = listed
+      .map((p) => {
+        const isOwned = owned.has(p.id);
+        const afford = gold >= p.cost;
+        const action = isOwned
+          ? `<div class="shop-item-owned">Owned</div>`
+          : `<div class="shop-item-cost">${p.cost} GP</div><button class="primary" data-perk="${p.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>`;
+        return `<div class="shop-item${isOwned ? " owned" : ""}">
+          <div class="shop-item-icon" aria-hidden="true">${PERK_ICON}</div>
+          <div>
+            <div class="shop-item-name">${escapeHtml(p.name)}</div>
+            <p class="shop-item-desc">${escapeHtml(p.description)}</p>
+          </div>
+          <div class="shop-item-buy">${action}</div>
+        </div>`;
+      })
+      .join("");
   }
 
   /** Called on every state patch; only rebuilds the DOM when something visible changed. */

@@ -33,6 +33,14 @@ Update this file after every meaningful implementation change.
   explosion icon. Economy resets when a new run starts.
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / revive / barrel charge and raises guard.
+- **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
+  with per-hero eligibility and `requires` / `excludes` fields for
+  future dependencies. Merchant lists every eligible perk each visit
+  (`perksOfferedFor`); one-time buys at 50 GP; persist for the run.
+  First perk: Bardin's **Rune Ward** — every 20s absorbs one discrete
+  hit (`strikeHero`; gas / drag ticks ignore it), shown as a faint
+  light blue glow while charged. Future: random offer pools and
+  per-perk pricing slot into `perksOfferedFor` / `PerkDef.cost`.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;

@@ -7,6 +7,7 @@ import {
   hitSide,
   MELEE,
   rollGoldDrop,
+  RUNE_WARD,
   shopDamageMul,
   splitGoldEvenly,
   type EnemyId,
@@ -159,13 +160,18 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
         if (hit.stagger >= BLOCK.heavyBlockStaggerPower) staggerHero(hero, BLOCK.heavyBlockStaggerTime);
         return "blocked";
       }
+      if (tryRuneWard(world, hero)) return "blocked";
       hero.stamina = 0;
       hero.staminaDelay = BLOCK.staminaRegenDelay;
       hero.guardBrokenT = BLOCK.guardBreakLockout;
       damage *= BLOCK.guardBreakDamageMul;
       world.emit({ t: "block", id: hero.id, x: hero.x, y: hero.y, broke: true });
       staggerHero(hero, BLOCK.guardBreakStagger);
+    } else if (tryRuneWard(world, hero)) {
+      return "blocked";
     }
+  } else if (hit.unblockable && hero.state !== "downed" && hero.state !== "grabbed" && tryRuneWard(world, hero)) {
+    return "blocked";
   }
 
   const dmg = damage * HERO_DAMAGE_TAKEN[side];
@@ -173,6 +179,14 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
   damageHero(world, hero, dmg);
   if (hit.stagger >= hero.def.staggerResist) staggerHero(hero, MELEE.staggerTime);
   return "hit";
+}
+
+/** Spend a charged Rune Ward to absorb one discrete hit. */
+function tryRuneWard(world: World, hero: Hero): boolean {
+  if (!hero.perks.has("rune_ward") || hero.wardCd > 0) return false;
+  hero.wardCd = RUNE_WARD.cooldown;
+  world.emit({ t: "ward", id: hero.id, x: hero.x, y: hero.y });
+  return true;
 }
 
 /** Raw damage with no blocking or dodging (gas, being dragged, bleeding). */

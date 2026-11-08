@@ -1,4 +1,4 @@
-import { BARREL, DOWNED, serializeLevelProps } from "@twodverm/shared";
+import { BARREL, DOWNED, serializeLevelProps, serializePerks } from "@twodverm/shared";
 import { BarrelState, EnemyState, HazardState, PickupState, type GameState, type PlayerState } from "../state/GameState";
 import { phaseNumber } from "./attacks";
 import { heroMoveMods } from "./heroes";
@@ -52,6 +52,8 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.damageDealt = Math.round(hero.damageDealt);
   s.gold = Math.max(0, Math.floor(hero.gold));
   s.dmgUpStacks = Math.max(0, Math.floor(hero.dmgUpStacks));
+  s.perks = serializePerks(hero.perks);
+  s.wardReady = hero.perks.has("rune_ward") && hero.wardCd <= 0;
 }
 
 export function syncWorld(world: World, state: GameState): void {

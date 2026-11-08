@@ -52,6 +52,10 @@ export interface PlayerView {
   gold: number;
   /** Merchant dmg-up stacks this run. */
   dmgUpStacks: number;
+  /** Comma-separated owned perk ids. */
+  perks: string;
+  /** Rune Ward charged (glow). */
+  wardReady: boolean;
   /** Gingey Wastes vote (location id) or "". */
   vote: string;
   carryingBarrel: boolean;

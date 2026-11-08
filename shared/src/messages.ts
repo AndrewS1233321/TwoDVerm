@@ -13,6 +13,8 @@ export const MSG = {
   travel: "travel",
   /** Merchant hall: buy a shop item by id. */
   buyShopItem: "buyShopItem",
+  /** Merchant hall: buy a hero perk by id. */
+  buyPerk: "buyPerk",
   fx: "fx",
 } as const;
 
@@ -67,6 +69,8 @@ export type FxEvent =
   | { t: "gold"; x: number; y: number; amount: number }
   /** Opens the merchant shop UI for this player. */
   | { t: "shop"; id: string }
+  /** A hero's Rune Ward absorbed a hit. */
+  | { t: "ward"; id: string; x: number; y: number }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {

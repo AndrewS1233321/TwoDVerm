@@ -1,4 +1,4 @@
-import type { AttackDef, EnemyDef, HeroDef, InputMessage, MoveBody } from "@twodverm/shared";
+import type { AttackDef, EnemyDef, HeroDef, InputMessage, MoveBody, PerkId } from "@twodverm/shared";
 
 export type AttackKind = "light" | "heavy" | "enemy";
 export type AttackPhase = "windup" | "active" | "recovery";
@@ -102,6 +102,10 @@ export interface Hero extends MoveBody {
   gold: number;
   /** Stacks of merchant "dmg up +10%"; persists for the whole run. */
   dmgUpStacks: number;
+  /** Perks bought at the merchant; persist for the whole run. */
+  perks: Set<PerkId>;
+  /** Seconds until Rune Ward is ready again (ready when <= 0). */
+  wardCd: number;
 }
 
 export type EnemyAiState =

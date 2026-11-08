@@ -23,7 +23,11 @@ export interface PoseInfo {
   dodging?: boolean;
   connected?: boolean;
   rangedMode?: boolean;
+  /** Rune Ward charged: faint light blue glow. */
+  wardReady?: boolean;
 }
+
+const WARD_GLOW = 0x8fd3ff;
 
 export interface ViewOptions {
   kind: "hero" | "enemy";
@@ -332,6 +336,13 @@ export class CreatureView {
       top.beginPath();
       top.arc(info.x, info.y, r + 18, info.facing - 1.1, info.facing + 1.1, false);
       top.strokePath();
+    }
+    if (info.wardReady && info.state !== "downed" && info.state !== "dead") {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.004);
+      ground.fillStyle(WARD_GLOW, 0.12 + 0.08 * pulse);
+      ground.fillCircle(info.x, info.y, r + 9);
+      top.lineStyle(2, WARD_GLOW, 0.25 + 0.2 * pulse);
+      top.strokeCircle(info.x, info.y, r + 6);
     }
     if (info.impenetrable && (info.ultActive ?? 0) > 0) {
       top.lineStyle(3, colors.accent, 0.5 + 0.3 * Math.sin(now * 0.015));

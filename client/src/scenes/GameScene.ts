@@ -379,6 +379,7 @@ export class GameScene extends Phaser.Scene {
       dodging,
       connected: p.connected,
       rangedMode: p.rangedMode,
+      wardReady: p.wardReady,
     };
   }
 
@@ -664,6 +665,13 @@ export class GameScene extends Phaser.Scene {
         case "shop":
           if (e.id === this.localId) this.onShopOpen?.();
           break;
+        case "ward": {
+          const at = this.viewFor(e.id)?.position ?? e;
+          this.effects.ring(at.x, at.y, 0x8fd3ff, 46, 380);
+          this.effects.sparks(at.x, at.y, 0xbfe8ff, 10);
+          this.sfxAt("block", at, 0.9);
+          break;
+        }
         case "gasburst":
           this.effects.gasBurst(e.x, e.y, 72);
           this.sfxAt("gas", e, 0.9);

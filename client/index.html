@@ -484,6 +484,30 @@
         color: var(--accent);
         font-size: 14px;
       }
+      .shop-section {
+        margin: 18px 0 8px;
+        font-size: 16px;
+      }
+      .shop-perks {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .shop-item.owned {
+        opacity: 0.7;
+        border-color: #5a8aa8;
+      }
+      .shop-item-owned {
+        text-align: center;
+        color: #8fd3ff;
+        font-size: 14px;
+        padding: 8px 0;
+      }
+      .shop-empty {
+        color: var(--text-muted);
+        font-size: 13px;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
@@ -654,6 +678,8 @@
             <button id="shop-buy-dmg" class="primary">Buy</button>
           </div>
         </div>
+        <h3 class="shop-section">Perks</h3>
+        <div id="shop-perks" class="shop-perks"></div>
         <div class="stack" style="margin-top: 18px">
           <button id="shop-close-btn">Close</button>
         </div>
