@@ -402,6 +402,8 @@ export class GameScene extends Phaser.Scene {
       connected: p.connected,
       rangedMode: p.rangedMode,
       wardReady: p.wardReady,
+      riposteReady: p.riposteReady,
+      riposteStrike: p.riposteStrike,
       hidden: p.invisT > 0,
     };
   }
@@ -625,14 +627,16 @@ export class GameScene extends Phaser.Scene {
             }
           } else {
             const back = e.side === "back";
-            const color = e.armor ? "#9aa3ad" : back ? "#ff9a3a" : e.heavy ? "#ffd27a" : "#e8e0d0";
-            this.effects.damageNumber(at.x, at.y, back && !e.armor ? `${e.dmg}!` : `${e.dmg}`, color, back || e.heavy);
+            const crit = e.crit === true;
+            const color = e.armor ? "#9aa3ad" : crit ? "#ffe27a" : back ? "#ff9a3a" : e.heavy ? "#ffd27a" : "#e8e0d0";
+            const label = crit ? `${e.dmg} CRIT` : back && !e.armor ? `${e.dmg}!` : `${e.dmg}`;
+            this.effects.damageNumber(at.x, at.y, label, color, crit || back || e.heavy);
             if (e.armor) this.effects.sparks(at.x, at.y, 0xd8d0c0, 5, 90);
-            else this.effects.blood(at.x, at.y, back ? 1.5 : 1);
-            this.sfxAt(e.armor ? "armor" : back ? "backstab" : "hit", at, 0.7);
+            else this.effects.blood(at.x, at.y, crit || back ? 1.5 : 1);
+            this.sfxAt(e.armor ? "armor" : crit || back ? "backstab" : "hit", at, 0.7);
             if (e.by === this.localId) {
-              this.heroViews.get(this.localId)?.hitPause(e.heavy || back ? 90 : 55);
-              if (e.heavy || back) this.shake(60, 0.0025);
+              this.heroViews.get(this.localId)?.hitPause(e.heavy || back || crit ? 90 : 55);
+              if (e.heavy || back || crit) this.shake(60, 0.0025);
             }
           }
           break;

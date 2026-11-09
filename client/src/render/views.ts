@@ -27,11 +27,16 @@ export interface PoseInfo {
   rangedMode?: boolean;
   /** Rune Ward charged: faint light blue glow. */
   wardReady?: boolean;
+  /** Riposte charged after a dodge. */
+  riposteReady?: boolean;
+  /** Current melee swing is a Riposte crit (extend thrust visuals). */
+  riposteStrike?: boolean;
   /** Smoke Bomb stealth. Local player stays faintly visible. */
   hidden?: boolean;
 }
 
 const WARD_GLOW = 0x8fd3ff;
+const RIPOSTE_GLOW = 0xe8b84a;
 
 export interface ViewOptions {
   kind: "hero" | "enemy";
@@ -241,7 +246,8 @@ export class CreatureView {
       } else if (info.phase === 2) {
         const t = clamp(elapsed / Math.max(0.01, def.active), 0, 1);
         angle = lerp(def.swing.from, def.swing.to, easeOutCubic(t));
-        thrust = (def.swing.thrust ?? 0) * Math.sin(t * Math.PI);
+        const thrustMul = info.riposteStrike ? 2 : 1;
+        thrust = (def.swing.thrust ?? 0) * thrustMul * Math.sin(t * Math.PI);
       } else {
         const t = clamp(elapsed / Math.max(0.01, def.recovery), 0, 1);
         angle = lerp(def.swing.to, REST_ANGLE, easeInOut(t));
@@ -365,6 +371,13 @@ export class CreatureView {
       ground.fillCircle(info.x, info.y, r + 9);
       top.lineStyle(2, WARD_GLOW, 0.25 + 0.2 * pulse);
       top.strokeCircle(info.x, info.y, r + 6);
+    }
+    if (info.riposteReady && info.state !== "downed" && info.state !== "dead") {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.008);
+      top.lineStyle(2, RIPOSTE_GLOW, 0.35 + 0.35 * pulse);
+      top.beginPath();
+      top.arc(info.x, info.y, r + 7, info.facing - 0.55, info.facing + 0.55, false);
+      top.strokePath();
     }
     if (info.impenetrable && (info.ultActive ?? 0) > 0) {
       top.lineStyle(3, colors.accent, 0.5 + 0.3 * Math.sin(now * 0.015));

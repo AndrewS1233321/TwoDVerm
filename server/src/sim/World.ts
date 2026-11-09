@@ -166,6 +166,7 @@ export class World {
       hero.wardCd = 0;
       hero.invisT = 0;
       hero.vanishAfterDodge = false;
+      hero.riposteReady = false;
     }
   }
 

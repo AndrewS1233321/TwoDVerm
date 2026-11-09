@@ -1,6 +1,6 @@
 import type { HeroId } from "./types";
 
-export type PerkId = "rune_ward" | "smoke_bomb";
+export type PerkId = "rune_ward" | "smoke_bomb" | "riposte";
 
 export interface PerkDef {
   id: PerkId;
@@ -41,6 +41,14 @@ export function smokeCloudRadius(heroRadius: number): number {
   return SMOKE_BOMB.radiusDiameters * heroRadius * 2;
 }
 
+/** Viktor: after a dodge (not his ult dash), the next melee strike is extended and critical. */
+export const RIPOSTE = {
+  /** Multiplier applied to attack reach (and thrust / lunge for feel). */
+  reachMul: 2,
+  /** Damage multiplier for the guaranteed critical hit. */
+  critMul: 2,
+} as const;
+
 export const PERKS: Record<PerkId, PerkDef> = {
   rune_ward: {
     id: "rune_ward",
@@ -55,6 +63,13 @@ export const PERKS: Record<PerkId, PerkDef> = {
     description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 1.5s, and enemies stop chasing you.",
     cost: PERK_COST,
     heroIds: ["ranger"],
+  },
+  riposte: {
+    id: "riposte",
+    name: "Riposte",
+    description: "After a dodge, your next melee attack has double reach and is a guaranteed critical hit. Does not trigger from your ultimate.",
+    cost: PERK_COST,
+    heroIds: ["hunter"],
   },
 };
 

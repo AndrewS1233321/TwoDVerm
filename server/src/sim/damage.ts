@@ -6,6 +6,7 @@ import {
   HERO_DAMAGE_TAKEN,
   hitSide,
   MELEE,
+  RIPOSTE,
   rollGoldDrop,
   RUNE_WARD,
   shopDamageMul,
@@ -36,6 +37,8 @@ export interface EnemyHit {
   armorPierce?: boolean;
   backstabMul?: number;
   heavy?: boolean;
+  /** Guaranteed critical (Riposte): applies RIPOSTE.critMul. */
+  crit?: boolean;
   srcX: number;
   srcY: number;
 }
@@ -66,6 +69,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
       side: "front",
       armor: true,
       heavy: hit.heavy ?? false,
+      crit: hit.crit === true,
     });
     return;
   }
@@ -75,6 +79,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   const armor = enemy.def.armored && !hit.armorPierce && side !== "back";
   if (armor) mul *= ARMOR_NON_PIERCE_MUL;
   if (hero) mul *= shopDamageMul(hero.dmgUpStacks);
+  if (hit.crit) mul *= RIPOSTE.critMul;
   const dmg = hit.damage * mul;
 
   enemy.hp -= dmg;
@@ -84,7 +89,18 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     if (!hidden) enemy.lastDamagerId = hero.id;
     hero.damageDealt += dmg;
   }
-  world.emit({ t: "hit", id: enemy.id, by: hero?.id ?? "", x: enemy.x, y: enemy.y, dmg: Math.round(dmg), side, armor, heavy: hit.heavy ?? false });
+  world.emit({
+    t: "hit",
+    id: enemy.id,
+    by: hero?.id ?? "",
+    x: enemy.x,
+    y: enemy.y,
+    dmg: Math.round(dmg),
+    side,
+    armor,
+    heavy: hit.heavy ?? false,
+    crit: hit.crit === true,
+  });
 
   if (enemy.hp <= 0) {
     killEnemy(world, enemy, hero);
@@ -241,6 +257,7 @@ export function downHero(world: World, hero: Hero): void {
   if (hero.invisT > 0 || hero.vanishAfterDodge) world.rebuildFlow();
   hero.invisT = 0;
   hero.vanishAfterDodge = false;
+  hero.riposteReady = false;
   if (hero.grabbedBy) {
     const e = world.enemies.get(hero.grabbedBy);
     if (e) releaseGrab(world, e);
@@ -260,6 +277,7 @@ export function killHero(world: World, hero: Hero): void {
   if (hero.invisT > 0 || hero.vanishAfterDodge) world.rebuildFlow();
   hero.invisT = 0;
   hero.vanishAfterDodge = false;
+  hero.riposteReady = false;
   hero.state = "dead";
   hero.downHp = 0;
   hero.respawnT = DOWNED.respawnTime;

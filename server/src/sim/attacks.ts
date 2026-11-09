@@ -4,8 +4,8 @@ import { damageEnemy, strikeHero } from "./damage";
 import type { ActiveAttack, AttackKind, Enemy, Hero } from "./types";
 import type { World } from "./World";
 
-export function newAttack(def: AttackDef, kind: AttackKind): ActiveAttack {
-  return { def, kind, phase: "windup", t: 0, hit: new Set(), hitsLeft: def.cleave };
+export function newAttack(def: AttackDef, kind: AttackKind, crit = false): ActiveAttack {
+  return { def, kind, phase: "windup", t: 0, hit: new Set(), hitsLeft: def.cleave, crit };
 }
 
 export function phaseNumber(a: ActiveAttack | null): number {
@@ -68,6 +68,7 @@ export function heroMeleeHits(world: World, hero: Hero, a: ActiveAttack): void {
       armorPierce: a.def.armorPierce,
       backstabMul: a.def.backstabMul,
       heavy: a.kind === "heavy",
+      crit: a.crit,
       srcX: hero.x,
       srcY: hero.y,
     });

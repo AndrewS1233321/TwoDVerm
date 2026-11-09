@@ -11,6 +11,8 @@ export interface ActiveAttack {
   t: number;
   hit: Set<string>;
   hitsLeft: number;
+  /** Riposte: this swing is a guaranteed critical with extended reach. */
+  crit: boolean;
 }
 
 export type HeroState =
@@ -113,6 +115,8 @@ export interface Hero extends MoveBody {
   invisT: number;
   /** Dodge in progress should grant stealth when dodgeT hits 0. */
   vanishAfterDodge: boolean;
+  /** Riposte charged: next melee attack is extended + critical. */
+  riposteReady: boolean;
 }
 
 export type EnemyAiState =

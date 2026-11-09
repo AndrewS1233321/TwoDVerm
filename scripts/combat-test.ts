@@ -2,7 +2,7 @@
  * Offline checks of the combat rules, run straight on the server simulation (no network):
  *   npm run combat-test
  */
-import { DT, DODGE, HEROES, perksOfferedFor, SMOKE_BOMB, smokeCloudRadius, type FxEvent, type HeroId, type InputMessage } from "@twodverm/shared";
+import { DT, DODGE, HEROES, perksOfferedFor, RIPOSTE, SMOKE_BOMB, smokeCloudRadius, type FxEvent, type HeroId, type InputMessage } from "@twodverm/shared";
 import { strikeHero } from "../server/src/sim/damage";
 import type { Enemy, Hero } from "../server/src/sim/types";
 import { World } from "../server/src/sim/World";
@@ -295,6 +295,73 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   other.world.phase = "merchant";
   other.world.spawnEnemy("merchant", other.hero.x + 10, other.hero.y, false);
   check("Other heroes cannot buy Smoke Bomb", !other.world.buyPerk(other.hero.id, "smoke_bomb") && other.hero.gold === 50);
+}
+
+// Viktor's Riposte: after a dodge (not ult), next melee is double reach + guaranteed crit.
+{
+  const offered = perksOfferedFor("hunter", new Set()).map((p) => p.id);
+  check("Merchant offers Viktor Riposte", offered.includes("riposte"));
+  check("Riposte is not offered to Kerri", perksOfferedFor("ranger", new Set()).every((p) => p.id !== "riposte"));
+
+  const { world, hero } = setup("hunter");
+  hero.perks.add("riposte");
+  hero.facing = 0;
+  const baseReach = HEROES.hunter.weapon.light[0]!.reach;
+  // Beyond normal first-light reach, inside double-reach.
+  const gap = hero.radius + baseReach * 1.55;
+  const pin = (e: Enemy, x: number, y: number) => {
+    e.x = x;
+    e.y = y;
+    e.aggro = true;
+    e.cooldown = 999;
+    // Stay staggered so they never walk into range mid-swing.
+    e.state = "staggered";
+    e.stateT = 99;
+    e.def = { ...e.def, speed: 0 };
+  };
+
+  tick(world, hero, { dodge: true, mx: -1 });
+  check("Dodge charges Riposte", hero.riposteReady);
+
+  // Wait out dodge, then light attack into extended reach.
+  run(world, hero, DODGE.time + 0.05);
+  const near = dummy(world, hero.x + gap, hero.y, Math.PI);
+  pin(near, hero.x + gap, hero.y);
+  const hp0 = near.hp;
+  tick(world, hero, { attack: true, aim: 0 });
+  const fx = run(world, hero, 0.7, { aim: 0 });
+  check("Riposte swing uses double reach", near.hp < hp0, `hp ${hp0} -> ${near.hp}`);
+  check("Riposte is consumed after the attack", !hero.riposteReady && hero.attack === null);
+  const critHit = fx.find((f) => f.t === "hit" && f.id === near.id && f.crit === true);
+  check("Riposte hit is a guaranteed critical", !!critHit, critHit ? `dmg ${critHit.dmg}` : "no crit fx");
+  // Front hit (mul 1) × crit.
+  const expected = Math.round(HEROES.hunter.weapon.light[0]!.damage * RIPOSTE.critMul);
+  check("Critical multiplies damage", !!critHit && critHit.dmg === expected, critHit ? `${critHit.dmg} vs ${expected}` : "missing");
+
+  // Without a fresh dodge, a swing at the same gap misses and is not a crit.
+  world.enemies.delete(near.id);
+  hero.chainLight = 0;
+  hero.comboT = 99;
+  const far = dummy(world, hero.x + gap, hero.y, Math.PI);
+  pin(far, hero.x + gap, hero.y);
+  const hpFar = far.hp;
+  tick(world, hero, { attack: true, aim: 0 });
+  const fx2 = run(world, hero, 0.7, { aim: 0 });
+  check("Without Riposte, extended-range target is missed", far.hp === hpFar, `hp ${hpFar} -> ${far.hp}`);
+  check("Normal swings are not critical", !fx2.some((f) => f.t === "hit" && f.crit === true));
+
+  // Ultimate dash must not charge Riposte.
+  const { world: w2, hero: h2 } = setup("hunter");
+  h2.perks.add("riposte");
+  h2.ultCd = 0;
+  tick(w2, h2, { ult: true });
+  check("Ultimate dash does not charge Riposte", !h2.riposteReady && h2.dodgeT > 0 && h2.def.ult === "dash");
+
+  const buy = setup("hunter");
+  buy.hero.gold = 50;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check("Viktor can buy Riposte for 50 GP", buy.world.buyPerk(buy.hero.id, "riposte") && buy.hero.perks.has("riposte") && buy.hero.gold === 0);
 }
 
 console.log(failures === 0 ? "\nAll combat checks passed" : `\n${failures} combat check(s) failed`);

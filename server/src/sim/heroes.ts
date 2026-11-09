@@ -20,9 +20,11 @@ import {
   PRECISION_SHOT,
   PUSH,
   raycastWalls,
+  RIPOSTE,
   SMOKE_BOMB,
   smokeCloudRadius,
   stepMovement,
+  type AttackDef,
   inAttackArc,
   dist,
   type HeroDef,
@@ -104,6 +106,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     wardCd: 0,
     invisT: 0,
     vanishAfterDodge: false,
+    riposteReady: false,
   };
   return hero;
 }
@@ -211,6 +214,8 @@ export function processHeroInputs(world: World, hero: Hero): void {
         dropSmokeBomb(world, hero, dropX, dropY);
         hero.vanishAfterDodge = true;
       }
+      // Player dodge only (ult dash sets dodgeT without going through here).
+      if (hero.perks.has("riposte")) hero.riposteReady = true;
     }
     hero.lastInput = input;
     hero.ackSeq = input.seq;
@@ -408,11 +413,27 @@ function applyKnockback(world: World, hero: Hero, dt: number): void {
   hero.kvy *= decay;
 }
 
+/** Double reach / thrust / lunge for a Riposte-charged swing. */
+function riposteAttackDef(base: AttackDef): AttackDef {
+  const thrust = base.swing.thrust;
+  return {
+    ...base,
+    reach: base.reach * RIPOSTE.reachMul,
+    lunge: base.lunge !== undefined ? base.lunge * RIPOSTE.reachMul : undefined,
+    swing: {
+      ...base.swing,
+      thrust: thrust !== undefined ? thrust * RIPOSTE.reachMul : undefined,
+    },
+  };
+}
+
 function startLight(hero: Hero): void {
   const chain = hero.def.weapon.light;
-  const def = chain[hero.chainLight % chain.length]!;
+  const base = chain[hero.chainLight % chain.length]!;
   hero.chainLight = (hero.chainLight + 1) % chain.length;
-  hero.attack = newAttack(def, "light");
+  const crit = hero.riposteReady;
+  hero.riposteReady = false;
+  hero.attack = newAttack(crit ? riposteAttackDef(base) : base, "light", crit);
   hero.state = "attack";
   hero.lightBufferT = 0;
   hero.comboT = 0;
@@ -430,9 +451,11 @@ function startCharging(hero: Hero): void {
 
 function startHeavy(hero: Hero): void {
   const chain = hero.def.weapon.heavy;
-  const def = chain[hero.chainHeavy % chain.length]!;
+  const base = chain[hero.chainHeavy % chain.length]!;
   hero.chainHeavy = (hero.chainHeavy + 1) % chain.length;
-  hero.attack = newAttack(def, "heavy");
+  const crit = hero.riposteReady;
+  hero.riposteReady = false;
+  hero.attack = newAttack(crit ? riposteAttackDef(base) : base, "heavy", crit);
   hero.state = "attack";
   hero.heavyQueued = false;
   hero.comboT = 0;

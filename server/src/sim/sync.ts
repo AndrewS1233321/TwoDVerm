@@ -58,6 +58,8 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.dmgUpStacks = Math.max(0, Math.floor(hero.dmgUpStacks));
   s.perks = serializePerks(hero.perks);
   s.wardReady = hero.perks.has("rune_ward") && hero.wardCd <= 0;
+  s.riposteReady = hero.perks.has("riposte") && hero.riposteReady;
+  s.riposteStrike = !!hero.attack?.crit;
   s.invisT = r2(hero.invisT);
 }
 

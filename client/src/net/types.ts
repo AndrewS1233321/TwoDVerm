@@ -58,6 +58,10 @@ export interface PlayerView {
   perks: string;
   /** Rune Ward charged (glow). */
   wardReady: boolean;
+  /** Riposte charged after a dodge. */
+  riposteReady: boolean;
+  /** Current melee swing is a Riposte crit. */
+  riposteStrike: boolean;
   /** Seconds of Smoke Bomb stealth remaining. */
   invisT: number;
   /** Gingey Wastes vote (location id) or "". */
