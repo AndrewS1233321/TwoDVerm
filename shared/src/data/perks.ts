@@ -27,13 +27,13 @@ export const RUNE_WARD = {
  * Cloud radius is `radiusDiameters` times her body diameter (2 × radius).
  */
 export const SMOKE_BOMB = {
-  radiusDiameters: 5,
+  radiusDiameters: 2.5,
   /** How long the cloud stays on the ground. */
   cloudTime: 0.75,
   /** Stagger applied to enemies standing in the cloud. No damage. */
   staggerTime: 0.45,
   /** Invisibility after the dodge finishes. */
-  invisTime: 3,
+  invisTime: 1.5,
 } as const;
 
 /** Smoke cloud radius in world pixels for a hero of the given body radius. */
@@ -52,7 +52,7 @@ export const PERKS: Record<PerkId, PerkDef> = {
   smoke_bomb: {
     id: "smoke_bomb",
     name: "Smoke Bomb",
-    description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 3s, and enemies stop chasing you.",
+    description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 1.5s, and enemies stop chasing you.",
     cost: PERK_COST,
     heroIds: ["ranger"],
   },

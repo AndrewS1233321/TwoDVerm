@@ -257,13 +257,7 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   check("Kerri is hidden after the dodge", hero.invisT > SMOKE_BOMB.invisTime - 0.35 && hero.invisT <= SMOKE_BOMB.invisTime, hero.invisT.toFixed(2));
   check("Chasers outside the cloud drop Kerri for someone else", far.targetId === buddy.id, far.targetId);
 
-  run(world, hero, SMOKE_BOMB.staggerTime);
-  check("Staggered chasers retarget after the stagger", near.targetId === buddy.id && ogre.targetId === buddy.id, `near ${near.targetId} ogre ${ogre.targetId}`);
-  check("Idle rats in the smoke go back to idle", idle.state === "idle" && idle.aggro === false && idle.targetId !== hero.id, `${idle.state} aggro ${idle.aggro}`);
-
-  run(world, hero, SMOKE_BOMB.cloudTime);
-  check("Smoke cloud is gone after 0.75s", [...world.hazards.values()].every((h) => h.kind !== "smoke"));
-
+  // Attack while still stealthed (before waiting out stagger / cloud timers).
   const victim = world.spawnEnemy("clanrat", hero.x + 24, hero.y, false)!;
   victim.cooldown = 999;
   victim.hp = 100;
@@ -273,6 +267,15 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   run(world, hero, 0.35, { aim: 0 });
   check("Attacks while hidden still deal damage", victim.hp < hpVictim, `${hpVictim} -> ${victim.hp}`);
   check("Attacks while hidden do not draw aggro or make her the target", victim.aggro === false && victim.targetId !== hero.id && hero.invisT > 0, `aggro ${victim.aggro} target ${victim.targetId}`);
+
+  run(world, hero, Math.max(0, SMOKE_BOMB.staggerTime - 0.35));
+  check("Staggered chasers retarget after the stagger", near.targetId === buddy.id && ogre.targetId === buddy.id, `near ${near.targetId} ogre ${ogre.targetId}`);
+  check("Idle rats in the smoke go back to idle", idle.state === "idle" && idle.aggro === false && idle.targetId !== hero.id, `${idle.state} aggro ${idle.aggro}`);
+
+  // Cloud started at dodge press; finish whatever remains of its lifetime.
+  const smokeLeft = [...world.hazards.values()].find((h) => h.kind === "smoke")?.timeLeft ?? 0;
+  if (smokeLeft > 0) run(world, hero, smokeLeft + DT);
+  check("Smoke cloud is gone after 0.75s", [...world.hazards.values()].every((h) => h.kind !== "smoke"));
 
   const plain = setup("ranger");
   tick(plain.world, plain.hero, { dodge: true, mx: 1 });

@@ -59,9 +59,9 @@ Update this file after every meaningful implementation change.
   Bardin's **Rune Ward** — every 20s absorbs one discrete hit
   (`strikeHero`; gas / drag ticks ignore it), shown as a faint light
   blue glow while charged. Kerri's **Smoke Bomb** — a dodge drops a
-  smoke cloud (radius = 5 × her diameter) for 0.75s that staggers
+  smoke cloud (radius = 2.5 × her diameter) for 0.75s that staggers
   enemies inside it and deals no damage; when the dodge ends she is
-  hidden for 3s (no aggro, not a target, current chasers drop her).
+  hidden for 1.5s (no aggro, not a target, current chasers drop her).
   Future: random offer pools and per-perk pricing slot into
   `perksOfferedFor` / `PerkDef.cost`.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
