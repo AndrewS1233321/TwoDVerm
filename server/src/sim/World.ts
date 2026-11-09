@@ -161,6 +161,8 @@ export class World {
       hero.dmgUpStacks = 0;
       hero.perks.clear();
       hero.wardCd = 0;
+      hero.invisT = 0;
+      hero.vanishAfterDodge = false;
     }
   }
 
@@ -357,8 +359,9 @@ export class World {
   }
 
   rebuildFlow(): void {
-    const targets = this.standingHeroes();
-    const list = targets.length > 0 ? targets : this.aliveHeroes();
+    const visible = (h: Hero) => h.invisT <= 0;
+    const targets = this.standingHeroes().filter(visible);
+    const list = targets.length > 0 ? targets : this.aliveHeroes().filter(visible);
     this.flowSmall.rebuild(this.gateOpen, list);
     this.flowWide.rebuild(this.gateOpen, list);
   }
@@ -388,6 +391,7 @@ export class World {
     }
 
     separateCreatures(this);
+    updateHazards(this, dt);
 
     if (this.phase === "merchant") {
       this.updateMerchantExit(dt);
@@ -395,7 +399,6 @@ export class World {
     }
 
     this.missionTime += dt;
-    updateHazards(this, dt);
     updateBarrels(this, dt);
     if (this.mode === "testing") this.updateSummonPads();
     else if (this.procMeta) {

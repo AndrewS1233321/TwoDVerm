@@ -58,6 +58,8 @@ export interface PlayerView {
   perks: string;
   /** Rune Ward charged (glow). */
   wardReady: boolean;
+  /** Seconds of Smoke Bomb stealth remaining. */
+  invisT: number;
   /** Gingey Wastes vote (location id) or "". */
   vote: string;
   carryingBarrel: boolean;

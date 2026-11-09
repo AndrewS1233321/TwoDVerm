@@ -28,6 +28,7 @@ elsewhere.
 | Enemy telegraph warning | `telegraph`      | `#ff5a1f` |
 | Ratmen fur              | `ratFur`         | `#6b5a48` |
 | Warpstone glow (specials)| `warp`          | `#7cff4f` |
+| Smoke cloud              | `smoke`         | `#c4beb4` |
 | Success                 | `success`        | `#6fbf5f` |
 
 ### Hero colours

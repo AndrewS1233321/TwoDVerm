@@ -5,6 +5,10 @@ import type { World } from "./World";
 export function updateHazards(world: World, dt: number): void {
   for (const hz of [...world.hazards.values()]) {
     hz.timeLeft -= dt;
+    if (hz.kind === "smoke") {
+      if (hz.timeLeft <= 0) world.hazards.delete(hz.id);
+      continue;
+    }
     if (hz.kind === "globe") {
       if (hz.timeLeft <= 0) {
         hz.kind = "gas";

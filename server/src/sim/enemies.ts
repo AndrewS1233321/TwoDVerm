@@ -40,7 +40,7 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
   }
   if (e.state === "staggered") {
     e.stateT -= dt;
-    if (e.stateT <= 0) e.state = "chase";
+    if (e.stateT <= 0) e.state = e.aggro ? "chase" : "idle";
     return;
   }
 
@@ -80,7 +80,7 @@ function applyKnockback(world: World, e: Enemy, dt: number): void {
 
 function shouldAggro(world: World, e: Enemy): boolean {
   for (const h of world.heroes.values()) {
-    if (h.state === "dead") continue;
+    if (h.state === "dead" || h.invisT > 0) continue;
     const d = dist(e.x, e.y, h.x, h.y);
     if (d < ENEMY_AGGRO.alwaysRange) return true;
     if (d < ENEMY_AGGRO.sightRange && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, h.x, h.y)) return true;
@@ -103,7 +103,7 @@ function alert(world: World, source: Enemy): void {
 
 function validTarget(world: World, id: string): boolean {
   const h = world.heroes.get(id);
-  return !!h && h.state !== "dead";
+  return !!h && h.state !== "dead" && h.invisT <= 0;
 }
 
 function pickTarget(world: World, e: Enemy): string {
@@ -116,7 +116,7 @@ function pickTarget(world: World, e: Enemy): string {
   let best = "";
   let bestScore = Infinity;
   for (const h of world.heroes.values()) {
-    if (h.state === "dead") continue;
+    if (h.state === "dead" || h.invisT > 0) continue;
     let score = dist(e.x, e.y, h.x, h.y);
     if (h.state === "downed") score *= 1.6;
     if (h.id === e.targetId) score *= 0.85;
@@ -129,7 +129,7 @@ function pickTarget(world: World, e: Enemy): string {
 }
 
 function pickIsolatedHero(world: World, e: Enemy): string {
-  const standing = world.standingHeroes();
+  const standing = world.standingHeroes().filter((h) => h.invisT <= 0);
   if (standing.length === 0) return "";
   if (standing.length === 1) return standing[0]!.id;
   let best = "";
@@ -217,7 +217,10 @@ function chooseMeleeAttack(world: World, e: Enemy) {
   if (list.length <= 1) return list[0];
   if (e.def.behavior === "boss") {
     let near = 0;
-    for (const h of world.heroes.values()) if (h.state !== "dead" && dist(e.x, e.y, h.x, h.y) < 110) near++;
+    for (const h of world.heroes.values()) {
+      if (h.state === "dead" || h.invisT > 0) continue;
+      if (dist(e.x, e.y, h.x, h.y) < 110) near++;
+    }
     return near >= 2 ? list[1] : list[0];
   }
   return list[Math.floor(world.rng() * list.length)];
@@ -280,7 +283,7 @@ function gunnerShot(world: World, e: Enemy): void {
   let hitHero: Hero | null = null;
   let hitT = wall;
   for (const h of world.heroes.values()) {
-    if (h.state === "dead") continue;
+    if (h.state === "dead" || h.invisT > 0) continue;
     const dx = h.x - sx;
     const dy = h.y - sy;
     const t = dx * cos + dy * sin;
@@ -348,7 +351,7 @@ function updateHooker(world: World, e: Enemy, target: Hero | undefined, dt: numb
     if (a.phase === "windup" && target) faceToward(e, target.x, target.y, 0.8, dt);
     const done = advanceAttack(a, dt, () => {
       if (!target || a.hitsLeft <= 0) return;
-      if (target.state === "dead" || target.state === "downed" || target.state === "grabbed") return;
+      if (target.state === "dead" || target.state === "downed" || target.state === "grabbed" || target.invisT > 0) return;
       if (!inAttackArc(e.x, e.y, e.radius, e.facing, a.def.reach, a.def.arc, target.x, target.y, target.radius)) return;
       a.hitsLeft = 0;
       if (target.iframesT > 0) {

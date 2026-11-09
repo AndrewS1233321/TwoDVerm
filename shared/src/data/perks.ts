@@ -1,6 +1,6 @@
 import type { HeroId } from "./types";
 
-export type PerkId = "rune_ward";
+export type PerkId = "rune_ward" | "smoke_bomb";
 
 export interface PerkDef {
   id: PerkId;
@@ -22,6 +22,25 @@ export const RUNE_WARD = {
   cooldown: 20,
 } as const;
 
+/**
+ * Kerri's dodge drops smoke, then she vanishes.
+ * Cloud radius is `radiusDiameters` times her body diameter (2 × radius).
+ */
+export const SMOKE_BOMB = {
+  radiusDiameters: 5,
+  /** How long the cloud stays on the ground. */
+  cloudTime: 0.75,
+  /** Stagger applied to enemies standing in the cloud. No damage. */
+  staggerTime: 0.45,
+  /** Invisibility after the dodge finishes. */
+  invisTime: 3,
+} as const;
+
+/** Smoke cloud radius in world pixels for a hero of the given body radius. */
+export function smokeCloudRadius(heroRadius: number): number {
+  return SMOKE_BOMB.radiusDiameters * heroRadius * 2;
+}
+
 export const PERKS: Record<PerkId, PerkDef> = {
   rune_ward: {
     id: "rune_ward",
@@ -29,6 +48,13 @@ export const PERKS: Record<PerkId, PerkDef> = {
     description: "Every 20s, a ward fully blocks one hit.",
     cost: PERK_COST,
     heroIds: ["dwarf"],
+  },
+  smoke_bomb: {
+    id: "smoke_bomb",
+    name: "Smoke Bomb",
+    description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 3s, and enemies stop chasing you.",
+    cost: PERK_COST,
+    heroIds: ["ranger"],
   },
 };
 

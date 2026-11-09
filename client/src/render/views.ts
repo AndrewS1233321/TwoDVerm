@@ -27,6 +27,8 @@ export interface PoseInfo {
   rangedMode?: boolean;
   /** Rune Ward charged: faint light blue glow. */
   wardReady?: boolean;
+  /** Smoke Bomb stealth. Local player stays faintly visible. */
+  hidden?: boolean;
 }
 
 const WARD_GLOW = 0x8fd3ff;
@@ -166,7 +168,19 @@ export class CreatureView {
     else if (info.state === "staggered") this.body.setTint(0xc8c8ff);
     else if (this.opts.kind === "enemy" && info.state === "idle") this.body.setTint(0xb0a898);
     else this.body.clearTint();
-    this.root.setAlpha(info.dodging ? 0.55 : info.connected === false ? 0.4 : 1);
+    const hidden = info.hidden === true;
+    const bodyAlpha = hidden
+      ? this.opts.isLocal
+        ? 0.32
+        : 0.1
+      : info.dodging
+        ? 0.55
+        : info.connected === false
+          ? 0.4
+          : 1;
+    this.root.setAlpha(bodyAlpha);
+    this.shadow.setAlpha(hidden ? 0.08 : 0.35);
+    this.label?.setAlpha(hidden ? (this.opts.isLocal ? 0.45 : 0) : 1);
 
     this.animateWeapon(info, now);
     this.drawOverlays(info, now, ground, top);

@@ -55,6 +55,7 @@ export class HudScene extends Phaser.Scene {
     t("info", { fontSize: "12px", color: palette.textMuted }, 1, 0);
     t("hint", { fontSize: "12px", color: palette.textMuted, align: "center" }, 0.5, 0);
     t("heroName", { fontFamily: TITLE_FONT, fontSize: "15px", color: palette.accent }, 0, 1);
+    t("hidden", { fontSize: "12px", color: palette.dodge }, 0, 0.5);
     for (let i = 0; i < 3; i++) {
       this.teamTexts.push(this.add.text(0, 0, "", { fontFamily: FONT, fontSize: "12px", color: palette.textPrimary, stroke: "#000", strokeThickness: 3 }));
     }
@@ -192,6 +193,13 @@ export class HudScene extends Phaser.Scene {
         g.fillCircle(cx, dodgeY, dodgeR);
       }
     }
+
+    const hidden = me.invisT > 0;
+    t.hidden!
+      .setVisible(hidden)
+      .setOrigin(1, 1)
+      .setPosition(x + panelW - 16, y + 26)
+      .setText(hidden ? `Hidden ${me.invisT.toFixed(1)}s` : "");
 
     const ux = bx + bw - 20;
     const uy = dodgeY;

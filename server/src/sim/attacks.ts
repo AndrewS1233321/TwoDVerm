@@ -86,7 +86,7 @@ export function enemyMeleeHits(world: World, enemy: Enemy, a: ActiveAttack): voi
   }
   for (const h of world.heroes.values()) {
     if (a.hitsLeft <= 0) break;
-    if (a.hit.has(h.id) || h.state === "dead") continue;
+    if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
     if (!inAttackArc(enemy.x, enemy.y, enemy.radius, enemy.facing, a.def.reach, a.def.arc, h.x, h.y, h.radius)) continue;
     if (!hasLineOfSight(world.level, world.gateOpen, enemy.x, enemy.y, h.x, h.y)) continue;
     const result = strikeHero(world, h, {

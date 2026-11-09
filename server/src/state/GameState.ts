@@ -62,6 +62,8 @@ export class PlayerState extends Schema {
   @type("string") perks = "";
   /** True while Rune Ward is charged (drives the glow). */
   @type("boolean") wardReady = false;
+  /** Seconds of Smoke Bomb stealth remaining. */
+  @type("float32") invisT = 0;
 
   /** Gingey Wastes Holseher's Map vote (location id) or "". */
   @type("string") vote = "";

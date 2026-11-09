@@ -78,9 +78,10 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   const dmg = hit.damage * mul;
 
   enemy.hp -= dmg;
-  enemy.aggro = true;
+  const hidden = !!hero && hero.invisT > 0;
+  if (!hidden) enemy.aggro = true;
   if (hero) {
-    enemy.lastDamagerId = hero.id;
+    if (!hidden) enemy.lastDamagerId = hero.id;
     hero.damageDealt += dmg;
   }
   world.emit({ t: "hit", id: enemy.id, by: hero?.id ?? "", x: enemy.x, y: enemy.y, dmg: Math.round(dmg), side, armor, heavy: hit.heavy ?? false });
@@ -100,8 +101,9 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   }
 }
 
-export function staggerEnemy(enemy: Enemy, time: number): void {
-  if (enemy.def.staggerResist >= 99) return;
+export function staggerEnemy(enemy: Enemy, time: number, opts?: { force?: boolean }): void {
+  if (enemy.def.behavior === "dummy") return;
+  if (!opts?.force && enemy.def.staggerResist >= 99) return;
   enemy.attack = null;
   enemy.state = "staggered";
   enemy.stateT = time;
@@ -236,6 +238,9 @@ export function staggerHero(hero: Hero, time: number): void {
 }
 
 export function downHero(world: World, hero: Hero): void {
+  if (hero.invisT > 0 || hero.vanishAfterDodge) world.rebuildFlow();
+  hero.invisT = 0;
+  hero.vanishAfterDodge = false;
   if (hero.grabbedBy) {
     const e = world.enemies.get(hero.grabbedBy);
     if (e) releaseGrab(world, e);
@@ -252,6 +257,9 @@ export function downHero(world: World, hero: Hero): void {
 }
 
 export function killHero(world: World, hero: Hero): void {
+  if (hero.invisT > 0 || hero.vanishAfterDodge) world.rebuildFlow();
+  hero.invisT = 0;
+  hero.vanishAfterDodge = false;
   hero.state = "dead";
   hero.downHp = 0;
   hero.respawnT = DOWNED.respawnTime;

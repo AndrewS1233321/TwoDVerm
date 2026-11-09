@@ -20,6 +20,8 @@ import {
   PRECISION_SHOT,
   PUSH,
   raycastWalls,
+  SMOKE_BOMB,
+  smokeCloudRadius,
   stepMovement,
   inAttackArc,
   dist,
@@ -100,6 +102,8 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     dmgUpStacks: 0,
     perks: new Set(),
     wardCd: 0,
+    invisT: 0,
+    vanishAfterDodge: false,
   };
   return hero;
 }
@@ -187,6 +191,8 @@ export function processHeroInputs(world: World, hero: Hero): void {
     hero.aimY = input.aimY;
     hero.held = { attack: input.attack, block: input.block, interact: input.interact };
 
+    const dropX = hero.x;
+    const dropY = hero.y;
     const started = stepMovement(hero, input, mods, world.level, world.gateOpen, DT);
     if (started) {
       hero.dodgeCharges--;
@@ -201,14 +207,65 @@ export function processHeroInputs(world: World, hero: Hero): void {
         hero.heavyQueued = false;
       }
       world.emit({ t: "dodge", id: hero.id });
+      if (hero.perks.has("smoke_bomb")) {
+        dropSmokeBomb(world, hero, dropX, dropY);
+        hero.vanishAfterDodge = true;
+      }
     }
     hero.lastInput = input;
     hero.ackSeq = input.seq;
   }
 }
 
+/** Smoke at the dodge's start. Staggers enemies in the cloud and does not hurt them. */
+function dropSmokeBomb(world: World, hero: Hero, x: number, y: number): void {
+  const radius = smokeCloudRadius(hero.radius);
+  const id = world.newId("h");
+  world.hazards.set(id, {
+    id,
+    kind: "smoke",
+    x,
+    y,
+    fromX: x,
+    fromY: y,
+    radius,
+    timeLeft: SMOKE_BOMB.cloudTime,
+    duration: SMOKE_BOMB.cloudTime,
+  });
+  for (const e of world.enemies.values()) {
+    if (e.def.behavior === "dummy") continue;
+    if (dist(e.x, e.y, x, y) > radius + e.radius) continue;
+    staggerEnemy(e, SMOKE_BOMB.staggerTime, { force: true });
+  }
+}
+
+/** Stealth at the end of the dodge. Current chasers drop her and pick someone else. */
+function beginVanish(world: World, hero: Hero): void {
+  hero.vanishAfterDodge = false;
+  hero.invisT = SMOKE_BOMB.invisTime;
+  for (const e of world.enemies.values()) {
+    if (e.lastDamagerId === hero.id) e.lastDamagerId = "";
+    if (e.targetId !== hero.id) continue;
+    e.targetId = "";
+    e.stateT = 0;
+    if (e.state === "attack" || e.state === "aim" || e.state === "fire" || e.state === "throw") {
+      e.attack = null;
+      e.shotT = 0;
+      e.state = e.aggro ? "chase" : "idle";
+      e.actionSeq++;
+    }
+  }
+  world.rebuildFlow();
+}
+
 export function updateHero(world: World, hero: Hero, dt: number): void {
+  if (hero.vanishAfterDodge && hero.dodgeT <= 0) {
+    if (hero.state === "dead" || hero.state === "downed") hero.vanishAfterDodge = false;
+    else beginVanish(world, hero);
+  }
+  const hiddenBefore = hero.invisT > 0;
   tickTimers(hero, dt);
+  if (hiddenBefore && hero.invisT <= 0) world.rebuildFlow();
   applyKnockback(world, hero, dt);
 
   switch (hero.state) {
@@ -320,6 +377,7 @@ function tickTimers(hero: Hero, dt: number): void {
   hero.guardBrokenT = Math.max(0, hero.guardBrokenT - dt);
   hero.lightBufferT = Math.max(0, hero.lightBufferT - dt);
   hero.wardCd = Math.max(0, hero.wardCd - dt);
+  hero.invisT = Math.max(0, hero.invisT - dt);
   if (hero.state !== "attack" && hero.state !== "charging") {
     hero.comboT += dt;
     if (hero.comboT > MELEE.comboResetTime) {
@@ -506,7 +564,7 @@ function tryPush(world: World, hero: Hero): void {
       continue;
     }
     staggerEnemy(e, MELEE.staggerTime);
-    e.aggro = true;
+    if (hero.invisT <= 0) e.aggro = true;
     const a = Math.atan2(e.y - hero.y, e.x - hero.x);
     e.kvx = Math.cos(a) * PUSH.knockback;
     e.kvy = Math.sin(a) * PUSH.knockback;

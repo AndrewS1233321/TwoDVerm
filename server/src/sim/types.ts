@@ -109,6 +109,10 @@ export interface Hero extends MoveBody {
   perks: Set<PerkId>;
   /** Seconds until Rune Ward is ready again (ready when <= 0). */
   wardCd: number;
+  /** Seconds of stealth remaining (Smoke Bomb). Enemies ignore her while > 0. */
+  invisT: number;
+  /** Dodge in progress should grant stealth when dodgeT hits 0. */
+  vanishAfterDodge: boolean;
 }
 
 export type EnemyAiState =
@@ -149,7 +153,7 @@ export interface Enemy {
 
 export interface Hazard {
   id: string;
-  kind: "globe" | "gas";
+  kind: "globe" | "gas" | "smoke";
   x: number;
   y: number;
   fromX: number;

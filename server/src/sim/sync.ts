@@ -58,6 +58,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.dmgUpStacks = Math.max(0, Math.floor(hero.dmgUpStacks));
   s.perks = serializePerks(hero.perks);
   s.wardReady = hero.perks.has("rune_ward") && hero.wardCd <= 0;
+  s.invisT = r2(hero.invisT);
 }
 
 export function syncWorld(world: World, state: GameState): void {

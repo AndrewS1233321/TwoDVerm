@@ -52,10 +52,14 @@ Update this file after every meaningful implementation change.
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit
   (`perksOfferedFor`); one-time buys at 50 GP; persist for the run.
-  First perk: Bardin's **Rune Ward** — every 20s absorbs one discrete
-  hit (`strikeHero`; gas / drag ticks ignore it), shown as a faint
-  light blue glow while charged. Future: random offer pools and
-  per-perk pricing slot into `perksOfferedFor` / `PerkDef.cost`.
+  Bardin's **Rune Ward** — every 20s absorbs one discrete hit
+  (`strikeHero`; gas / drag ticks ignore it), shown as a faint light
+  blue glow while charged. Kerri's **Smoke Bomb** — a dodge drops a
+  smoke cloud (radius = 5 × her diameter) for 0.75s that staggers
+  enemies inside it and deals no damage; when the dodge ends she is
+  hidden for 3s (no aggro, not a target, current chasers drop her).
+  Future: random offer pools and per-perk pricing slot into
+  `perksOfferedFor` / `PerkDef.cost`.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;

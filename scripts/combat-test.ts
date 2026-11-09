@@ -2,7 +2,7 @@
  * Offline checks of the combat rules, run straight on the server simulation (no network):
  *   npm run combat-test
  */
-import { DT, HEROES, type FxEvent, type HeroId, type InputMessage } from "@twodverm/shared";
+import { DT, DODGE, HEROES, perksOfferedFor, SMOKE_BOMB, smokeCloudRadius, type FxEvent, type HeroId, type InputMessage } from "@twodverm/shared";
 import { strikeHero } from "../server/src/sim/damage";
 import type { Enemy, Hero } from "../server/src/sim/types";
 import { World } from "../server/src/sim/World";
@@ -211,6 +211,87 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
     if (fx.some((f) => f.t === "hit" && f.id === hero.id)) hitAt = t;
   }
   check("Rat winds up before it hits", windupSeen >= 0 && hitAt - windupSeen >= 0.4, `windup at ${windupSeen.toFixed(2)}s, hit at ${hitAt.toFixed(2)}s`);
+}
+
+// Kerri's Smoke Bomb: merchant perk, stagger cloud, then stealth that drops aggro.
+{
+  const offered = perksOfferedFor("ranger", new Set()).map((p) => p.id);
+  check("Merchant offers Kerri Smoke Bomb", offered.includes("smoke_bomb"));
+  check("Smoke Bomb is not offered to other heroes", perksOfferedFor("dwarf", new Set()).every((p) => p.id !== "smoke_bomb") && perksOfferedFor("soldier", new Set()).every((p) => p.id !== "smoke_bomb"));
+
+  const { world, hero } = setup("ranger");
+  hero.perks.add("smoke_bomb");
+  hero.gold = 80;
+  const buddy = world.addHero("h2", "Buddy", HEROES.soldier);
+  buddy.x = hero.x + 520;
+  buddy.y = hero.y;
+  const near = world.spawnEnemy("clanrat", hero.x + 36, hero.y, true)!;
+  near.targetId = hero.id;
+  near.cooldown = 999;
+  const far = world.spawnEnemy("clanrat", hero.x + 280, hero.y, true)!;
+  far.targetId = hero.id;
+  far.cooldown = 999;
+  const idle = world.spawnEnemy("slave", hero.x, hero.y + 28, false)!;
+  idle.cooldown = 999;
+  const ogre = world.spawnEnemy("ogre", hero.x + 70, hero.y, true)!;
+  ogre.targetId = hero.id;
+  ogre.cooldown = 999;
+  const hpNear = near.hp;
+  const hpIdle = idle.hp;
+  const hpOgre = ogre.hp;
+  const hpFar = far.hp;
+
+  tick(world, hero, { dodge: true, mx: -1 });
+  const smoke = [...world.hazards.values()].find((h) => h.kind === "smoke");
+  const expectedR = smokeCloudRadius(hero.radius);
+  check("Dodge drops a smoke cloud", !!smoke && Math.abs(smoke.radius - expectedR) < 0.01 && Math.abs((smoke?.duration ?? 0) - SMOKE_BOMB.cloudTime) < 0.001, smoke ? `r ${smoke.radius}` : "missing");
+  check(
+    "Smoke staggers enemies inside it and deals no damage",
+    near.state === "staggered" && idle.state === "staggered" && ogre.state === "staggered" && near.hp === hpNear && idle.hp === hpIdle && ogre.hp === hpOgre,
+    `near ${near.state} idle ${idle.state} ogre ${ogre.state}`,
+  );
+  check("Enemies outside the cloud are not staggered", far.state !== "staggered" && far.hp === hpFar, far.state);
+  check("Stealth starts when the dodge ends, not when it starts", hero.invisT === 0 && hero.dodgeT > 0);
+
+  run(world, hero, DODGE.time);
+  check("Kerri is hidden after the dodge", hero.invisT > SMOKE_BOMB.invisTime - 0.35 && hero.invisT <= SMOKE_BOMB.invisTime, hero.invisT.toFixed(2));
+  check("Chasers outside the cloud drop Kerri for someone else", far.targetId === buddy.id, far.targetId);
+
+  run(world, hero, SMOKE_BOMB.staggerTime);
+  check("Staggered chasers retarget after the stagger", near.targetId === buddy.id && ogre.targetId === buddy.id, `near ${near.targetId} ogre ${ogre.targetId}`);
+  check("Idle rats in the smoke go back to idle", idle.state === "idle" && idle.aggro === false && idle.targetId !== hero.id, `${idle.state} aggro ${idle.aggro}`);
+
+  run(world, hero, SMOKE_BOMB.cloudTime);
+  check("Smoke cloud is gone after 0.75s", [...world.hazards.values()].every((h) => h.kind !== "smoke"));
+
+  const victim = world.spawnEnemy("clanrat", hero.x + 24, hero.y, false)!;
+  victim.cooldown = 999;
+  victim.hp = 100;
+  hero.facing = 0;
+  const hpVictim = victim.hp;
+  tick(world, hero, { attack: true, aim: 0 });
+  run(world, hero, 0.35, { aim: 0 });
+  check("Attacks while hidden still deal damage", victim.hp < hpVictim, `${hpVictim} -> ${victim.hp}`);
+  check("Attacks while hidden do not draw aggro or make her the target", victim.aggro === false && victim.targetId !== hero.id && hero.invisT > 0, `aggro ${victim.aggro} target ${victim.targetId}`);
+
+  const plain = setup("ranger");
+  tick(plain.world, plain.hero, { dodge: true, mx: 1 });
+  run(plain.world, plain.hero, DODGE.time);
+  check("Dodge without the perk drops no smoke and does not hide her", [...plain.world.hazards.values()].every((h) => h.kind !== "smoke") && plain.hero.invisT === 0);
+}
+
+{
+  const { world, hero } = setup("ranger");
+  hero.gold = 50;
+  world.phase = "merchant";
+  world.spawnEnemy("merchant", hero.x + 10, hero.y, false);
+  check("Kerri can buy Smoke Bomb for 50 GP", world.buyPerk(hero.id, "smoke_bomb") && hero.perks.has("smoke_bomb") && hero.gold === 0);
+  check("Smoke Bomb cannot be bought twice", !world.buyPerk(hero.id, "smoke_bomb"));
+  const other = setup("soldier");
+  other.hero.gold = 50;
+  other.world.phase = "merchant";
+  other.world.spawnEnemy("merchant", other.hero.x + 10, other.hero.y, false);
+  check("Other heroes cannot buy Smoke Bomb", !other.world.buyPerk(other.hero.id, "smoke_bomb") && other.hero.gold === 50);
 }
 
 console.log(failures === 0 ? "\nAll combat checks passed" : `\n${failures} combat check(s) failed`);

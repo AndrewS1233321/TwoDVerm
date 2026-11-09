@@ -402,6 +402,7 @@ export class GameScene extends Phaser.Scene {
       connected: p.connected,
       rangedMode: p.rangedMode,
       wardReady: p.wardReady,
+      hidden: p.invisT > 0,
     };
   }
 
@@ -545,6 +546,18 @@ export class GameScene extends Phaser.Scene {
     const now = performance.now();
     const g = this.ground;
     state.hazards.forEach((h) => {
+      if (h.kind === "smoke") {
+        const fade = Math.max(0, h.timeLeft / Math.max(0.05, h.duration));
+        g.fillStyle(colors.smoke, 0.22 * fade);
+        g.fillCircle(h.x, h.y, h.radius);
+        for (let i = 0; i < 6; i++) {
+          const a = now * 0.0012 * (i % 2 ? 1 : -1) + i * 1.05;
+          const puff = h.radius * (0.28 + (i % 3) * 0.1);
+          g.fillStyle(colors.smoke, (0.12 + (i % 2) * 0.06) * fade);
+          g.fillCircle(h.x + Math.cos(a) * h.radius * 0.42, h.y + Math.sin(a * 1.3) * h.radius * 0.42, puff);
+        }
+        return;
+      }
       if (h.kind === "globe") {
         const t = 1 - h.timeLeft / Math.max(0.01, h.duration);
         g.lineStyle(2, colors.warp, 0.4 + 0.4 * Math.sin(now * 0.03));
