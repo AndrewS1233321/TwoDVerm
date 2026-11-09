@@ -2,7 +2,20 @@
  * Offline checks of the combat rules, run straight on the server simulation (no network):
  *   npm run combat-test
  */
-import { DT, DODGE, HEROES, perksOfferedFor, RIPOSTE, SMOKE_BOMB, smokeCloudRadius, type FxEvent, type HeroId, type InputMessage } from "@twodverm/shared";
+import {
+  DT,
+  DODGE,
+  HEROES,
+  NO_RETREATING,
+  noRetreatingWeight,
+  perksOfferedFor,
+  RIPOSTE,
+  SMOKE_BOMB,
+  smokeCloudRadius,
+  type FxEvent,
+  type HeroId,
+  type InputMessage,
+} from "@twodverm/shared";
 import { strikeHero } from "../server/src/sim/damage";
 import type { Enemy, Hero } from "../server/src/sim/types";
 import { World } from "../server/src/sim/World";
@@ -362,6 +375,57 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   buy.world.phase = "merchant";
   buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
   check("Viktor can buy Riposte for 50 GP", buy.world.buyPerk(buy.hero.id, "riposte") && buy.hero.perks.has("riposte") && buy.hero.gold === 0);
+}
+
+// Markus No retreating: dodge body-checks stagger harder near the end of the dash.
+{
+  check("Merchant offers Markus No retreating", perksOfferedFor("soldier", new Set()).some((p) => p.id === "no_retreating"));
+  check("No retreating is not offered to Viktor", perksOfferedFor("hunter", new Set()).every((p) => p.id !== "no_retreating"));
+
+  const earlyW = noRetreatingWeight(DODGE.time * 0.95, DODGE.time);
+  const lateW = noRetreatingWeight(DODGE.time * 0.05, DODGE.time);
+  check("No retreating weight is much higher at the end of a dodge", lateW > earlyW * 5, `early ${earlyW.toFixed(3)} late ${lateW.toFixed(3)}`);
+
+  const { world, hero } = setup("soldier");
+  hero.perks.add("no_retreating");
+  hero.facing = 0;
+  const early = dummy(world, hero.x + hero.radius + 10, hero.y, Math.PI);
+  early.cooldown = 999;
+  early.hp = 9999;
+  const hpEarly = early.hp;
+
+  // Contact on the first dodge frame (near the start).
+  tick(world, hero, { dodge: true, mx: 1 });
+  check("Early dodge contact staggers briefly", early.state === "staggered" && early.stateT <= NO_RETREATING.staggerTimeMin + 0.2, `t ${early.stateT.toFixed(3)}`);
+  check("No retreating deals no damage", early.hp === hpEarly);
+
+  // Fresh dodge, then force a contact in the final moments of the dash.
+  world.enemies.delete(early.id);
+  run(world, hero, DODGE.time + 0.05);
+  tick(world, hero, { dodge: true, mx: 1 });
+  hero.dodgeT = DT * 1.5;
+  hero.noRetreatHit.clear();
+  const late = dummy(world, hero.x + 8, hero.y, Math.PI);
+  late.cooldown = 999;
+  late.hp = 9999;
+  run(world, hero, DT, { mx: 1 });
+  check(
+    "Late dodge contact staggers much longer",
+    late.state === "staggered" && late.stateT >= NO_RETREATING.staggerTimeMax * 0.55,
+    `t ${late.stateT.toFixed(3)}`,
+  );
+
+  const plain = setup("soldier");
+  const rat = dummy(plain.world, plain.hero.x + 12, plain.hero.y, Math.PI);
+  rat.cooldown = 999;
+  tick(plain.world, plain.hero, { dodge: true, mx: 1 });
+  check("Dodge without the perk does not stagger on contact", rat.state !== "staggered");
+
+  const buy = setup("soldier");
+  buy.hero.gold = 50;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check("Markus can buy No retreating for 50 GP", buy.world.buyPerk(buy.hero.id, "no_retreating") && buy.hero.perks.has("no_retreating") && buy.hero.gold === 0);
 }
 
 console.log(failures === 0 ? "\nAll combat checks passed" : `\n${failures} combat check(s) failed`);

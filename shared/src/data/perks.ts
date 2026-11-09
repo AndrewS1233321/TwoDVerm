@@ -1,6 +1,6 @@
 import type { HeroId } from "./types";
 
-export type PerkId = "rune_ward" | "smoke_bomb" | "riposte";
+export type PerkId = "rune_ward" | "smoke_bomb" | "riposte" | "no_retreating";
 
 export interface PerkDef {
   id: PerkId;
@@ -49,6 +49,26 @@ export const RIPOSTE = {
   critMul: 2,
 } as const;
 
+/**
+ * Markus: dodge body-checks stagger enemies. Strength scales with how far
+ * through the dodge the contact happens (weak at the start, heavy at the end).
+ */
+export const NO_RETREATING = {
+  /** Extra reach beyond overlapping body radii. */
+  pad: 8,
+  staggerTimeMin: 0.12,
+  staggerTimeMax: 1.55,
+  knockbackMin: 70,
+  knockbackMax: 520,
+} as const;
+
+/** 0 at dodge start → 1 at dodge end (ease-in so the finish hits much harder). */
+export function noRetreatingWeight(dodgeTRemaining: number, dodgeDuration: number): number {
+  if (dodgeDuration <= 0) return 1;
+  const progress = Math.max(0, Math.min(1, 1 - dodgeTRemaining / dodgeDuration));
+  return progress * progress;
+}
+
 export const PERKS: Record<PerkId, PerkDef> = {
   rune_ward: {
     id: "rune_ward",
@@ -70,6 +90,13 @@ export const PERKS: Record<PerkId, PerkDef> = {
     description: "After a dodge, your next melee attack has double reach and is a guaranteed critical hit. Does not trigger from your ultimate.",
     cost: PERK_COST,
     heroIds: ["hunter"],
+  },
+  no_retreating: {
+    id: "no_retreating",
+    name: "No retreating",
+    description: "While dodging, enemies you barge into are staggered. Hits late in the dodge stagger much harder than hits at the start.",
+    cost: PERK_COST,
+    heroIds: ["soldier"],
   },
 };
 

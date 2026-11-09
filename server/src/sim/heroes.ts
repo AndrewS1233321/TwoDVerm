@@ -18,6 +18,9 @@ import {
   MELEE,
   moveCircle,
   PRECISION_SHOT,
+  lerp,
+  NO_RETREATING,
+  noRetreatingWeight,
   PUSH,
   raycastWalls,
   RIPOSTE,
@@ -107,6 +110,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     invisT: 0,
     vanishAfterDodge: false,
     riposteReady: false,
+    noRetreatHit: new Set(),
   };
   return hero;
 }
@@ -216,6 +220,7 @@ export function processHeroInputs(world: World, hero: Hero): void {
       }
       // Player dodge only (ult dash sets dodgeT without going through here).
       if (hero.perks.has("riposte")) hero.riposteReady = true;
+      if (hero.perks.has("no_retreating")) hero.noRetreatHit.clear();
     }
     hero.lastInput = input;
     hero.ackSeq = input.seq;
@@ -302,6 +307,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
     if (hero.edges.attackPressed && !hero.rangedMode && !hero.carryingBarrelId) tryPush(world, hero);
     if (hero.edges.ult) tryUlt(world, hero);
     if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+    if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
     return;
   }
 
@@ -341,6 +347,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 
   if (hero.edges.ult) tryUlt(world, hero);
   if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+  if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
 }
 
 /** Right-click block cuts off the current action and raises the guard this tick. */
@@ -869,5 +876,24 @@ function dashHits(world: World, hero: Hero): void {
     if (dist(hero.x, hero.y, e.x, e.y) > hero.radius + e.radius + 18) continue;
     hero.dashHit.add(e.id);
     damageEnemy(world, hero, e, { damage: 40, stagger: 2, armorPierce: true, srcX: hero.x, srcY: hero.y });
+  }
+}
+
+/** Markus No retreating: body-check stagger while dodging; later contacts hit much harder. */
+function noRetreatHits(world: World, hero: Hero): void {
+  const weight = noRetreatingWeight(hero.dodgeT, DODGE.time);
+  const staggerTime = lerp(NO_RETREATING.staggerTimeMin, NO_RETREATING.staggerTimeMax, weight);
+  const knockback = lerp(NO_RETREATING.knockbackMin, NO_RETREATING.knockbackMax, weight);
+  const reach = hero.radius + NO_RETREATING.pad;
+  for (const e of world.enemies.values()) {
+    if (e.def.behavior === "dummy") continue;
+    if (hero.noRetreatHit.has(e.id)) continue;
+    if (dist(hero.x, hero.y, e.x, e.y) > reach + e.radius) continue;
+    hero.noRetreatHit.add(e.id);
+    staggerEnemy(e, staggerTime, { force: true });
+    if (hero.invisT <= 0) e.aggro = true;
+    const a = Math.atan2(e.y - hero.y, e.x - hero.x);
+    e.kvx += Math.cos(a) * knockback;
+    e.kvy += Math.sin(a) * knockback;
   }
 }

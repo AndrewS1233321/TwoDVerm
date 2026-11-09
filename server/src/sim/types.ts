@@ -117,6 +117,8 @@ export interface Hero extends MoveBody {
   vanishAfterDodge: boolean;
   /** Riposte charged: next melee attack is extended + critical. */
   riposteReady: boolean;
+  /** Enemies already body-checked during the current No retreating dodge. */
+  noRetreatHit: Set<string>;
 }
 
 export type EnemyAiState =
