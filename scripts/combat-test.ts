@@ -8,6 +8,7 @@ import {
   HEROES,
   NO_RETREATING,
   noRetreatingWeight,
+  OLD_GOAT,
   perksOfferedFor,
   RIPOSTE,
   SMOKE_BOMB,
@@ -426,6 +427,42 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   buy.world.phase = "merchant";
   buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
   check("Markus can buy No retreating for 50 GP", buy.world.buyPerk(buy.hero.id, "no_retreating") && buy.hero.perks.has("no_retreating") && buy.hero.gold === 0);
+}
+
+// Bardin Old Goat: dodge into an enemy stops the dodge, damages, knocks back, no stagger, focuses him.
+{
+  check("Merchant offers Bardin Old Goat", perksOfferedFor("dwarf", new Set()).some((p) => p.id === "old_goat"));
+  check("Old Goat is not offered to Markus", perksOfferedFor("soldier", new Set()).every((p) => p.id !== "old_goat"));
+
+  const { world, hero } = setup("dwarf");
+  hero.perks.add("old_goat");
+  hero.facing = 0;
+  const rat = dummy(world, hero.x + hero.radius + 8, hero.y, Math.PI);
+  rat.cooldown = 999;
+  rat.hp = 500;
+  const hp0 = rat.hp;
+  const x0 = rat.x;
+
+  tick(world, hero, { dodge: true, mx: 1 });
+  check("Old Goat stops the dodge on contact", hero.dodgeT === 0);
+  check("Old Goat deals 160 damage", Math.round(hp0 - rat.hp) === OLD_GOAT.damage, `${hp0} -> ${rat.hp}`);
+  check("Old Goat does not stagger", rat.state !== "staggered");
+  check("Old Goat knocks the enemy back", rat.x > x0, `x ${x0.toFixed(1)} -> ${rat.x.toFixed(1)}`);
+  check("Old Goat makes the enemy target Bardin", rat.targetId === hero.id && rat.aggro);
+
+  const plain = setup("dwarf");
+  const other = dummy(plain.world, plain.hero.x + 10, plain.hero.y, Math.PI);
+  other.cooldown = 999;
+  other.hp = 500;
+  const ohp = other.hp;
+  tick(plain.world, plain.hero, { dodge: true, mx: 1 });
+  check("Dodge without Old Goat does not shoulder-check", other.hp === ohp && plain.hero.dodgeT > 0);
+
+  const buy = setup("dwarf");
+  buy.hero.gold = 50;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check("Bardin can buy Old Goat for 50 GP", buy.world.buyPerk(buy.hero.id, "old_goat") && buy.hero.perks.has("old_goat") && buy.hero.gold === 0);
 }
 
 console.log(failures === 0 ? "\nAll combat checks passed" : `\n${failures} combat check(s) failed`);

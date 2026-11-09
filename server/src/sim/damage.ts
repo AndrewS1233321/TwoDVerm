@@ -39,6 +39,8 @@ export interface EnemyHit {
   heavy?: boolean;
   /** Guaranteed critical (Riposte): applies RIPOSTE.critMul. */
   crit?: boolean;
+  /** Skip stagger entirely (even back-hit stagger bonus). */
+  noStagger?: boolean;
   srcX: number;
   srcY: number;
 }
@@ -111,6 +113,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     staggerEnemy(enemy, 1.5);
     return;
   }
+  if (hit.noStagger) return;
   const power = hit.stagger + (side === "back" ? 1 : 0);
   if (power >= enemy.def.staggerResist) {
     staggerEnemy(enemy, MELEE.staggerTime * (side === "back" ? MELEE.backStaggerMul : 1));

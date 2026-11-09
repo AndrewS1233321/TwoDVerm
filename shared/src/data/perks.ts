@@ -1,6 +1,6 @@
 import type { HeroId } from "./types";
 
-export type PerkId = "rune_ward" | "smoke_bomb" | "riposte" | "no_retreating";
+export type PerkId = "rune_ward" | "smoke_bomb" | "riposte" | "no_retreating" | "old_goat";
 
 export interface PerkDef {
   id: PerkId;
@@ -71,11 +71,26 @@ export function noRetreatingWeight(dodgeTRemaining: number, dodgeDuration: numbe
   return progress * progress;
 }
 
+/** Bardin: dodge shoulder-check. Stops the dodge on contact. */
+export const OLD_GOAT = {
+  /** Extra reach beyond overlapping body radii. */
+  pad: 6,
+  damage: 160,
+  knockback: 820,
+} as const;
+
 export const PERKS: Record<PerkId, PerkDef> = {
   rune_ward: {
     id: "rune_ward",
     name: "Rune Ward",
     description: "Every 20s, a ward fully blocks one hit.",
+    cost: PERK_COST,
+    heroIds: ["dwarf"],
+  },
+  old_goat: {
+    id: "old_goat",
+    name: "Old Goat",
+    description: "Dodging into an enemy stops you cold, deals 160 damage with a heavy knockback, and makes them focus you. Does not stagger.",
     cost: PERK_COST,
     heroIds: ["dwarf"],
   },

@@ -21,6 +21,7 @@ import {
   lerp,
   NO_RETREATING,
   noRetreatingWeight,
+  OLD_GOAT,
   PUSH,
   raycastWalls,
   RIPOSTE,
@@ -308,6 +309,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
     if (hero.edges.ult) tryUlt(world, hero);
     if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
     if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
+    if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
     return;
   }
 
@@ -348,6 +350,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
   if (hero.edges.ult) tryUlt(world, hero);
   if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
   if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
+  if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
 }
 
 /** Right-click block cuts off the current action and raises the guard this tick. */
@@ -895,5 +898,39 @@ function noRetreatHits(world: World, hero: Hero): void {
     const a = Math.atan2(e.y - hero.y, e.x - hero.x);
     e.kvx += Math.cos(a) * knockback;
     e.kvy += Math.sin(a) * knockback;
+  }
+}
+
+/** Bardin Old Goat: colliding mid-dodge stops him and shoulder-checks every contact. */
+function oldGoatHits(world: World, hero: Hero): void {
+  const reach = hero.radius + OLD_GOAT.pad;
+  const hits: Enemy[] = [];
+  for (const e of world.enemies.values()) {
+    if (e.def.behavior === "dummy") continue;
+    if (dist(hero.x, hero.y, e.x, e.y) > reach + e.radius) continue;
+    hits.push(e);
+  }
+  if (hits.length === 0) return;
+
+  hero.dodgeT = 0;
+  for (const e of hits) {
+    damageEnemy(world, hero, e, {
+      damage: OLD_GOAT.damage,
+      stagger: 0,
+      armorPierce: true,
+      noStagger: true,
+      heavy: true,
+      srcX: hero.x,
+      srcY: hero.y,
+    });
+    if (!world.enemies.has(e.id)) continue;
+    e.aggro = true;
+    e.targetId = hero.id;
+    e.lastDamagerId = hero.id;
+    e.stateT = 0;
+    if (e.state === "idle") e.state = "chase";
+    const a = Math.atan2(e.y - hero.y, e.x - hero.x);
+    e.kvx += Math.cos(a) * OLD_GOAT.knockback;
+    e.kvy += Math.sin(a) * OLD_GOAT.knockback;
   }
 }
