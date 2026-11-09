@@ -1,5 +1,6 @@
 import { Room, type Client } from "colyseus";
 import {
+  DEV_TEST_START_GOLD,
   DT,
   EXPEDITION_LOCATION_IDS,
   generateLevel,
@@ -38,9 +39,13 @@ export class GameRoom extends Room<GameState> {
   private lastPhase = "lobby";
 
   onCreate(options: unknown): void {
-    const mode = sanitizeGameMode((options as { gameMode?: unknown } | null)?.gameMode);
+    const opts = options as { gameMode?: unknown; devTest?: unknown } | null;
+    const mode = sanitizeGameMode(opts?.gameMode);
+    const devTest = mode === "wastes" && opts?.devTest === true;
     this.world = new World(Math.floor(Math.random() * 2 ** 31), mode);
+    this.world.devTest = devTest;
     this.state.gameMode = mode;
+    this.state.devTest = devTest;
     this.state.levelId = this.world.levelId;
 
     this.code = claimRoomCode();
@@ -73,8 +78,17 @@ export class GameRoom extends Room<GameState> {
       if ([...this.state.players.values()].some((p) => !p.heroId)) return;
       this.world.resetRunEconomy();
       if (this.state.gameMode === "wastes") {
-        this.beginExpeditionVote();
-        console.log(`Expedition map opened in room ${this.code}`);
+        if (this.state.devTest) {
+          this.world.grantDevTestStartingGold();
+          this.world.enterMerchantHall();
+          this.state.levelId = this.world.levelId;
+          this.lastPhase = "merchant";
+          this.syncAll();
+          console.log(`Dev-test merchant opened in room ${this.code} (${this.state.players.size} players, ${DEV_TEST_START_GOLD} GP)`);
+        } else {
+          this.beginExpeditionVote();
+          console.log(`Expedition map opened in room ${this.code}`);
+        }
       } else {
         this.world.startMission();
         this.syncAll();
@@ -151,6 +165,10 @@ export class GameRoom extends Room<GameState> {
         player.heroId = heroId;
         const hero = this.world.addHero(client.sessionId, name, HEROES[heroId]);
         this.world.placeLateJoiner(hero);
+        // Catch up a late joiner to the opening merchant before the first map.
+        if (this.state.devTest && this.state.phase === "merchant" && this.state.expeditionStop === 0) {
+          hero.gold = DEV_TEST_START_GOLD;
+        }
         syncHero(hero, player);
       }
     }

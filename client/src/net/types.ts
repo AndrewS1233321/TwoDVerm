@@ -115,6 +115,8 @@ export interface GameStateView {
   hostId: string;
   code: string;
   gameMode: string;
+  /** Wastes host option: merchant + starting gold before the first map. */
+  devTest: boolean;
   levelId: string;
   expeditionOptionA: string;
   expeditionOptionB: string;

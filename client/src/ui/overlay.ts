@@ -27,7 +27,7 @@ import type { GameStateView } from "../net/types";
 import { getSettings, updateSettings } from "../settings";
 
 export interface OverlayHandlers {
-  onCreate(name: string, gameMode: GameMode): void;
+  onCreate(name: string, gameMode: GameMode, devTest: boolean): void;
   onJoin(code: string, name: string): void;
   onPickHero(heroId: HeroId): void;
   onStart(): void;
@@ -70,6 +70,9 @@ export class Overlay {
   private readonly nameInput = el<HTMLInputElement>("name-input");
   private readonly codeInput = el<HTMLInputElement>("code-input");
   private readonly modeSelect = el<HTMLSelectElement>("mode-select");
+  private readonly devTestCheck = el<HTMLInputElement>("devtest-check");
+  private readonly devTestRow = el("devtest-row");
+  private readonly devTestHint = el("devtest-hint");
 
   constructor(private readonly h: OverlayHandlers) {
     const s = getSettings();
@@ -78,7 +81,10 @@ export class Overlay {
     const code = params.get("code");
     if (code) this.codeInput.value = code.toUpperCase().slice(0, 4);
 
-    el("create-btn").onclick = () => this.submit(() => this.h.onCreate(this.name(), this.mode()));
+    this.modeSelect.onchange = () => this.syncDevTestVisibility();
+    this.syncDevTestVisibility();
+    el("create-btn").onclick = () =>
+      this.submit(() => this.h.onCreate(this.name(), this.mode(), this.devTestEnabled()));
     el("join-btn").onclick = () => this.join();
     this.codeInput.onkeydown = (e) => {
       if (e.key === "Enter") this.join();
@@ -147,6 +153,17 @@ export class Overlay {
   private mode(): GameMode {
     const v = this.modeSelect.value;
     return isGameMode(v) ? v : "default";
+  }
+
+  private syncDevTestVisibility(): void {
+    const wastes = this.mode() === "wastes";
+    this.devTestRow.style.display = wastes ? "flex" : "none";
+    this.devTestHint.style.display = wastes ? "block" : "none";
+    if (!wastes) this.devTestCheck.checked = false;
+  }
+
+  private devTestEnabled(): boolean {
+    return this.mode() === "wastes" && this.devTestCheck.checked;
   }
 
   private join(): void {
@@ -276,6 +293,7 @@ export class Overlay {
       state.hostId,
       state.code,
       state.gameMode,
+      state.devTest ? "1" : "0",
       state.levelId,
       state.expeditionOptionA,
       state.expeditionOptionB,
@@ -301,7 +319,7 @@ export class Overlay {
     this.show("lobby");
     el("lobby-code").textContent = state.code;
     const mode = isGameMode(state.gameMode) ? state.gameMode : "default";
-    el("lobby-mode").textContent = GAME_MODE_LABELS[mode];
+    el("lobby-mode").textContent = state.devTest && mode === "wastes" ? `${GAME_MODE_LABELS[mode]} · devTest` : GAME_MODE_LABELS[mode];
     const players = [...state.players.values()];
     const me = state.players.get(localId);
     el("lobby-players").innerHTML =
@@ -349,17 +367,22 @@ export class Overlay {
     const start = el<HTMLButtonElement>("start-btn");
     start.style.display = isHost ? "" : "none";
     start.disabled = !allPicked;
-    start.textContent = mode === "wastes" ? "Open Gingey's Map" : "Start mission";
+    start.textContent =
+      mode === "wastes" ? (state.devTest ? "Start at merchant" : "Open Gingey's Map") : "Start mission";
     el("lobby-status").textContent = !me?.heroId
       ? "Pick a hero"
       : isHost
         ? allPicked
           ? mode === "wastes"
-            ? "Open the map when ready"
+            ? state.devTest
+              ? "Start at the merchant when ready"
+              : "Open the map when ready"
             : "Everyone is ready"
           : "Waiting for everyone to pick a hero"
         : mode === "wastes"
-          ? "Waiting for the host to open the map"
+          ? state.devTest
+            ? "Waiting for the host to start at the merchant"
+            : "Waiting for the host to open the map"
           : "Waiting for the host to start";
   }
 

@@ -21,6 +21,9 @@ export const GAME_MODE_LABELS: Record<GameMode, string> = {
   wastes: "The Gingey Wastes",
 };
 
+/** Starting gold when a Wastes room is created with the host's `devTest` option. */
+export const DEV_TEST_START_GOLD = 1000;
+
 export function isGameMode(v: unknown): v is GameMode {
   return v === "default" || v === "testing" || v === "wastes";
 }

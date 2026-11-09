@@ -22,7 +22,7 @@ const scene = (): GameScene => game.scene.getScene("GameScene") as GameScene;
 if (import.meta.env.DEV) Object.assign(window, { twodverm: { game, scene, room: () => room } });
 
 const overlay = new Overlay({
-  onCreate: (name, gameMode) => connect(() => createGame({ name, gameMode })),
+  onCreate: (name, gameMode, devTest) => connect(() => createGame({ name, gameMode, devTest: devTest || undefined })),
   onJoin: (code, name) => connect(() => joinGame(code, { name })),
   onPickHero: (heroId: HeroId) => room?.send(MSG.selectHero, { heroId }),
   onStart: () => room?.send(MSG.start),

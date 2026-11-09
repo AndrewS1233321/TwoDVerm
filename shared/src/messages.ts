@@ -48,6 +48,11 @@ export interface JoinOptions {
   name: string;
   /** Host-only; ignored when joining an existing room. */
   gameMode?: GameMode;
+  /**
+   * Host-only Wastes option. When true, the run starts in the merchant hall
+   * with DEV_TEST_START_GOLD for every hero (before the first map vote).
+   */
+  devTest?: boolean;
 }
 
 export type GamePhase = "lobby" | "expedition" | "merchant" | "playing" | "victory" | "defeat";

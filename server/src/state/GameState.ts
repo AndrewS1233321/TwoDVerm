@@ -119,6 +119,8 @@ export class GameState extends Schema {
   @type("string") code = "";
   /** "default" | "testing" | "wastes". Set once when the room is created. */
   @type("string") gameMode = "default";
+  /** Host Wastes option: start at merchant with extra gold for shop testing. */
+  @type("boolean") devTest = false;
   /** Current playable level id (mission, testing zone, or expedition location). */
   @type("string") levelId = "default";
   /** Holseher's Map fork option A (expedition location id). */

@@ -37,6 +37,10 @@ Update this file after every meaningful implementation change.
   `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
   damage per stack via `shopDamageMul`); stacks shown under the
   explosion icon. Economy resets when a new run starts.
+- **Wastes `devTest`**: host-only create checkbox when mode is The
+  Gingey Wastes. Room stores `devTest`; on Start the party begins in
+  the merchant hall with `DEV_TEST_START_GOLD` (1000) each, then the
+  normal map vote after the exit hold (expeditionStop still 0).
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the
@@ -125,11 +129,13 @@ Update this file after every meaningful implementation change.
 
 - Game mode is chosen by the host at create time and stored on the
   room (`default` | `testing` | `wastes`). Joiners inherit it.
-  Wastes uses phase `expedition` for map voting, then
-  `generateLevel` + `loadGeneratedLevel` before `startMission`.
-  Testing disables the Director and uses edge-triggered summon pads
-  instead of horde pacing. Hand-authored ASCII remains for Default,
-  Testing, merchant, and camp.
+  Optional host `devTest` (Wastes only) starts the run in the merchant
+  hall with 1000 GP before the first map vote. Wastes uses phase
+  `expedition` for map voting, then `generateLevel` +
+  `loadGeneratedLevel` before `startMission`. Testing disables the
+  Director and uses edge-triggered summon pads instead of horde
+  pacing. Hand-authored ASCII remains for Default, Testing, merchant,
+  and camp.
 - Q toggles melee / ranged. While ranged is drawn, left click fires
   (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting

@@ -4,6 +4,7 @@ import {
   confineToBossRoom,
   createRng,
   dist,
+  DEV_TEST_START_GOLD,
   ENEMIES,
   initialLevelIdForMode,
   INTERACT_RANGE,
@@ -42,6 +43,8 @@ const LONELY_DESPAWN_TIME = 10;
 
 export class World {
   readonly mode: GameMode;
+  /** Wastes create option: merchant-first run with starting gold. */
+  devTest = false;
   levelId: string;
   level: Level;
   readonly heroes = new Map<string, Hero>();
@@ -164,6 +167,12 @@ export class World {
       hero.invisT = 0;
       hero.vanishAfterDodge = false;
     }
+  }
+
+  /** Give every hero the Wastes `devTest` starting purse. */
+  grantDevTestStartingGold(): void {
+    if (!this.devTest) return;
+    for (const hero of this.heroes.values()) hero.gold = DEV_TEST_START_GOLD;
   }
 
   /** Hero who may trade right now (merchant phase, standing, next to the merchant). */
