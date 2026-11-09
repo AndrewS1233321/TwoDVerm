@@ -884,7 +884,7 @@ function noRetreatHits(world: World, hero: Hero): void {
   const weight = noRetreatingWeight(hero.dodgeT, DODGE.time);
   const staggerTime = lerp(NO_RETREATING.staggerTimeMin, NO_RETREATING.staggerTimeMax, weight);
   const knockback = lerp(NO_RETREATING.knockbackMin, NO_RETREATING.knockbackMax, weight);
-  const reach = hero.radius + NO_RETREATING.pad;
+  const reach = hero.radius * lerp(NO_RETREATING.radiusMulMin, NO_RETREATING.radiusMulMax, weight);
   for (const e of world.enemies.values()) {
     if (e.def.behavior === "dummy") continue;
     if (hero.noRetreatHit.has(e.id)) continue;

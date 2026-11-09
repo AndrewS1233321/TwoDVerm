@@ -52,14 +52,16 @@ export const RIPOSTE = {
 /**
  * Markus: dodge body-checks stagger enemies. Strength scales with how far
  * through the dodge the contact happens (weak at the start, heavy at the end).
+ * End-of-dodge contact radius is `radiusMulMax` × his body radius.
  */
 export const NO_RETREATING = {
-  /** Extra reach beyond overlapping body radii. */
-  pad: 8,
-  staggerTimeMin: 0.12,
-  staggerTimeMax: 1.55,
-  knockbackMin: 70,
-  knockbackMax: 520,
+  /** Contact radius as a multiple of Markus's body radius (start → end of dodge). */
+  radiusMulMin: 1,
+  radiusMulMax: 1.5,
+  staggerTimeMin: 0.24,
+  staggerTimeMax: 3.1,
+  knockbackMin: 140,
+  knockbackMax: 1040,
 } as const;
 
 /** 0 at dodge start → 1 at dodge end (ease-in so the finish hits much harder). */

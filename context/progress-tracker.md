@@ -67,8 +67,9 @@ Update this file after every meaningful implementation change.
   (`RIPOSTE.critMul`); gold arc shows when charged. Markus's
   **No retreating** — while dodging, body-check contacts stagger
   enemies (no damage); stagger/knockback scale up sharply toward the
-  end of the dodge (`noRetreatingWeight`). Future: random offer pools
-  and per-perk pricing slot into `perksOfferedFor` / `PerkDef.cost`.
+  end of the dodge (`noRetreatingWeight`), with end contact radius
+  1.5× his body size. Future: random offer pools and per-perk pricing
+  slot into `perksOfferedFor` / `PerkDef.cost`.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
