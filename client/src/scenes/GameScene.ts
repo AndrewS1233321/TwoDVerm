@@ -394,6 +394,7 @@ export class GameScene extends Phaser.Scene {
       stamina: p.stamina,
       maxStamina: p.maxStamina,
       guardBroken: p.guardBroken,
+      guarding: p.guarding,
       ultActive: p.ultActive,
       impenetrable: p.heroId === "dwarf",
       reviveProgress: p.reviveProgress,

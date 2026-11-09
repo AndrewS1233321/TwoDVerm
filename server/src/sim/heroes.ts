@@ -282,17 +282,17 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 }
 
 /** Right-click block cuts off the current action and raises the guard this tick. */
-function tryInterruptToBlock(world: World, hero: Hero): boolean {
+function tryInterruptToBlock(_world: World, hero: Hero): boolean {
   // Ranged: RMB is precision aim, not block.
+  // Reviving: RMB raises a guard without cancelling the revive channel.
   if (hero.rangedMode) return false;
   if (!hero.held.block || hero.guardBrokenT > 0) return false;
-  if (hero.state === "blocking") return false;
+  if (hero.state === "blocking" || hero.state === "reviving") return false;
   if (
     hero.state !== "attack" &&
     hero.state !== "charging" &&
     hero.state !== "shooting" &&
     hero.state !== "pushing" &&
-    hero.state !== "reviving" &&
     hero.state !== "idle"
   ) {
     return false;
@@ -300,12 +300,6 @@ function tryInterruptToBlock(world: World, hero: Hero): boolean {
   // Idle with no throw charge can fall through to updateIdle's block path.
   if (hero.state === "idle" && !hero.carryingBarrelId) return false;
 
-  if (hero.state === "reviving") {
-    const target = world.heroes.get(hero.reviveTargetId);
-    if (target) target.reviveT = 0;
-    hero.reviveT = 0;
-    hero.reviveTargetId = "";
-  }
   hero.attack = null;
   hero.heavyQueued = false;
   hero.lightBufferT = 0;

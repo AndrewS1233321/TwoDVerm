@@ -38,7 +38,9 @@ Update this file after every meaningful implementation change.
   damage per stack via `shopDamageMul`); stacks shown under the
   explosion icon. Economy resets when a new run starts.
 - **Block interrupt**: holding block immediately cancels attack /
-  charge / shoot / push / revive / barrel charge and raises guard.
+  charge / shoot / push / barrel charge and raises guard. Revive can
+  continue while RMB is held (front blocks still work during the
+  channel).
 - **Bardin barrel handling**: built-in — 0.35s throw release (range
   charges from hold start), full move speed while carrying.
 - **Ranged precision aim**: with a ranged weapon drawn, RMB no longer

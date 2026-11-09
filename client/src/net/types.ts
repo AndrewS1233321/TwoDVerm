@@ -28,6 +28,8 @@ export interface PlayerView {
   stamina: number;
   maxStamina: number;
   guardBroken: boolean;
+  /** Blocking / pushing, or reviving while holding RMB. */
+  guarding: boolean;
   dodgeCharges: number;
   maxDodges: number;
   ammo: number;

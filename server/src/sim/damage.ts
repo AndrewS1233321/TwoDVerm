@@ -15,6 +15,21 @@ import {
 import type { Enemy, Hero } from "./types";
 import type { World } from "./World";
 
+/** Guard is up in block/push, or while channeling a revive with RMB held. */
+function heroIsGuarding(hero: Hero): boolean {
+  if (hero.guardBrokenT > 0 || hero.rangedMode) return false;
+  if (hero.state === "blocking" || hero.state === "pushing") return true;
+  return hero.state === "reviving" && hero.held.block;
+}
+
+function clearReviveIfNeeded(world: World, hero: Hero): void {
+  if (hero.state !== "reviving" && !hero.reviveTargetId) return;
+  const target = world.heroes.get(hero.reviveTargetId);
+  if (target) target.reviveT = 0;
+  hero.reviveT = 0;
+  hero.reviveTargetId = "";
+}
+
 export interface EnemyHit {
   damage: number;
   stagger: number;
@@ -150,14 +165,17 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
       world.emit({ t: "block", id: hero.id, x: hero.x, y: hero.y, broke: false });
       return "blocked";
     }
-    const guarding = hero.state === "blocking" || hero.state === "pushing";
+    const guarding = heroIsGuarding(hero);
     if (guarding && side === "front") {
       const cost = hit.blockCost * hero.def.weapon.blockCostMul;
       if (hero.stamina >= cost - 1e-6) {
         hero.stamina = Math.max(0, hero.stamina - cost);
         hero.staminaDelay = BLOCK.staminaRegenDelay;
         world.emit({ t: "block", id: hero.id, x: hero.x, y: hero.y, broke: false });
-        if (hit.stagger >= BLOCK.heavyBlockStaggerPower) staggerHero(hero, BLOCK.heavyBlockStaggerTime);
+        if (hit.stagger >= BLOCK.heavyBlockStaggerPower) {
+          clearReviveIfNeeded(world, hero);
+          staggerHero(hero, BLOCK.heavyBlockStaggerTime);
+        }
         return "blocked";
       }
       if (tryRuneWard(world, hero)) return "blocked";
@@ -166,6 +184,7 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
       hero.guardBrokenT = BLOCK.guardBreakLockout;
       damage *= BLOCK.guardBreakDamageMul;
       world.emit({ t: "block", id: hero.id, x: hero.x, y: hero.y, broke: true });
+      clearReviveIfNeeded(world, hero);
       staggerHero(hero, BLOCK.guardBreakStagger);
     } else if (tryRuneWard(world, hero)) {
       return "blocked";
@@ -177,7 +196,10 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
   const dmg = damage * HERO_DAMAGE_TAKEN[side];
   world.emit({ t: "hit", id: hero.id, by: hit.srcId, x: hero.x, y: hero.y, dmg: Math.round(dmg), side, armor: false, heavy: hit.stagger >= 2 });
   damageHero(world, hero, dmg);
-  if (hit.stagger >= hero.def.staggerResist) staggerHero(hero, MELEE.staggerTime);
+  if (hit.stagger >= hero.def.staggerResist) {
+    clearReviveIfNeeded(world, hero);
+    staggerHero(hero, MELEE.staggerTime);
+  }
   return "hit";
 }
 
@@ -219,6 +241,7 @@ export function downHero(world: World, hero: Hero): void {
     if (e) releaseGrab(world, e);
     hero.grabbedBy = "";
   }
+  clearReviveIfNeeded(world, hero);
   hero.hp = 0;
   hero.state = "downed";
   hero.downHp = DOWNED.hp;

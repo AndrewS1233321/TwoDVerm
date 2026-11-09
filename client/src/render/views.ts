@@ -17,6 +17,8 @@ export interface PoseInfo {
   stamina?: number;
   maxStamina?: number;
   guardBroken?: boolean;
+  /** True while actively guarding (incl. revive + RMB). */
+  guarding?: boolean;
   ultActive?: number;
   impenetrable?: boolean;
   reviveProgress?: number;
@@ -256,7 +258,13 @@ export class CreatureView {
           angle = 1.9;
           break;
         case "reviving":
-          angle = 1.4;
+          if (info.guarding) {
+            angle = -1.35;
+            hx = r * 0.8;
+            hy = r * 0.25;
+          } else {
+            angle = 1.4;
+          }
           break;
       }
     }
@@ -323,7 +331,7 @@ export class CreatureView {
       return;
     }
 
-    if (info.state === "blocking" || info.state === "pushing") {
+    if (info.state === "blocking" || info.state === "pushing" || (info.state === "reviving" && info.guarding)) {
       const frac = info.maxStamina ? clamp((info.stamina ?? 0) / info.maxStamina, 0, 1) : 1;
       const color = info.guardBroken ? colors.health : colors.stamina;
       top.lineStyle(3, color, 0.35 + 0.6 * frac);

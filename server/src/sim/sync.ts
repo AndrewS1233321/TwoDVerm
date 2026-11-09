@@ -26,6 +26,10 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.stamina = r2(hero.stamina);
   s.maxStamina = hero.def.stamina;
   s.guardBroken = hero.guardBrokenT > 0;
+  s.guarding =
+    !hero.rangedMode &&
+    hero.guardBrokenT <= 0 &&
+    (hero.state === "blocking" || hero.state === "pushing" || (hero.state === "reviving" && hero.held.block));
   s.dodgeCharges = hero.dodgeCharges;
   s.maxDodges = hero.def.dodges;
   s.ammo = hero.ammo;

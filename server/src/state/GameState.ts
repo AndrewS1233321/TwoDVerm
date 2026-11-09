@@ -25,6 +25,8 @@ export class PlayerState extends Schema {
   @type("float32") stamina = 0;
   @type("float32") maxStamina = 0;
   @type("boolean") guardBroken = false;
+  /** True while blocking / pushing, or reviving with RMB held. */
+  @type("boolean") guarding = false;
   @type("uint8") dodgeCharges = 0;
   @type("uint8") maxDodges = 0;
   @type("uint16") ammo = 0;
