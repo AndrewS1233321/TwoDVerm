@@ -81,6 +81,10 @@ export interface Hero extends MoveBody {
   shotCd: number;
   /** True while the ranged weapon is equipped; left-click fires instead of melee. */
   rangedMode: boolean;
+  /** Longbow hip-fire: currently holding left click to draw. */
+  bowDrawing: boolean;
+  /** Seconds the longbow string has been drawn (0–drawTime). */
+  bowDrawT: number;
   /** Barrel currently equipped ("" if none). */
   carryingBarrelId: string;
   /** Seconds left-click has been held while charging a barrel throw. */

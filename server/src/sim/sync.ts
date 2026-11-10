@@ -64,6 +64,8 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.riposteStrike = !!hero.attack?.crit;
   s.wrathCharging = hero.wrathCharging;
   s.wrathCharge = hero.wrathCharging ? r2(hero.wrathChargeT / ELVISH_WRATH.maxHold) : 0;
+  const drawMax = hero.def.ranged.drawTime ?? 0;
+  s.bowDraw = hero.bowDrawing && drawMax > 0 ? r2(hero.bowDrawT / drawMax) : 0;
   s.invisT = r2(hero.invisT);
 }
 

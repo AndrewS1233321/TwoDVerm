@@ -56,6 +56,13 @@ export interface RangedDef {
   /** Every shot lands on the head armor location. Precision headshots always do. */
   head?: boolean;
   stagger: number;
+  /**
+   * Hip-fire only: seconds to full draw. Hold left click to draw, release to fire.
+   * Precision aim (RMB) ignores this and fires instantly at full damage.
+   */
+  drawTime?: number;
+  /** Damage at 0 draw when `drawTime` is set (linear to `damage` at full draw). */
+  minDamage?: number;
 }
 
 export type UltId = "rally" | "volley" | "impenetrable" | "dash";

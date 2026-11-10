@@ -120,7 +120,7 @@ export class HudScene extends Phaser.Scene {
     t.hint!
       .setPosition(W / 2, 36)
       .setVisible(room.state.missionTime < HINT_SECONDS)
-      .setText("Left click: attack (hold for heavy)   Right click: block / ranged precision aim   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up or drop barrel   Esc: menu");
+      .setText("Left click: attack (hold for heavy) / draw bow   Right click: block / ranged precision aim   Space: dodge\nQ: switch melee / ranged   F: ultimate   Hold E: revive / pick up or drop barrel   Esc: menu");
   }
 
   /** Screen-space reticle glued to the cursor while ranged + RMB. */

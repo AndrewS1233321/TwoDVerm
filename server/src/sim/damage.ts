@@ -274,6 +274,8 @@ export function staggerHero(hero: Hero, time: number): void {
   if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") return;
   hero.attack = null;
   hero.heavyQueued = false;
+  hero.bowDrawing = false;
+  hero.bowDrawT = 0;
   hero.state = "staggered";
   hero.staggerT = Math.max(hero.staggerT, time);
   hero.actionSeq++;
@@ -286,6 +288,8 @@ export function downHero(world: World, hero: Hero): void {
   hero.riposteReady = false;
   hero.wrathCharging = false;
   hero.wrathChargeT = 0;
+  hero.bowDrawing = false;
+  hero.bowDrawT = 0;
   if (hero.grabbedBy) {
     const e = world.enemies.get(hero.grabbedBy);
     if (e) releaseGrab(world, e);
@@ -308,6 +312,8 @@ export function killHero(world: World, hero: Hero): void {
   hero.riposteReady = false;
   hero.wrathCharging = false;
   hero.wrathChargeT = 0;
+  hero.bowDrawing = false;
+  hero.bowDrawT = 0;
   hero.state = "dead";
   hero.downHp = 0;
   hero.respawnT = DOWNED.respawnTime;

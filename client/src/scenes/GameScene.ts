@@ -406,6 +406,7 @@ export class GameScene extends Phaser.Scene {
       riposteStrike: p.riposteStrike,
       wrathCharging: p.wrathCharging,
       wrathCharge: p.wrathCharge,
+      bowDraw: p.bowDraw,
       hidden: p.invisT > 0,
     };
   }
@@ -707,6 +708,14 @@ export class GameScene extends Phaser.Scene {
           this.effects.ring(e.x, e.y, 0xe8d0ff, 110, 520);
           this.effects.sparks(e.x, e.y, 0xd8a0ff, 14);
           this.sfxAt("ult", e, 0.55);
+          break;
+        }
+        case "bowDrawn": {
+          const view = this.viewFor(e.id);
+          view?.flash(110);
+          const at = view?.position ?? e;
+          this.effects.ring(at.x, at.y, 0xffffff, 48, 280);
+          this.effects.sparks(at.x, at.y, 0xffffff, 8);
           break;
         }
         case "pickup":

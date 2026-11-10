@@ -30,6 +30,7 @@ import {
   ELVISH_WRATH,
   elvishWrathShot,
   RIPOSTE,
+  bowDrawDamage,
   SMOKE_BOMB,
   smokeCloudRadius,
   stepMovement,
@@ -99,6 +100,8 @@ export function createHero(
     ammo: def.ranged.ammo,
     shotCd: 0,
     rangedMode: false,
+    bowDrawing: false,
+    bowDrawT: 0,
     carryingBarrelId: "",
     barrelCharge: 0,
     ultCd: 0,
@@ -260,6 +263,7 @@ export function processHeroInputs(world: World, hero: Hero): void {
         hero.attack = null;
         hero.heavyQueued = false;
       }
+      cancelBowDraw(hero);
       world.emit({ t: "dodge", id: hero.id });
       if (hero.perks.has("smoke_bomb")) {
         dropSmokeBomb(world, hero, dropX, dropY);
@@ -350,6 +354,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
   updateWrathCharge(world, hero, dt);
 
   if (hero.state === "staggered") {
+    cancelBowDraw(hero);
     hero.staggerT -= dt;
     if (hero.staggerT <= 0) hero.state = "idle";
     else {
@@ -393,9 +398,11 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
     case "shooting":
       hero.stateT -= dt;
       if (hero.rangedMode && hero.held.block) {
+        cancelBowDraw(hero);
         if (hero.edges.attackPressed) shoot(world, hero, true);
         else if (hero.stateT <= 0) hero.state = "idle";
-      } else if (hero.rangedMode && hero.held.attack) {
+      } else if (hero.rangedMode && hero.held.attack && !hero.def.ranged.drawTime) {
+        // Guns keep firing while held; bows draw on hold / fire on release in idle.
         shoot(world, hero, false);
       } else if (hero.stateT <= 0) {
         hero.state = "idle";
@@ -585,6 +592,7 @@ function toggleRanged(hero: Hero): void {
   hero.lightBufferT = 0;
   hero.attackHeldT = 0;
   hero.heavyQueued = false;
+  cancelBowDraw(hero);
   if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting" || hero.state === "blocking" || hero.state === "pushing") {
     hero.attack = null;
     hero.state = "idle";
@@ -620,11 +628,16 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
   if (hero.rangedMode) {
     hero.lightBufferT = 0;
     if (hero.held.block) {
+      cancelBowDraw(hero);
       // Precision aim: fire once per click at the cursor, not a ray.
       if (hero.edges.attackPressed) shoot(world, hero, true);
       return;
     }
-    // Held left click keeps firing whenever the weapon is ready.
+    if (hero.def.ranged.drawTime) {
+      updateBowHipfire(world, hero, dt);
+      return;
+    }
+    // Guns: held left click keeps firing whenever the weapon is ready.
     if (hero.held.attack) {
       shoot(world, hero, false);
       return;
@@ -633,6 +646,37 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
     return;
   }
   if (hero.held.interact) tryInteract(world, hero);
+}
+
+function cancelBowDraw(hero: Hero): void {
+  hero.bowDrawing = false;
+  hero.bowDrawT = 0;
+}
+
+/** Longbow hip-fire: hold to draw (up to drawTime), release to shoot. */
+function updateBowHipfire(world: World, hero: Hero, dt: number): void {
+  const canDraw = hero.ammo > 0 && hero.shotCd <= 0;
+  if (hero.held.attack && canDraw) {
+    const max = hero.def.ranged.drawTime!;
+    const prev = hero.bowDrawT;
+    if (!hero.bowDrawing) {
+      hero.bowDrawing = true;
+      hero.bowDrawT = 0;
+    }
+    hero.bowDrawT = Math.min(max, hero.bowDrawT + dt);
+    if (prev < max && hero.bowDrawT >= max) {
+      world.emit({ t: "bowDrawn", id: hero.id, x: hero.x, y: hero.y });
+    }
+    return;
+  }
+  if (hero.edges.attackReleased && hero.bowDrawing) {
+    const drawT = hero.bowDrawT;
+    cancelBowDraw(hero);
+    if (hero.ammo <= 0 || hero.shotCd > 0) return;
+    shoot(world, hero, false, bowDrawDamage(hero.def.ranged, drawT));
+    return;
+  }
+  if (!hero.held.attack) cancelBowDraw(hero);
 }
 
 function tryPush(world: World, hero: Hero): void {
@@ -662,7 +706,7 @@ function tryPush(world: World, hero: Hero): void {
   }
 }
 
-function shoot(world: World, hero: Hero, precision = false): void {
+function shoot(world: World, hero: Hero, precision = false, damageOverride?: number): void {
   const r = hero.def.ranged;
   if (hero.ammo <= 0 || hero.shotCd > 0) return;
   hero.ammo--;
@@ -670,13 +714,15 @@ function shoot(world: World, hero: Hero, precision = false): void {
   hero.state = "shooting";
   hero.stateT = SHOOT_RECOVERY;
   hero.actionSeq++;
+  cancelBowDraw(hero);
   const kind = r.id === "longbow" ? "arrow" : "gun";
+  const damage = damageOverride ?? r.damage;
   if (precision) {
-    firePrecisionShot(world, hero, r.damage, r.armorPierce, r.head ?? false, r.stagger, r.range, kind);
+    firePrecisionShot(world, hero, damage, r.armorPierce, r.head ?? false, r.stagger, r.range, kind);
     return;
   }
   const angle = hero.facing + (world.rng() - 0.5) * 2 * r.spread;
-  fireRay(world, hero, angle, r.range, r.pierce, r.damage, r.armorPierce, r.head ?? false, r.stagger, kind);
+  fireRay(world, hero, angle, r.range, r.pierce, damage, r.armorPierce, r.head ?? false, r.stagger, kind);
 }
 
 /**
@@ -883,6 +929,7 @@ function interruptForUlt(world: World, hero: Hero): void {
   hero.lightBufferT = 0;
   hero.attackHeldT = 0;
   hero.barrelCharge = 0;
+  cancelBowDraw(hero);
   hero.staggerT = 0;
   hero.state = keepBlock ? "blocking" : "idle";
   hero.actionSeq++;

@@ -171,6 +171,8 @@ export class World {
       hero.riposteReady = false;
       hero.wrathCharging = false;
       hero.wrathChargeT = 0;
+      hero.bowDrawing = false;
+      hero.bowDrawT = 0;
     }
   }
 

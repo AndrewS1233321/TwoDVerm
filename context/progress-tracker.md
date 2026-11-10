@@ -66,6 +66,10 @@ Update this file after every meaningful implementation change.
   (tiny radius, impact FX only — no travel tracer). Walls block LOS (shot
   fails). Head hotspot along facing (scales with body size) = 2×
   (`PRECISION_SHOT`).
+- **Kerri longbow draw**: hip-fire is hold-LMB to draw (up to 1s),
+  release to fire. Damage scales linearly from 20 → 40; full draw flashes
+  white (`bowDrawn`). Ammo 45, pierce 1 (no multi-target). RMB precision
+  still fires instantly at full damage. Guns keep hold-to-auto-fire.
 - **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit
@@ -190,8 +194,9 @@ Update this file after every meaningful implementation change.
   Director and uses edge-triggered summon pads instead of horde
   pacing; its end-zone pad never ends the mission. Hand-authored ASCII
   remains for Default, Testing, merchant, and camp.
-- Q toggles melee / ranged. While ranged is drawn, left click fires
-  (hold to keep shooting on cooldown); Q again returns to melee.
+- Q toggles melee / ranged. Guns: hold left click to keep firing on
+  cooldown. Kerri's longbow: hold to draw, release to fire (RMB
+  precision is still click-to-fire). Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting
   multiplayer onto a single-player game is very costly.
 - Colyseus for rooms and state sync, to avoid writing low-level netcode.

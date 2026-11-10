@@ -36,7 +36,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     ult: "volley",
     ultName: "Trueflight Volley",
     ultCooldown: 40,
-    description: "Fast daggers with deadly backstabs, a piercing bow, and extra dodges.",
+    description: "Fast daggers with deadly backstabs, a drawn longbow, and extra dodges.",
   },
   dwarf: {
     id: "dwarf",

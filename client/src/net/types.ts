@@ -70,6 +70,8 @@ export interface PlayerView {
   wrathCharging: boolean;
   /** Kerri Elvish Wrath charge 0–1. */
   wrathCharge: number;
+  /** Longbow hip-fire draw 0–1. */
+  bowDraw: number;
   /** Seconds of Smoke Bomb stealth remaining. */
   invisT: number;
   /** Gingey Wastes vote (location id) or "". */

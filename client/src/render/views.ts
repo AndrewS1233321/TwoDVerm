@@ -35,6 +35,8 @@ export interface PoseInfo {
   wrathCharging?: boolean;
   /** Kerri Elvish Wrath charge 0–1. */
   wrathCharge?: number;
+  /** Longbow hip-fire draw 0–1. */
+  bowDraw?: number;
   /** Smoke Bomb stealth. Local player stays faintly visible. */
   hidden?: boolean;
 }
@@ -233,8 +235,9 @@ export class CreatureView {
     const def = info.action && !info.rangedMode ? getAttack(info.action) : undefined;
 
     if (info.rangedMode && (info.state === "idle" || info.state === "shooting" || info.state === "blocking")) {
-      angle = info.state === "shooting" ? 0.05 : 0.15;
-      thrust = info.state === "shooting" ? 4 : 0;
+      const draw = clamp(info.bowDraw ?? 0, 0, 1);
+      angle = info.state === "shooting" ? 0.05 : 0.15 - draw * 0.08;
+      thrust = info.state === "shooting" ? 4 : draw * 6;
       hx = hand.x;
       hy = hand.y * 0.35;
       this.weapon.setPosition(hx + Math.cos(angle) * thrust, hy + Math.sin(angle) * thrust).setRotation(angle).clearTint();

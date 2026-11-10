@@ -82,6 +82,8 @@ export type FxEvent =
   | { t: "ult"; id: string; ult: string; x: number; y: number }
   /** Kerri Elvish Wrath reached maximum charge. */
   | { t: "wrathMax"; id: string; x: number; y: number }
+  /** Longbow reached full draw (hip-fire). */
+  | { t: "bowDrawn"; id: string; x: number; y: number }
   | { t: "pickup"; id: string; kind: string }
   | { t: "gasburst"; x: number; y: number }
   | { t: "gold"; x: number; y: number; amount: number }

@@ -1,4 +1,4 @@
-import { deg } from "../math";
+import { clamp, deg, lerp } from "../math";
 import type { RangedDef, WeaponDef } from "./types";
 
 export const GREATSWORD: WeaponDef = {
@@ -71,6 +71,27 @@ export const RAPIER: WeaponDef = {
 };
 
 export const REPEATER: RangedDef = { id: "repeater", name: "Repeater Handgun", damage: 22, ammo: 30, cooldown: 0.18, pierce: 1, spread: 0.04, range: 650, armorPierce: 0, stagger: 1 };
-export const LONGBOW: RangedDef = { id: "longbow", name: "Longbow", damage: 40, ammo: 24, cooldown: 0.5, pierce: 3, spread: 0, range: 800, armorPierce: 1, stagger: 1 };
+export const LONGBOW: RangedDef = {
+  id: "longbow",
+  name: "Longbow",
+  damage: 40,
+  minDamage: 20,
+  drawTime: 1,
+  ammo: 45,
+  cooldown: 0.5,
+  pierce: 1,
+  spread: 0,
+  range: 800,
+  armorPierce: 1,
+  stagger: 1,
+};
 export const HANDGUN: RangedDef = { id: "handgun", name: "Handgun", damage: 70, ammo: 10, cooldown: 1, pierce: 2, spread: 0, range: 750, armorPierce: 1, head: true, stagger: 2 };
 export const PISTOLS: RangedDef = { id: "pistols", name: "Brace of Pistols", damage: 26, ammo: 20, cooldown: 0.3, pierce: 1, spread: 0.03, range: 600, armorPierce: 0, stagger: 1 };
+
+/** Hip-fire damage for a drawn bow: minDamage at 0s → damage at full drawTime. */
+export function bowDrawDamage(ranged: RangedDef, drawT: number): number {
+  const max = ranged.drawTime ?? 0;
+  if (max <= 0) return ranged.damage;
+  const min = ranged.minDamage ?? ranged.damage;
+  return Math.round(lerp(min, ranged.damage, clamp(drawT / max, 0, 1)));
+}

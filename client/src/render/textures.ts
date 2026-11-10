@@ -498,16 +498,38 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
       g.fillStyle(0xd9b44a);
       g.fillCircle(14 * S, cy + 4 * S, 2.2 * S);
       break;
-    case "longbow":
-      g.lineStyle(2.2 * S, wood, 1);
+    case "longbow": {
+      // Classic side-view longbow: tall D-curve, grip, string, nocked arrow.
+      const tipX = 8 * S;
+      const bellyX = 20 * S;
+      g.lineStyle(2.6 * S, wood, 1);
       g.beginPath();
-      g.arc(18 * S, cy, 16 * S, -Math.PI * 0.55, Math.PI * 0.55, false);
+      g.moveTo(tipX, cy - 15 * S);
+      g.lineTo(bellyX, cy - 5 * S);
+      g.lineTo(bellyX + 1.5 * S, cy);
+      g.lineTo(bellyX, cy + 5 * S);
+      g.lineTo(tipX, cy + 15 * S);
       g.strokePath();
-      g.lineStyle(S * 0.8, 0xe8e0d0, 1);
-      g.lineBetween(10 * S, cy - 13 * S, 10 * S, cy + 13 * S);
+      g.lineStyle(1.4 * S, 0x8a6238, 1);
+      g.beginPath();
+      g.moveTo(tipX + 1 * S, cy - 14 * S);
+      g.lineTo(bellyX - 1 * S, cy - 4 * S);
+      g.lineTo(bellyX, cy);
+      g.lineTo(bellyX - 1 * S, cy + 4 * S);
+      g.lineTo(tipX + 1 * S, cy + 14 * S);
+      g.strokePath();
+      g.fillStyle(0x5a3a22);
+      g.fillRect(bellyX - 1.5 * S, cy - 2.2 * S, 4 * S, 4.4 * S);
+      g.lineStyle(S * 0.7, 0xe8e0d0, 1);
+      g.lineBetween(tipX, cy - 15 * S, tipX, cy + 15 * S);
       g.fillStyle(0xc9a14a);
-      g.fillTriangle(10 * S, cy - 1 * S, 10 * S, cy + 1 * S, 34 * S, cy);
+      g.fillRect(tipX - 0.6 * S, cy - 0.7 * S, 26 * S, 1.4 * S);
+      g.fillStyle(steel);
+      g.fillTriangle(tipX + 24 * S, cy - 1.6 * S, tipX + 24 * S, cy + 1.6 * S, tipX + 30 * S, cy);
+      g.fillStyle(0xb3261e);
+      g.fillTriangle(tipX - 0.4 * S, cy - 1.8 * S, tipX - 0.4 * S, cy + 1.8 * S, tipX + 3 * S, cy);
       break;
+    }
     case "handgun":
       g.fillStyle(wood);
       g.fillRect(0, cy - 1.5 * S, 10 * S, 3 * S);

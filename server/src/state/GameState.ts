@@ -74,6 +74,8 @@ export class PlayerState extends Schema {
   @type("boolean") wrathCharging = false;
   /** Kerri Elvish Wrath charge 0–1. */
   @type("float32") wrathCharge = 0;
+  /** Longbow hip-fire draw 0–1. */
+  @type("float32") bowDraw = 0;
   /** Seconds of Smoke Bomb stealth remaining. */
   @type("float32") invisT = 0;
 

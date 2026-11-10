@@ -22,6 +22,7 @@ import {
   RIPOSTE,
   SMOKE_BOMB,
   smokeCloudRadius,
+  bowDrawDamage,
   type ArmorLoadout,
   type ArmorSetDef,
   type ArmorSetId,
@@ -224,6 +225,54 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   check("Q a second time puts the melee weapon back", !hero.rangedMode);
   const ids = attackIds(world, hero, [{ hold: DT, wait: 0.4 }]);
   check("Left click is a melee swing again after holstering", ids[0] === HEROES.soldier.weapon.light[0]!.id, ids.join(" > "));
+}
+
+// Kerri's longbow: hold to draw (damage scales), release to fire; no multi-pierce.
+{
+  const bow = HEROES.ranger.ranged;
+  check("Longbow ammo is 45", bow.ammo === 45, `${bow.ammo}`);
+  check("Longbow pierce is 1", bow.pierce === 1, `${bow.pierce}`);
+  check("Longbow draw damage at 0s is half", bowDrawDamage(bow, 0) === 20, `${bowDrawDamage(bow, 0)}`);
+  check("Longbow draw damage at full is 40", bowDrawDamage(bow, bow.drawTime!) === 40, `${bowDrawDamage(bow, bow.drawTime!)}`);
+  check("Longbow draw damage mid-way is linear", bowDrawDamage(bow, 0.5) === 30, `${bowDrawDamage(bow, 0.5)}`);
+
+  const { world, hero } = setup("ranger");
+  check("Kerri starts with 45 ammo", hero.ammo === 45, `${hero.ammo}`);
+  run(world, hero, DT, { fire: true });
+  const ammo0 = hero.ammo;
+  run(world, hero, DT, { attack: true });
+  check("Holding LMB draws the bow without firing", hero.bowDrawing && hero.ammo === ammo0 && hero.state === "idle", `draw ${hero.bowDrawT} ammo ${hero.ammo}`);
+  tick(world, hero, { attack: false });
+  check("Releasing a short draw fires a weak arrow", hero.ammo === ammo0 - 1 && hero.state === "shooting", `ammo ${hero.ammo}`);
+
+  run(world, hero, 0.6);
+  const holdFx = run(world, hero, 1.05, { attack: true });
+  check("Holding to full draw flashes white once", holdFx.some((f) => f.t === "bowDrawn") && hero.bowDrawT >= (bow.drawTime ?? 1) - 0.001, `drawT ${hero.bowDrawT}`);
+  const e = dummy(world, hero.x + 80, hero.y, Math.PI);
+  const hp0 = e.hp;
+  const ammo1 = hero.ammo;
+  tick(world, hero, { attack: false });
+  check("Release after full draw spends ammo", hero.ammo === ammo1 - 1, `${ammo1} -> ${hero.ammo}`);
+  check("Full-draw shot damages the target", e.hp < hp0, `dmg ${hp0 - e.hp}`);
+
+  // Pierce: only the first rat in a line should be hit.
+  const { world: w2, hero: h2 } = setup("ranger");
+  run(w2, h2, DT, { fire: true });
+  run(w2, h2, 0.6);
+  const front = dummy(w2, h2.x + 60, h2.y, Math.PI);
+  const back = dummy(w2, h2.x + 120, h2.y, Math.PI);
+  const hpF = front.hp;
+  const hpB = back.hp;
+  run(w2, h2, 1.05, { attack: true });
+  tick(w2, h2, { attack: false });
+  check("Longbow no longer pierces through a second target", front.hp < hpF && back.hp === hpB, `front ${hpF - front.hp} back ${hpB - back.hp}`);
+
+  // Precision aim still fires instantly on click (full damage path).
+  const { world: w3, hero: h3 } = setup("ranger");
+  run(w3, h3, DT, { fire: true });
+  const a3 = h3.ammo;
+  tick(w3, h3, { attack: true, block: true, aimX: h3.x + 40, aimY: h3.y });
+  check("Precision aim still fires on click without drawing", h3.ammo === a3 - 1 && !h3.bowDrawing, `ammo ${h3.ammo}`);
 }
 
 // A rat telegraphs (windup) before its swing lands, so there is time to react.
