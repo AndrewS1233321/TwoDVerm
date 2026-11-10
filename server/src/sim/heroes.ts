@@ -317,18 +317,27 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       return;
     case "grabbed":
       return;
-    case "staggered":
-      hero.staggerT -= dt;
-      if (hero.staggerT <= 0) hero.state = "idle";
-      return;
     default:
       break;
+  }
+
+  // Ult fires immediately, interrupting attacks/etc. Block and dodge stay active.
+  if (hero.edges.ult) tryUlt(world, hero);
+
+  if (hero.state === "staggered") {
+    hero.staggerT -= dt;
+    if (hero.staggerT <= 0) hero.state = "idle";
+    else {
+      if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+      if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
+      if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
+      return;
+    }
   }
 
   // Block cancels attacks, charge, shots, pushes, revive, and barrel throw charge immediately.
   if (tryInterruptToBlock(world, hero)) {
     if (hero.edges.attackPressed && !hero.rangedMode && !hero.carryingBarrelId) tryPush(world, hero);
-    if (hero.edges.ult) tryUlt(world, hero);
     if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
     if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
     if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
@@ -338,6 +347,9 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
   switch (hero.state) {
     case "reviving":
       updateReviving(world, hero, dt);
+      if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
+      if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
+      if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
       return;
     case "attack":
       updateAttacking(world, hero, dt);
@@ -369,7 +381,6 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       break;
   }
 
-  if (hero.edges.ult) tryUlt(world, hero);
   if (hero.ultActiveT > 0 && hero.def.ult === "dash" && hero.dodgeT > 0) dashHits(world, hero);
   if (hero.perks.has("no_retreating") && hero.dodgeT > 0) noRetreatHits(world, hero);
   if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
@@ -835,16 +846,26 @@ function tryRespawn(world: World, hero: Hero): void {
 
 function tryUlt(world: World, hero: Hero): void {
   if (hero.ultCd > 0) return;
-  const ok =
-    hero.state === "idle" ||
-    hero.state === "blocking" ||
-    hero.state === "charging" ||
-    hero.state === "shooting" ||
-    (hero.state === "attack" && hero.attack?.phase === "recovery");
-  if (!ok) return;
-  hero.ultCd = hero.def.ultCooldown;
+  if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") return;
+
+  // Cancel the current action/animation, but leave block and dodge alone.
+  const keepBlock = !hero.rangedMode && hero.guardBrokenT <= 0 && (hero.state === "blocking" || hero.held.block);
+  if (hero.state === "reviving") {
+    const target = world.heroes.get(hero.reviveTargetId);
+    if (target) target.reviveT = 0;
+    hero.reviveTargetId = "";
+    hero.reviveT = 0;
+  }
   hero.attack = null;
-  hero.state = "idle";
+  hero.heavyQueued = false;
+  hero.lightBufferT = 0;
+  hero.attackHeldT = 0;
+  hero.barrelCharge = 0;
+  hero.staggerT = 0;
+  hero.state = keepBlock ? "blocking" : "idle";
+  // dodgeT / dodgeDx / dodgeDy / dodgeSpeed intentionally untouched.
+
+  hero.ultCd = hero.def.ultCooldown;
   hero.actionSeq++;
   world.emit({ t: "ult", id: hero.id, ult: hero.def.ult, x: hero.x, y: hero.y });
 

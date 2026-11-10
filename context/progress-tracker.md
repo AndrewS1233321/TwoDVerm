@@ -51,6 +51,11 @@ Update this file after every meaningful implementation change.
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the
   channel).
+- **Ult interrupt**: pressing F (ultimate) fires immediately from any
+  actionable state (attack any phase, charge, shoot, push, revive,
+  stagger, idle). It cancels the current action/animation but does
+  not cancel blocking or an in-progress dodge. Still blocked while
+  dead / downed / grabbed.
 - **Bardin barrel handling**: built-in — 0.35s throw release (range
   charges from hold start), full move speed while carrying.
 - **Ranged precision aim**: with a ranged weapon drawn, RMB no longer
