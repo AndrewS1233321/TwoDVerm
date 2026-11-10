@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { clamp, DIRECTION, GUNNER, getAttack, lerp } from "@twodverm/shared";
+import { clamp, DIRECTION, GUNNER, getAttack, lerp, RIPOSTE } from "@twodverm/shared";
 import { colors } from "./palette";
 import { handOffset, TEX_SCALE, WEAPON_INFO, weaponTextureKey, type DrawnWeaponStyle } from "./textures";
 
@@ -246,7 +246,7 @@ export class CreatureView {
       } else if (info.phase === 2) {
         const t = clamp(elapsed / Math.max(0.01, def.active), 0, 1);
         angle = lerp(def.swing.from, def.swing.to, easeOutCubic(t));
-        const thrustMul = info.riposteStrike ? 2 : 1;
+        const thrustMul = info.riposteStrike ? RIPOSTE.reachMul : 1;
         thrust = (def.swing.thrust ?? 0) * thrustMul * Math.sin(t * Math.PI);
       } else {
         const t = clamp(elapsed / Math.max(0.01, def.recovery), 0, 1);
@@ -378,6 +378,56 @@ export class CreatureView {
       top.beginPath();
       top.arc(info.x, info.y, r + 7, info.facing - 0.55, info.facing + 0.55, false);
       top.strokePath();
+    }
+    // Riposte strike: white flash along the (extended) attack path.
+    if (info.riposteStrike && def && (info.phase === 1 || info.phase === 2)) {
+      const reach = r + def.reach * RIPOSTE.reachMul + 4;
+      const half = Math.min(Math.PI, def.arc / 2);
+      const pathFrom = info.facing + def.swing.from;
+      const pathTo = info.facing + def.swing.to;
+      const thrust = def.swing.from === def.swing.to;
+      if (info.phase === 1) {
+        const t = clamp(elapsed / Math.max(0.01, def.windup), 0, 1);
+        top.lineStyle(2, 0xffffff, 0.2 + 0.45 * t);
+        if (thrust) {
+          top.lineBetween(
+            info.x,
+            info.y,
+            info.x + Math.cos(info.facing) * reach * (0.35 + 0.65 * t),
+            info.y + Math.sin(info.facing) * reach * (0.35 + 0.65 * t),
+          );
+        } else {
+          top.beginPath();
+          top.arc(info.x, info.y, reach, Math.min(pathFrom, pathTo), Math.max(pathFrom, pathTo), false);
+          top.strokePath();
+        }
+      } else {
+        const t = clamp(elapsed / Math.max(0.01, def.active), 0, 1);
+        const flash = Math.max(0, 1 - t * 1.35);
+        ground.fillStyle(0xffffff, 0.1 + 0.22 * flash);
+        ground.slice(info.x, info.y, reach, info.facing - half, info.facing + half, false);
+        ground.fillPath();
+        if (thrust) {
+          top.lineStyle(5, 0xffffff, 0.35 + 0.55 * flash);
+          top.lineBetween(
+            info.x,
+            info.y,
+            info.x + Math.cos(info.facing) * reach,
+            info.y + Math.sin(info.facing) * reach,
+          );
+        } else {
+          const a0 = lerp(pathFrom, pathTo, Math.max(0, t - 0.2));
+          const a1 = lerp(pathFrom, pathTo, Math.min(1, t + 0.08));
+          top.lineStyle(2, 0xffffff, 0.25 + 0.25 * flash);
+          top.beginPath();
+          top.arc(info.x, info.y, reach, Math.min(pathFrom, pathTo), Math.max(pathFrom, pathTo), false);
+          top.strokePath();
+          top.lineStyle(4, 0xffffff, 0.45 + 0.5 * flash);
+          top.beginPath();
+          top.arc(info.x, info.y, reach, Math.min(a0, a1), Math.max(a0, a1), false);
+          top.strokePath();
+        }
+      }
     }
     if (info.impenetrable && (info.ultActive ?? 0) > 0) {
       top.lineStyle(3, colors.accent, 0.5 + 0.3 * Math.sin(now * 0.015));

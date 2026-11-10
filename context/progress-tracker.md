@@ -80,8 +80,9 @@ Update this file after every meaningful implementation change.
   deals no damage; when the dodge ends she is hidden for 1.5s (no
   aggro, not a target, current chasers drop her). Viktor's **Riposte**
   — after a player dodge (not Animosity), the next melee attack has
-  2× reach and deals a guaranteed critical (`RIPOSTE.critMul`); gold
-  arc shows when charged. Markus's **No retreating** — while dodging,
+  1.5× reach and deals a guaranteed critical (`RIPOSTE.critMul`); gold
+  arc shows when charged, and the strike draws a white flash along the
+  extended attack path. Markus's **No retreating** — while dodging,
   body-check contacts stagger enemies (no damage); stagger/knockback
   scale up sharply toward the end of the dodge (`noRetreatingWeight`),
   with end contact radius 1.5× his body size. Future: random offer

@@ -456,7 +456,7 @@ function applyKnockback(world: World, hero: Hero, dt: number): void {
   hero.kvy *= decay;
 }
 
-/** Double reach / thrust / lunge for a Riposte-charged swing. */
+/** Extended reach / thrust / lunge for a Riposte-charged swing. */
 function riposteAttackDef(base: AttackDef): AttackDef {
   const thrust = base.swing.thrust;
   return {

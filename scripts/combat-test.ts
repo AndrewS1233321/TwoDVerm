@@ -322,7 +322,7 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   check("Other heroes cannot buy Smoke Bomb", !other.world.buyPerk(other.hero.id, "smoke_bomb") && other.hero.gold === 50);
 }
 
-// Viktor's Riposte: after a dodge (not ult), next melee is double reach + guaranteed crit.
+// Viktor's Riposte: after a dodge (not ult), next melee is 1.5× reach + guaranteed crit.
 {
   const offered = perksOfferedFor("hunter", new Set()).map((p) => p.id);
   check("Merchant offers Viktor Riposte", offered.includes("riposte"));
@@ -332,8 +332,8 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   hero.perks.add("riposte");
   hero.facing = 0;
   const baseReach = HEROES.hunter.weapon.light[0]!.reach;
-  // Beyond normal first-light reach, inside double-reach.
-  const gap = hero.radius + baseReach * 1.55;
+  // Beyond normal first-light reach, inside 1.5× Riposte reach (target radius still helps).
+  const gap = hero.radius + baseReach * 1.25;
   const pin = (e: Enemy, x: number, y: number) => {
     e.x = x;
     e.y = y;
@@ -355,7 +355,7 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   const hp0 = near.hp;
   tick(world, hero, { attack: true, aim: 0 });
   const fx = run(world, hero, 0.7, { aim: 0 });
-  check("Riposte swing uses double reach", near.hp < hp0, `hp ${hp0} -> ${near.hp}`);
+  check("Riposte swing uses 1.5× reach", near.hp < hp0, `hp ${hp0} -> ${near.hp}`);
   check("Riposte is consumed after the attack", !hero.riposteReady && hero.attack === null);
   const critHit = fx.find((f) => f.t === "hit" && f.id === near.id && f.crit === true);
   check("Riposte hit is a guaranteed critical", !!critHit, critHit ? `dmg ${critHit.dmg}` : "no crit fx");

@@ -44,7 +44,7 @@ export function smokeCloudRadius(heroRadius: number): number {
 /** Viktor: after a dodge (not his ult dash), the next melee strike is extended and critical. */
 export const RIPOSTE = {
   /** Multiplier applied to attack reach (and thrust / lunge for feel). */
-  reachMul: 2,
+  reachMul: 1.5,
   /** Damage multiplier for the guaranteed critical hit. */
   critMul: 2,
 } as const;
@@ -104,7 +104,7 @@ export const PERKS: Record<PerkId, PerkDef> = {
   riposte: {
     id: "riposte",
     name: "Riposte",
-    description: "After a dodge, your next melee attack has double reach and is a guaranteed critical hit. Does not trigger from your ultimate.",
+    description: "After a dodge, your next melee attack has 1.5× reach and is a guaranteed critical hit. Does not trigger from your ultimate.",
     cost: PERK_COST,
     heroIds: ["hunter"],
   },
