@@ -56,7 +56,6 @@ function blastBarrel(world: World, barrel: Barrel, byId: string): void {
       damageEnemy(world, thrower, e, {
         damage: BARREL.throwDamage,
         stagger: BARREL.throwStagger,
-        armorPierce: false,
         srcX: barrel.x,
         srcY: barrel.y,
       });

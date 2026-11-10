@@ -1,5 +1,6 @@
 import {
   allLivingInBossRoom,
+  ARMOR_SETS,
   collideCircle,
   confineToBossRoom,
   createRng,
@@ -8,6 +9,7 @@ import {
   ENEMIES,
   initialLevelIdForMode,
   INTERACT_RANGE,
+  isArmorSetId,
   isInZone,
   isPerkId,
   isShopItemId,
@@ -33,7 +35,7 @@ import { Director } from "./director";
 import { updateEnemy } from "./enemies";
 import { FlowField } from "./flowField";
 import { updateHazards } from "./hazards";
-import { createHero, processHeroInputs, resetHeroForMission, updateHero } from "./heroes";
+import { createHero, equipArmorSet, processHeroInputs, resetHeroForMission, updateHero } from "./heroes";
 import { separateCreatures } from "./separation";
 import type { Barrel, Enemy, Hazard, Hero, Pickup } from "./types";
 
@@ -201,6 +203,19 @@ export class World {
     return true;
   }
 
+  /** Buy and equip a full armor set, replacing the current one. Returns false if the buy is rejected. */
+  buyArmorSet(heroId: string, setId: string): boolean {
+    if (!isArmorSetId(setId)) return false;
+    const hero = this.shopper(heroId);
+    if (!hero) return false;
+    const set = ARMOR_SETS[setId];
+    if (set.hero !== hero.def.id || hero.armorSetId === set.id || hero.gold < set.cost) return false;
+    hero.gold -= set.cost;
+    equipArmorSet(hero, set.id);
+    this.emit({ t: "pickup", id: hero.id, kind: "shop" });
+    return true;
+  }
+
   /** Spend gold on a merchant item. Returns false if the buy is rejected. */
   buyShopItem(heroId: string, itemId: string): boolean {
     if (!isShopItemId(itemId)) return false;
@@ -265,6 +280,9 @@ export class World {
     for (const d of this.level.dummySpawns) {
       this.spawnEnemy(d.armored ? "dummyArmored" : "dummy", d.x, d.y, false);
     }
+    for (const p of this.level.merchantSpawns) {
+      this.spawnEnemy("merchant", p.x, p.y, false);
+    }
     // A few barrels near the centre for interact / throw testing.
     const starts = this.level.playerStarts;
     const origin = starts[0] ?? { x: 200, y: 200 };
@@ -275,6 +293,41 @@ export class World {
         createBarrel(id, origin.x + 80 + (i % 2) * 36, origin.y + 40 + Math.floor(i / 2) * 36),
       );
     }
+  }
+
+  /**
+   * Opening hub for The Gingey Wastes: testing zone with a merchant and a
+   * "TO THE WASTES" hold. Used whether or not `devTest` was selected.
+   */
+  enterWastesHub(): void {
+    this.loadLevel("testing");
+    this.enemies.clear();
+    this.hazards.clear();
+    this.pickups.clear();
+    this.barrels.clear();
+    this.fx = [];
+    this.gateOpen = true;
+    this.eventActive = false;
+    this.eventDone = false;
+    this.eventTimeLeft = 0;
+    this.bossActive = false;
+    this.missionTime = 0;
+    this.merchantHold = 0;
+    this.merchantDepart = false;
+    this.padOccupancy.clear();
+    let i = 0;
+    for (const hero of this.heroes.values()) {
+      const start = this.level.playerStarts[i++ % this.level.playerStarts.length]!;
+      resetHeroForMission(hero, start.x, start.y);
+    }
+    this.setupTestingZone();
+    this.rebuildFlow();
+    this.phase = "merchant";
+    this.emit({
+      t: "announce",
+      text: "Staging hall. Trade with the merchant, then gather on TO THE WASTES.",
+      kind: "info",
+    });
   }
 
   /** After a wastes mission, send the party to the merchant hall. */
@@ -404,6 +457,7 @@ export class World {
     updateHazards(this, dt);
 
     if (this.phase === "merchant") {
+      if (this.level.summonPads.length > 0) this.updateSummonPads();
       this.updateMerchantExit(dt);
       return;
     }
@@ -586,6 +640,8 @@ export class World {
       return;
     }
     if (this.level.endZone.size === 0) return;
+    // Testing zone has a wastes-gate pad; standing there must never end the mission.
+    if (this.mode === "testing") return;
 
     if (this.procMeta) {
       if (!this.finalObjectiveComplete) {

@@ -223,13 +223,15 @@ export class LevelRenderer {
     zone(this.level.holdZone, colors.accent, this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0 ? "HOLD" : "HOLD THE SQUARE");
     zone(this.level.bossRoom.size > 0 ? this.level.bossRoom : this.level.bossTrigger, 0x9a2a1a, "BOSS");
     const exitText =
-      this.level.merchantSpawns.length > 0
-        ? "HOLD TO DEPART"
-        : this.exitUnlocked
-          ? this.level.holdZone.size > 0 || this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0
-            ? "EXIT"
-            : "SAFE ROOM"
-          : "EXIT — CLEAR BOSS FIRST";
+      this.level.summonPads.length > 0 && this.level.endZone.size > 0
+        ? "TO THE WASTES"
+        : this.level.merchantSpawns.length > 0
+          ? "HOLD TO DEPART"
+          : this.exitUnlocked
+            ? this.level.holdZone.size > 0 || this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0
+              ? "EXIT"
+              : "SAFE ROOM"
+            : "EXIT — CLEAR BOSS FIRST";
     this.exitLabel = zone(this.level.endZone, colors.success, exitText);
   }
 

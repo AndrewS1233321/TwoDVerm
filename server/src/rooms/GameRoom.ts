@@ -78,17 +78,16 @@ export class GameRoom extends Room<GameState> {
       if ([...this.state.players.values()].some((p) => !p.heroId)) return;
       this.world.resetRunEconomy();
       if (this.state.gameMode === "wastes") {
-        if (this.state.devTest) {
-          this.world.grantDevTestStartingGold();
-          this.world.enterMerchantHall();
-          this.state.levelId = this.world.levelId;
-          this.lastPhase = "merchant";
-          this.syncAll();
-          console.log(`Dev-test merchant opened in room ${this.code} (${this.state.players.size} players, ${DEV_TEST_START_GOLD} GP)`);
-        } else {
-          this.beginExpeditionVote();
-          console.log(`Expedition map opened in room ${this.code}`);
-        }
+        if (this.state.devTest) this.world.grantDevTestStartingGold();
+        this.world.enterWastesHub();
+        this.state.levelId = this.world.levelId;
+        this.lastPhase = "merchant";
+        this.syncAll();
+        console.log(
+          `Wastes staging hall opened in room ${this.code} (${this.state.players.size} players${
+            this.state.devTest ? `, ${DEV_TEST_START_GOLD} GP` : ""
+          })`,
+        );
       } else {
         this.world.startMission();
         this.syncAll();
@@ -106,6 +105,12 @@ export class GameRoom extends Room<GameState> {
       const perkId = (raw as { perkId?: unknown } | null)?.perkId;
       if (typeof perkId !== "string") return;
       if (this.world.buyPerk(client.sessionId, perkId)) this.syncAll();
+    });
+
+    this.onMessage(MSG.buyArmorSet, (client, raw: unknown) => {
+      const setId = (raw as { setId?: unknown } | null)?.setId;
+      if (typeof setId !== "string") return;
+      if (this.world.buyArmorSet(client.sessionId, setId)) this.syncAll();
     });
 
     this.onMessage(MSG.voteLocation, (client, raw: unknown) => {
@@ -165,7 +170,7 @@ export class GameRoom extends Room<GameState> {
         player.heroId = heroId;
         const hero = this.world.addHero(client.sessionId, name, HEROES[heroId]);
         this.world.placeLateJoiner(hero);
-        // Catch up a late joiner to the opening merchant before the first map.
+        // Catch up a late joiner to the opening staging hall before the first map.
         if (this.state.devTest && this.state.phase === "merchant" && this.state.expeditionStop === 0) {
           hero.gold = DEV_TEST_START_GOLD;
         }
@@ -291,7 +296,10 @@ export class GameRoom extends Room<GameState> {
 
     this.world.emit({
       t: "announce",
-      text: `Onward (${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}). Choose the next road.`,
+      text:
+        this.state.expeditionStop === 0
+          ? "The Wastes await. Choose your first road."
+          : `Onward (${this.state.expeditionStop}/${WASTES_EXPEDITION_STOPS}). Choose the next road.`,
       kind: "info",
     });
     this.beginExpeditionVote();

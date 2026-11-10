@@ -46,7 +46,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     radius: 15,
     hp: 180,
     stamina: 6,
-    dodges: 2,
+    dodges: 1,
     speed: 155,
     staggerResist: 3,
     weapon: WAR_HAMMER,

@@ -626,10 +626,10 @@ export class GameScene extends Phaser.Scene {
               this.hud.emit("hurt");
             }
           } else {
-            const back = e.side === "back";
+            const back = e.side === "back" && !e.head;
             const crit = e.crit === true;
             const color = e.armor ? "#9aa3ad" : crit ? "#ffe27a" : back ? "#ff9a3a" : e.heavy ? "#ffd27a" : "#e8e0d0";
-            const label = crit ? `${e.dmg} CRIT` : back && !e.armor ? `${e.dmg}!` : `${e.dmg}`;
+            const label = crit ? `${e.dmg} CRIT` : back ? `${e.dmg}!` : `${e.dmg}`;
             this.effects.damageNumber(at.x, at.y, label, color, crit || back || e.heavy);
             if (e.armor) this.effects.sparks(at.x, at.y, 0xd8d0c0, 5, 90);
             else this.effects.blood(at.x, at.y, crit || back ? 1.5 : 1);

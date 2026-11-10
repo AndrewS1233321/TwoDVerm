@@ -10,6 +10,7 @@ import {
   HEROES,
   INTERACT_RANGE,
   isHeroId,
+  isInZone,
   MERCHANT_EXIT_HOLD,
 } from "@twodverm/shared";
 import { hasState } from "../net/connection";
@@ -283,8 +284,15 @@ export class HudScene extends Phaser.Scene {
     const now = performance.now();
     const exitHolding = room.state.merchantHold > 0;
     const exitLeft = Math.max(0, MERCHANT_EXIT_HOLD - room.state.merchantHold);
+    const wastesGate = this.game_.level.summonPads.length > 0 && this.game_.level.endZone.size > 0;
     const exitLabel =
-      room.state.phase === "merchant" ? "Departing" : room.state.phase === "playing" ? "Extracting" : "Departing";
+      wastesGate && room.state.phase === "merchant"
+        ? "To the Wastes"
+        : room.state.phase === "merchant"
+          ? "Departing"
+          : room.state.phase === "playing"
+            ? "Extracting"
+            : "Departing";
 
     if (exitHolding) {
       const secs = Math.max(1, Math.ceil(exitLeft));
@@ -296,13 +304,28 @@ export class HudScene extends Phaser.Scene {
         .setFontSize("72px");
       t.event!
         .setPosition(W / 2, H * 0.48)
-        .setText(`${exitLabel} — stay in the exit`)
+        .setText(`${exitLabel} — stay in the zone`)
         .setFontSize("20px");
       return;
     }
 
+    const exitWait = this.exitWaitingOnOthers();
     t.announce!.setFontSize("30px");
     t.event!.setFontSize("16px");
+    if (exitWait) {
+      t.announce!
+        .setPosition(W / 2, H * 0.38)
+        .setText("Waiting on other players...")
+        .setAlpha(1)
+        .setColor(palette.accent)
+        .setFontSize("28px");
+      t.event!
+        .setPosition(W / 2, H * 0.48)
+        .setText(wastesGate ? "Gather everyone on TO THE WASTES" : "Gather everyone in the exit")
+        .setFontSize("18px");
+      return;
+    }
+
     if (this.announce && now < this.announce.until) {
       const left = this.announce.until - now;
       t.announce!.setPosition(W / 2, H * 0.22).setText(this.announce.text).setAlpha(Math.min(1, left / 500));
@@ -312,7 +335,9 @@ export class HudScene extends Phaser.Scene {
     }
     let eventText = "";
     if (room.state.phase === "merchant") {
-      eventText = "Merchant hall — gather in the exit to continue";
+      eventText = wastesGate
+        ? "Staging hall — trade, then gather on TO THE WASTES"
+        : "Merchant hall — gather in the exit to continue";
     } else if (room.state.phase === "playing" && room.state.procSeed && room.state.finalObjectiveComplete) {
       eventText = "Boss down — gather in the exit to leave";
     } else if (room.state.phase === "playing" && room.state.procSeed && !room.state.finalObjectiveComplete) {
@@ -343,6 +368,35 @@ export class HudScene extends Phaser.Scene {
     else if (me.state === "downed") status = "You are down! A teammate must hold E next to you";
     else if (me.state === "grabbed") status = "GRABBED! Teammates must strike the Packmaster!";
     t.status!.setPosition(W / 2, H * 0.68).setText(status);
+  }
+
+  /**
+   * True when at least one living hero is in the exit/hold zone but the whole
+   * living party is not yet assembled (so the 10s countdown has not started).
+   */
+  private exitWaitingOnOthers(): boolean {
+    const room = this.game_.room;
+    if (!room || room.state.merchantHold > 0) return false;
+    const phase = room.state.phase;
+    const level = this.game_.level;
+    if (level.endZone.size === 0) return false;
+    const wastesGate = level.summonPads.length > 0 && level.endZone.size > 0;
+    const exitArmed =
+      phase === "merchant" ||
+      (phase === "playing" && !!room.state.procSeed && room.state.finalObjectiveComplete);
+    if (!exitArmed) return false;
+    // Testing-mode missions never use the wastes gate as an exit.
+    if (wastesGate && phase !== "merchant") return false;
+
+    let living = 0;
+    let inZone = 0;
+    room.state.players.forEach((p) => {
+      if (p.state === "dead") return;
+      living++;
+      const able = p.state !== "downed" && p.state !== "grabbed";
+      if (able && isInZone(level, level.endZone, p.x, p.y)) inZone++;
+    });
+    return living > 1 && inZone > 0 && inZone < living;
   }
 
   private drawPrompt(me: PlayerView, W: number, H: number): void {

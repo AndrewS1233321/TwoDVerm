@@ -47,6 +47,8 @@ export interface PlayerView {
   dodgeDx: number;
   dodgeDy: number;
   dodgeSpeed: number;
+  /** Speed a newly started dodge will use (after armor). */
+  dodgeBaseSpeed: number;
   ackSeq: number;
   kills: number;
   damageDealt: number;
@@ -56,6 +58,8 @@ export interface PlayerView {
   dmgUpStacks: number;
   /** Comma-separated owned perk ids. */
   perks: string;
+  /** Equipped armor set id. */
+  armorSetId: string;
   /** Rune Ward charged (glow). */
   wardReady: boolean;
   /** Riposte charged after a dodge. */

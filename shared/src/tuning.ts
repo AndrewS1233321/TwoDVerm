@@ -40,10 +40,10 @@ export const PUSH = {
   duration: 0.25,
 };
 
-export const HERO_DAMAGE_TAKEN = { front: 1, side: 1, back: 1.25 };
-export const ENEMY_DAMAGE_TAKEN = { front: 1, side: 1.2, back: 1.5 };
-/** Damage multiplier for non-armour-piercing hits on an armoured enemy's front or side. */
-export const ARMOR_NON_PIERCE_MUL = 0.25;
+/** Damage multiplier by hit location, applied before armor. */
+export const HERO_DAMAGE_TAKEN = { head: 1, front: 1, side: 1, back: 1.25 };
+/** Back is the baseline backstab: double damage, still reduced by back armor. */
+export const ENEMY_DAMAGE_TAKEN = { head: 1, front: 1, side: 1.2, back: 2 };
 
 export const MELEE = {
   /** Holding attack at least this long turns it into a heavy charge instead of a light attack. */

@@ -1,5 +1,8 @@
 import {
+  armoredHeroStats,
+  type ArmorSetId,
   BARREL,
+  DEFAULT_ARMOR_SET,
   barrelCarrySpeedMul,
   barrelThrowReady,
   BLOCK,
@@ -44,7 +47,15 @@ import type { World } from "./World";
 const SHOOT_RECOVERY = 0.22;
 const KNOCKBACK_DECAY = 10;
 
-export function createHero(id: string, name: string, def: HeroDef, x: number, y: number): Hero {
+export function createHero(
+  id: string,
+  name: string,
+  def: HeroDef,
+  x: number,
+  y: number,
+  armorSetId: ArmorSetId = DEFAULT_ARMOR_SET[def.id],
+): Hero {
+  const stats = armoredHeroStats(def, armorSetId);
   const hero: Hero = {
     id,
     name,
@@ -74,11 +85,11 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     lightBufferT: 0,
     chargeT: 0,
     heavyQueued: false,
-    stamina: def.stamina,
+    stamina: stats.stamina,
     staminaDelay: 0,
     guardBrokenT: 0,
     pushCd: 0,
-    dodgeCharges: def.dodges,
+    dodgeCharges: stats.dodges,
     dodgeRefillT: 0,
     dodgeCooldown: 0,
     iframesT: 0,
@@ -107,6 +118,8 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
     gold: 0,
     dmgUpStacks: 0,
     perks: new Set(),
+    armorSetId,
+    stats,
     wardCd: 0,
     invisT: 0,
     vanishAfterDodge: false,
@@ -117,7 +130,7 @@ export function createHero(id: string, name: string, def: HeroDef, x: number, y:
 }
 
 export function resetHeroForMission(hero: Hero, x: number, y: number): void {
-  const fresh = createHero(hero.id, hero.name, hero.def, x, y);
+  const fresh = createHero(hero.id, hero.name, hero.def, x, y, hero.armorSetId);
   fresh.connected = hero.connected;
   fresh.ackSeq = hero.ackSeq;
   fresh.actionSeq = hero.actionSeq + 1;
@@ -125,6 +138,14 @@ export function resetHeroForMission(hero: Hero, x: number, y: number): void {
   fresh.dmgUpStacks = hero.dmgUpStacks;
   fresh.perks = hero.perks;
   Object.assign(hero, fresh);
+}
+
+/** Swap the hero's whole armor set. Stamina and dodge charges are capped to the new maximums. */
+export function equipArmorSet(hero: Hero, setId: ArmorSetId): void {
+  hero.armorSetId = setId;
+  hero.stats = armoredHeroStats(hero.def, setId);
+  hero.stamina = Math.min(hero.stamina, hero.stats.stamina);
+  hero.dodgeCharges = Math.min(hero.dodgeCharges, hero.stats.dodges);
 }
 
 export function queueInput(hero: Hero, input: InputMessage): void {
@@ -141,9 +162,9 @@ export function heroMoveMods(hero: Hero): MoveMods {
     hero.def.weapon.style === "daggers" &&
     !hero.rangedMode &&
     (key === "windup" || key === "active" || key === "recovery" || key === "charging");
-  let speed = hero.def.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
+  let speed = hero.stats.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
   if (hero.carryingBarrelId) speed *= barrelCarrySpeedMul(hero.def.id);
-  const turnRate = HERO_TURN_RATE * (HERO_STATE_TURN[key] ?? 1);
+  const turnRate = HERO_TURN_RATE * hero.stats.turnRateMul * (HERO_STATE_TURN[key] ?? 1);
   const stateAllowsDodge =
     hero.state === "idle" ||
     hero.state === "blocking" ||
@@ -155,6 +176,7 @@ export function heroMoveMods(hero: Hero): MoveMods {
     speed,
     turnRate,
     canDodge: stateAllowsDodge && hero.dodgeCharges >= 1 && hero.dodgeCooldown <= 0 && hero.dodgeT <= 0,
+    dodgeSpeed: DODGE.speed * hero.stats.dodgeSpeedMul,
   };
 }
 
@@ -400,7 +422,7 @@ function tickTimers(hero: Hero, dt: number): void {
       hero.chainHeavy = 0;
     }
   }
-  if (hero.dodgeCharges < hero.def.dodges) {
+  if (hero.dodgeCharges < hero.stats.dodges) {
     hero.dodgeRefillT -= dt;
     if (hero.dodgeRefillT <= 0) {
       hero.dodgeCharges++;
@@ -409,7 +431,7 @@ function tickTimers(hero: Hero, dt: number): void {
   }
   if (hero.state !== "blocking" && hero.state !== "pushing") {
     hero.staminaDelay -= dt;
-    if (hero.staminaDelay <= 0) hero.stamina = Math.min(hero.def.stamina, hero.stamina + BLOCK.staminaRegenPerSec * dt);
+    if (hero.staminaDelay <= 0) hero.stamina = Math.min(hero.stats.stamina, hero.stamina + BLOCK.staminaRegenPerSec * dt);
   }
 }
 
@@ -614,11 +636,11 @@ function shoot(world: World, hero: Hero, precision = false): void {
   hero.actionSeq++;
   const kind = r.id === "longbow" ? "arrow" : "gun";
   if (precision) {
-    firePrecisionShot(world, hero, r.damage, r.armorPierce, r.stagger, r.range, kind);
+    firePrecisionShot(world, hero, r.damage, r.armorPierce, r.head ?? false, r.stagger, r.range, kind);
     return;
   }
   const angle = hero.facing + (world.rng() - 0.5) * 2 * r.spread;
-  fireRay(world, hero, angle, r.range, r.pierce, r.damage, r.armorPierce, r.stagger, kind);
+  fireRay(world, hero, angle, r.range, r.pierce, r.damage, r.armorPierce, r.head ?? false, r.stagger, kind);
 }
 
 /**
@@ -629,7 +651,8 @@ function firePrecisionShot(
   world: World,
   hero: Hero,
   damage: number,
-  armorPierce: boolean,
+  armorPierce: number,
+  head: boolean,
   stagger: number,
   range: number,
   kind: "arrow" | "gun",
@@ -669,6 +692,7 @@ function firePrecisionShot(
       damage: damage * (headshot ? PRECISION_SHOT.headDamageMul : 1),
       stagger,
       armorPierce,
+      head: head || headshot,
       srcX: hero.x,
       srcY: hero.y,
     });
@@ -687,7 +711,8 @@ function fireRay(
   range: number,
   pierce: number,
   damage: number,
-  armorPierce: boolean,
+  armorPierce: number,
+  head: boolean,
   stagger: number,
   kind: "arrow" | "gun",
 ): void {
@@ -722,7 +747,7 @@ function fireRay(
     if (left <= 0) break;
     left--;
     if (hit.kind === "enemy") {
-      damageEnemy(world, hero, hit.e, { damage, stagger, armorPierce, srcX: hero.x, srcY: hero.y });
+      damageEnemy(world, hero, hit.e, { damage, stagger, armorPierce, head, srcX: hero.x, srcY: hero.y });
     } else {
       const barrel = world.barrels.get(hit.id);
       if (barrel) damageBarrel(world, barrel, damage, hero.id);
@@ -802,8 +827,8 @@ function tryRespawn(world: World, hero: Hero): void {
   hero.state = "idle";
   hero.hp = hero.def.hp * DOWNED.respawnHpFraction;
   hero.ammo = Math.floor(hero.def.ranged.ammo / 2);
-  hero.stamina = hero.def.stamina;
-  hero.dodgeCharges = hero.def.dodges;
+  hero.stamina = hero.stats.stamina;
+  hero.dodgeCharges = hero.stats.dodges;
   hero.actionSeq++;
   world.emit({ t: "revive", id: hero.id });
 }
@@ -837,7 +862,7 @@ function tryUlt(world: World, hero: Hero): void {
         if (h.state === "dead" || h.state === "downed") continue;
         if (dist(hero.x, hero.y, h.x, h.y) > 300) continue;
         h.hp = Math.min(h.def.hp, h.hp + 25);
-        h.stamina = h.def.stamina;
+        h.stamina = h.stats.stamina;
       }
       break;
     }
@@ -848,13 +873,13 @@ function tryUlt(world: World, hero: Hero): void {
       for (let i = 0; i < 3 && candidates.length > 0; i++) {
         const e = candidates[i % candidates.length]!;
         world.emit({ t: "tracer", x1: hero.x, y1: hero.y, x2: e.x, y2: e.y, kind: "arrow" });
-        damageEnemy(world, hero, e, { damage: 60, stagger: 2, armorPierce: true, srcX: hero.x, srcY: hero.y });
+        damageEnemy(world, hero, e, { damage: 60, stagger: 2, armorPierce: 1, srcX: hero.x, srcY: hero.y });
       }
       break;
     }
     case "impenetrable": {
       hero.ultActiveT = 6;
-      hero.stamina = hero.def.stamina;
+      hero.stamina = hero.stats.stamina;
       for (const e of world.enemies.values()) {
         if (dist(hero.x, hero.y, e.x, e.y) < 400) e.targetId = hero.id;
       }
@@ -878,7 +903,7 @@ function dashHits(world: World, hero: Hero): void {
     if (hero.dashHit.has(e.id)) continue;
     if (dist(hero.x, hero.y, e.x, e.y) > hero.radius + e.radius + 18) continue;
     hero.dashHit.add(e.id);
-    damageEnemy(world, hero, e, { damage: 40, stagger: 2, armorPierce: true, srcX: hero.x, srcY: hero.y });
+    damageEnemy(world, hero, e, { damage: 40, stagger: 2, armorPierce: 1, srcX: hero.x, srcY: hero.y });
   }
 }
 
@@ -917,7 +942,7 @@ function oldGoatHits(world: World, hero: Hero): void {
     damageEnemy(world, hero, e, {
       damage: OLD_GOAT.damage,
       stagger: 0,
-      armorPierce: true,
+      armorPierce: 1,
       noStagger: true,
       heavy: true,
       srcX: hero.x,

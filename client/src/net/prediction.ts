@@ -1,5 +1,6 @@
 import {
   confineToBossRoom,
+  DODGE,
   DT,
   HEROES,
   isHeroId,
@@ -25,7 +26,7 @@ export class Predictor {
   readonly offset = { x: 0, y: 0 };
   private pending: InputMessage[] = [];
   private seq = 0;
-  private mods: MoveMods = { radius: 14, speed: 0, turnRate: 0, canDodge: false };
+  private mods: MoveMods = { radius: 14, speed: 0, turnRate: 0, canDodge: false, dodgeSpeed: DODGE.speed };
   private initialised = false;
 
   nextSeq(): number {
@@ -47,6 +48,7 @@ export class Predictor {
       speed: p.moveSpeed,
       turnRate: p.turnRate,
       canDodge: p.canDodge,
+      dodgeSpeed: p.dodgeBaseSpeed || DODGE.speed,
     };
     const before = { x: this.body.x, y: this.body.y };
     if (!this.initialised) this.seq = Math.max(this.seq, p.ackSeq);

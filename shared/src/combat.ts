@@ -1,4 +1,5 @@
 import { angleDiff, angleTo } from "./math";
+import type { ArmorLocation } from "./data/armor";
 import type { HitSide } from "./messages";
 import { DIRECTION } from "./tuning";
 
@@ -8,6 +9,11 @@ export function hitSide(defFacing: number, defX: number, defY: number, srcX: num
   if (rel <= DIRECTION.frontHalfArc) return "front";
   if (rel >= Math.PI - DIRECTION.backHalfArc) return "back";
   return "side";
+}
+
+/** Armor location a hit lands on: the head for head-targeting hits, otherwise its side. */
+export function hitLocation(side: HitSide, head: boolean | undefined): ArmorLocation {
+  return head ? "head" : side;
 }
 
 /**

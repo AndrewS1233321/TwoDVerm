@@ -1,5 +1,9 @@
 import {
+  ARMOR_LEVEL_NAMES,
+  ARMOR_LOCATIONS,
+  armorSetsForHero,
   CREATURE_RACE_LABELS,
+  describeTradeoffs,
   EXPEDITION_LOCATIONS,
   GAME_MODE_LABELS,
   HERO_IDS,
@@ -15,6 +19,8 @@ import {
   isGameMode,
   isHeroId,
   parseLevelProps,
+  type ArmorLocation,
+  type ArmorSetId,
   type ExpeditionLocation,
   type ExpeditionLocationId,
   type GameMode,
@@ -38,7 +44,10 @@ export interface OverlayHandlers {
   onPauseChange(paused: boolean): void;
   onBuyShopItem(itemId: ShopItemId): void;
   onBuyPerk(perkId: PerkId): void;
+  onBuyArmorSet(setId: ArmorSetId): void;
 }
+
+const ARMOR_LOCATION_LABELS: Record<ArmorLocation, string> = { head: "Head", front: "Front", side: "Sides", back: "Back" };
 
 const PERK_ICON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <path d="M32 6 L54 14 V32 C54 46 44 54 32 58 C20 54 10 46 10 32 V14 Z" fill="#16303f" stroke="#8fd3ff" stroke-width="3" />
@@ -115,6 +124,11 @@ export class Overlay {
       const id = btn?.dataset.perk;
       if (btn && !btn.disabled && id) this.h.onBuyPerk(id as PerkId);
     };
+    el("shop-armor").onclick = (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-armor]");
+      const id = btn?.dataset.armor;
+      if (btn && !btn.disabled && id) this.h.onBuyArmorSet(id as ArmorSetId);
+    };
     this.bindSettings();
 
     window.addEventListener("keydown", (e) => {
@@ -129,6 +143,7 @@ export class Overlay {
     if (!this.inRoom || this.currentPhase !== "merchant") return;
     this.shopOpen = true;
     this.perkSignature = "";
+    this.armorSignature = "";
     el("shop").classList.add("show");
     this.h.onPauseChange(true);
     this.refreshShop();
@@ -238,6 +253,44 @@ export class Overlay {
     buy.disabled = gold < item.cost;
     buy.textContent = gold < item.cost ? "Need gold" : "Buy";
     this.renderShopPerks(me?.heroId ?? "", me?.perks ?? "", gold);
+    this.renderShopArmor(me?.heroId ?? "", me?.armorSetId ?? "", gold);
+  }
+
+  private armorSignature = "";
+
+  /** Full armor sets for this hero; the worn set shows as Equipped. */
+  private renderShopArmor(heroId: string, equipped: string, gold: number): void {
+    const sets = armorSetsForHero(heroId);
+    const sig = `${heroId}|${equipped}|${sets.map((s) => `${s.id}:${gold >= s.cost}`).join(",")}`;
+    if (sig === this.armorSignature) return;
+    this.armorSignature = sig;
+    const box = el("shop-armor");
+    if (sets.length === 0) {
+      box.innerHTML = `<div class="shop-empty">No armour available</div>`;
+      return;
+    }
+    box.innerHTML = sets
+      .map((s) => {
+        const isEquipped = s.id === equipped;
+        const afford = gold >= s.cost;
+        const action = isEquipped
+          ? `<div class="shop-item-owned">Equipped</div>`
+          : `<div class="shop-item-cost">${s.cost} GP</div><button class="primary" data-armor="${s.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>`;
+        const levels = ARMOR_LOCATIONS.map(
+          (loc) => `<span><b>${ARMOR_LOCATION_LABELS[loc]}</b> ${ARMOR_LEVEL_NAMES[s.loadout[loc]]}</span>`,
+        ).join("");
+        const tradeoffs = describeTradeoffs(s.tradeoffs);
+        return `<div class="shop-item${isEquipped ? " owned" : ""}">
+          <div class="shop-item-icon" aria-hidden="true">${PERK_ICON}</div>
+          <div>
+            <div class="shop-item-name">${escapeHtml(s.name)}</div>
+            <div class="shop-armor-levels">${levels}</div>
+            <p class="shop-item-desc">${escapeHtml(tradeoffs ? `${s.description} ${tradeoffs}.` : s.description)}</p>
+          </div>
+          <div class="shop-item-buy">${action}</div>
+        </div>`;
+      })
+      .join("");
   }
 
   private perkSignature = "";
@@ -367,22 +420,19 @@ export class Overlay {
     const start = el<HTMLButtonElement>("start-btn");
     start.style.display = isHost ? "" : "none";
     start.disabled = !allPicked;
-    start.textContent =
-      mode === "wastes" ? (state.devTest ? "Start at merchant" : "Open Gingey's Map") : "Start mission";
+    start.textContent = mode === "wastes" ? "Enter staging hall" : "Start mission";
     el("lobby-status").textContent = !me?.heroId
       ? "Pick a hero"
       : isHost
         ? allPicked
           ? mode === "wastes"
             ? state.devTest
-              ? "Start at the merchant when ready"
-              : "Open the map when ready"
+              ? "Start in the testing hall with bonus gold when ready"
+              : "Start in the testing hall when ready"
             : "Everyone is ready"
           : "Waiting for everyone to pick a hero"
         : mode === "wastes"
-          ? state.devTest
-            ? "Waiting for the host to start at the merchant"
-            : "Waiting for the host to open the map"
+          ? "Waiting for the host to open the staging hall"
           : "Waiting for the host to start";
   }
 

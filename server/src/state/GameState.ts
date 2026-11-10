@@ -50,6 +50,8 @@ export class PlayerState extends Schema {
   @type("float32") dodgeDx = 0;
   @type("float32") dodgeDy = 0;
   @type("float32") dodgeSpeed = 0;
+  /** Speed a newly started dodge will use (after armor). */
+  @type("float32") dodgeBaseSpeed = 0;
   @type("uint32") ackSeq = 0;
 
   @type("uint16") kills = 0;
@@ -60,6 +62,8 @@ export class PlayerState extends Schema {
   @type("uint16") dmgUpStacks = 0;
   /** Comma-separated owned perk ids. */
   @type("string") perks = "";
+  /** Equipped armor set id. */
+  @type("string") armorSetId = "";
   /** True while Rune Ward is charged (drives the glow). */
   @type("boolean") wardReady = false;
   /** True while Riposte is charged after a dodge. */

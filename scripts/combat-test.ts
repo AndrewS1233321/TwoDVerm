@@ -3,8 +3,14 @@
  *   npm run combat-test
  */
 import {
+  ARMOR_LEVELS,
+  ARMOR_REDUCTION,
+  ARMOR_SETS,
+  armorReduction,
+  DEFAULT_ARMOR_SET,
   DT,
   DODGE,
+  HERO_IDS,
   HEROES,
   NO_RETREATING,
   noRetreatingWeight,
@@ -13,11 +19,16 @@ import {
   RIPOSTE,
   SMOKE_BOMB,
   smokeCloudRadius,
+  type ArmorLoadout,
+  type ArmorSetDef,
+  type ArmorSetId,
+  type EnemyDef,
   type FxEvent,
   type HeroId,
   type InputMessage,
 } from "@twodverm/shared";
-import { strikeHero } from "../server/src/sim/damage";
+import { damageEnemy, strikeHero, type EnemyHit } from "../server/src/sim/damage";
+import { heroMoveMods } from "../server/src/sim/heroes";
 import type { Enemy, Hero } from "../server/src/sim/types";
 import { World } from "../server/src/sim/World";
 
@@ -463,6 +474,95 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   buy.world.phase = "merchant";
   buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
   check("Bardin can buy Old Goat for 50 GP", buy.world.buyPerk(buy.hero.id, "old_goat") && buy.hero.perks.has("old_goat") && buy.hero.gold === 0);
+}
+
+// Layered armor: per-location levels, pierce steps levels down, head hits, backstab 2x through back armor.
+{
+  check("Bardin starts with one dodge charge", HEROES.dwarf.dodges === 1 && setup("dwarf").hero.dodgeCharges === 1);
+
+  const loadout: ArmorLoadout = { head: "superHeavy", front: "heavy", side: "medium", back: "light" };
+  check(
+    "Armor levels reduce 0 / 25 / 50 / 75 / 95%",
+    ARMOR_LEVELS.map((l) => ARMOR_REDUCTION[l]).join(",") === "0,0.25,0.5,0.75,0.95",
+  );
+  check("Pierce 1 makes heavy act as medium", armorReduction(loadout, "front", 1) === ARMOR_REDUCTION.medium);
+  check("Pierce never goes below unarmored", armorReduction(loadout, "back", 5) === 0);
+
+  const { world } = setup("dwarf");
+  const strike = (location: "front" | "side" | "back", hit: Partial<EnemyHit> = {}): number => {
+    const e = world.spawnEnemy("clanrat", 0, 0, true)!;
+    (e as { def: EnemyDef }).def = { ...e.def, armor: loadout };
+    e.hp = 9999;
+    e.facing = 0;
+    const src = { front: { x: 30, y: 0 }, side: { x: 0, y: 30 }, back: { x: -30, y: 0 } }[location];
+    const hp0 = e.hp;
+    damageEnemy(world, null, e, { damage: 100, stagger: 0, srcX: e.x + src.x, srcY: e.y + src.y, ...hit });
+    world.enemies.delete(e.id);
+    return Math.round((hp0 - e.hp) * 100) / 100;
+  };
+  check("Front heavy armor takes 25%", strike("front") === 25, `${strike("front")}`);
+  check("Side medium armor takes 1.2x then 50%", strike("side") === 60, `${strike("side")}`);
+  check("Backstab is 2x and still reduced by light back armor", strike("back") === 150, `${strike("back")}`);
+  check("Head-flagged hits use head armor (super heavy)", strike("front", { head: true }) === 5, `${strike("front", { head: true })}`);
+  check("Pierce 1 on the front: heavy acts as medium", strike("front", { armorPierce: 1 }) === 50, `${strike("front", { armorPierce: 1 })}`);
+
+  const plainRat = world.spawnEnemy("clanrat", 0, 0, true)!;
+  plainRat.hp = 9999;
+  plainRat.facing = 0;
+  damageEnemy(world, null, plainRat, { damage: 100, stagger: 0, srcX: plainRat.x - 30, srcY: plainRat.y });
+  check("Unarmored backstab deals exactly double the attack's base damage", 9999 - plainRat.hp === 200, `${9999 - plainRat.hp}`);
+  world.enemies.delete(plainRat.id);
+
+  const storm = setup("soldier");
+  const sv = storm.world.spawnEnemy("stormvermin", storm.hero.x + 30, storm.hero.y, true)!;
+  sv.facing = Math.PI;
+  sv.hp = 9999;
+  damageEnemy(storm.world, null, sv, { damage: 100, stagger: 0, srcX: storm.hero.x, srcY: storm.hero.y });
+  check("Stormvermin front is heavy armor", Math.round(9999 - sv.hp) === 25, `${9999 - sv.hp}`);
+}
+
+// Hero armor sets: defaults per hero, armor reduces incoming damage, trade-offs apply, buying replaces the set.
+{
+  for (const heroId of HERO_IDS) {
+    const { hero } = setup(heroId);
+    check(`${HEROES[heroId].name} starts in ${ARMOR_SETS[DEFAULT_ARMOR_SET[heroId]].name}`, hero.armorSetId === DEFAULT_ARMOR_SET[heroId]);
+  }
+
+  const sets = ARMOR_SETS as Record<string, ArmorSetDef>;
+  sets.testHeavy = {
+    id: "testHeavy" as ArmorSetId,
+    name: "Test Heavy",
+    hero: "dwarf",
+    cost: 50,
+    loadout: { head: "heavy", front: "heavy", side: "medium", back: "light" },
+    tradeoffs: { speedMul: 0.8, dodgesDelta: 1, staminaMul: 0.5, dodgeDistanceMul: 0.5 },
+    description: "Test only.",
+  };
+
+  const buy = setup("dwarf");
+  buy.hero.gold = 60;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check("Kerri cannot buy Bardin's armor", !setup("ranger").world.buyArmorSet("h1", "testHeavy"));
+  check("Bardin buys a full armor set", buy.world.buyArmorSet(buy.hero.id, "testHeavy") && buy.hero.armorSetId === ("testHeavy" as ArmorSetId) && buy.hero.gold === 10);
+  check("Buying the worn set again is rejected", !buy.world.buyArmorSet(buy.hero.id, "testHeavy"));
+  check("Armor trade-offs change stats", buy.hero.stats.speed === HEROES.dwarf.speed * 0.8 && buy.hero.stats.dodges === HEROES.dwarf.dodges + 1 && buy.hero.stats.stamina === HEROES.dwarf.stamina * 0.5);
+  check("Stamina is capped to the new maximum", buy.hero.stamina <= buy.hero.stats.stamina);
+  const mods = heroMoveMods(buy.hero);
+  check("Armor slows movement and dodges", mods.speed === HEROES.dwarf.speed * 0.8 && mods.dodgeSpeed === DODGE.speed * 0.5);
+
+  buy.world.phase = "playing";
+  buy.hero.facing = 0;
+  const hp0 = buy.hero.hp;
+  strikeHero(buy.world, buy.hero, { damage: 40, stagger: 0, blockCost: 1, srcId: "e", srcX: buy.hero.x + 30, srcY: buy.hero.y });
+  check("Hero front heavy armor takes 25%", Math.round(hp0 - buy.hero.hp) === 10, `${hp0} -> ${buy.hero.hp}`);
+  const hp1 = buy.hero.hp;
+  strikeHero(buy.world, buy.hero, { damage: 40, stagger: 0, blockCost: 1, srcId: "e", srcX: buy.hero.x - 30, srcY: buy.hero.y });
+  check("Hero back light armor: 1.25x then 25% off", Math.round(hp1 - buy.hero.hp) === 38, `${hp1} -> ${buy.hero.hp}`);
+
+  buy.world.startMission();
+  check("Armor set persists into the next mission", buy.hero.armorSetId === ("testHeavy" as ArmorSetId));
+  delete sets.testHeavy;
 }
 
 console.log(failures === 0 ? "\nAll combat checks passed" : `\n${failures} combat check(s) failed`);

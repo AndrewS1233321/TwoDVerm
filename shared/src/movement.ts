@@ -23,6 +23,8 @@ export interface MoveMods {
   /** Turn rate in radians per second for the current state. */
   turnRate: number;
   canDodge: boolean;
+  /** Speed of a dodge started this input (armor can shorten dodges). */
+  dodgeSpeed: number;
 }
 
 /**
@@ -55,7 +57,7 @@ export function stepMovement(
       body.dodgeDy = -Math.sin(body.facing);
     }
     body.dodgeT = DODGE.time;
-    body.dodgeSpeed = DODGE.speed;
+    body.dodgeSpeed = mods.dodgeSpeed;
     started = true;
   }
 

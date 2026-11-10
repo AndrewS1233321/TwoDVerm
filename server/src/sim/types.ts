@@ -1,4 +1,4 @@
-import type { AttackDef, EnemyDef, HeroDef, InputMessage, MoveBody, PerkId } from "@twodverm/shared";
+import type { ArmoredHeroStats, ArmorSetId, AttackDef, EnemyDef, HeroDef, InputMessage, MoveBody, PerkId } from "@twodverm/shared";
 
 export type AttackKind = "light" | "heavy" | "enemy";
 export type AttackPhase = "windup" | "active" | "recovery";
@@ -109,6 +109,10 @@ export interface Hero extends MoveBody {
   dmgUpStacks: number;
   /** Perks bought at the merchant; persist for the whole run. */
   perks: Set<PerkId>;
+  /** Equipped full armor set; persists for the whole run. */
+  armorSetId: ArmorSetId;
+  /** Base stats after the armor set's trade-offs. Read these instead of `def` for speed, dodges and stamina. */
+  stats: ArmoredHeroStats;
   /** Seconds until Rune Ward is ready again (ready when <= 0). */
   wardCd: number;
   /** Seconds of stealth remaining (Smoke Bomb). Enemies ignore her while > 0. */

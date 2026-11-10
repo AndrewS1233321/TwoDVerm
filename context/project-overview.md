@@ -29,9 +29,13 @@ game is moderately fast-paced; reaction time and attack timing matter.
 3. Friends open the URL, enter a name and the room code, click "Join".
 4. In the lobby, each player picks a hero (unique per team).
 5. Host starts: Default/Testing enter the mission; Gingey Wastes
-   opens Gingey's Map so the party votes on a forked path (Chaos
-   Wastes style). Each option shows rolled level type, difficulty,
-   and races; Travel generates a room-based layout from those props.
+   always opens the Testing zone staging hall (merchant + summon
+   pads), whether or not DevTest is checked. DevTest still grants
+   starting gold. When the whole party holds the green
+   "TO THE WASTES" pad for 10s, Gingey's Map opens so the party votes
+   on a forked path (Chaos Wastes style). Each option shows rolled
+   level type, difficulty, and races; Travel generates a room-based
+   layout from those props.
 6. All players spawn at the start zone of the chosen level.
 7. Players fight through the level; the Director spawns hordes,
    specials and a boss (Default mission and Wastes proc levels).

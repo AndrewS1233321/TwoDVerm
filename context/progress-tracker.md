@@ -37,10 +37,14 @@ Update this file after every meaningful implementation change.
   `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
   damage per stack via `shopDamageMul`); stacks shown under the
   explosion icon. Economy resets when a new run starts.
-- **Wastes `devTest`**: host-only create checkbox when mode is The
-  Gingey Wastes. Room stores `devTest`; on Start the party begins in
-  the merchant hall with `DEV_TEST_START_GOLD` (1000) each, then the
-  normal map vote after the exit hold (expeditionStop still 0).
+- **Wastes staging hall**: on Start (Gingey Wastes), the party always
+  enters the Testing zone as a hub (`enterWastesHub`) — merchant NPC,
+  summon pads, dummies — whether or not `devTest` is checked. A green
+  **TO THE WASTES** pad requires the whole living party for 10s, then
+  opens Gingey's Map. HUD shows the countdown, or "Waiting on other
+  players..." when only some are on the pad. `devTest` still only
+  grants `DEV_TEST_START_GOLD` (1000). Mid-run merchant halls stay on
+  `wastes_merchant`. Testing mode ignores the pad for victory.
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the
@@ -73,6 +77,25 @@ Update this file after every meaningful implementation change.
   with end contact radius 1.5× his body size. Future: random offer
   pools and per-perk pricing slot into `perksOfferedFor` /
   `PerkDef.cost`.
+- **Layered armor** (`shared/src/data/armor.ts`): armor sits per
+  location (head / front / side / back) at one of five levels (none 0%,
+  light 25%, medium 50%, heavy 75%, super heavy 95% reduction). Enemies
+  carry an `armor` loadout (placeholders: Stormvermin head/front heavy,
+  side medium, back light; Armoured Dummy heavy everywhere; others
+  unarmored). `armorPierce` is now a number of levels stripped (all old
+  piercing attacks start at 1). Head hits come from `head`-flagged
+  attacks (overhead heavies `gs_h2` / `wh_h1`, rapier thrusts `ra_l3` /
+  `ra_h1`, handgun, Stormvermin overhead) and precision headshots.
+  Backstabs double the attack's base damage, then back armor applies
+  (no longer ignored). Back armor levels are chosen per enemy by hand;
+  there is no rule tying them to front/side armor.
+  Heroes wear one full armor set (`ARMOR_SETS`, starting on
+  `markusDefault` / `kerriDefault` / `bardinDefault` / `viktorDefault`,
+  all unarmored with no trade-offs). Sets carry trade-offs (speed, turn,
+  dodges, dodge distance, stamina) applied via `hero.stats`; bought
+  from the merchant's Armour section (`MSG.buyArmorSet`), replacing the
+  worn set for the rest of the run. Real sets are still to be defined.
+- **Bardin dodges**: 1 dodge charge.
 - **Barrels**: procedural rooms roll density (50% none / 25% few /
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
@@ -90,9 +113,10 @@ Update this file after every meaningful implementation change.
   map vote; 4 stops then results.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
-  central room (starts + unarmoured/armoured dummies) and a summon
+  central room (starts + unarmoured/armoured dummies), a summon
   room with one green pad per combat enemy type (step on pad to
-  spawn). Director disabled in testing; no auto-victory.
+  spawn), a merchant, and a **TO THE WASTES** hold room. Director
+  disabled in testing; no auto-victory (the wastes pad is ignored).
 - Unit 01: context files and build plan written.
 - Unit 02: skeleton. `npm run dev` starts Colyseus (port 2567) and Vite
   (port 5173). Colyseus 0.16, Phaser 3, Vite 6.
@@ -138,13 +162,14 @@ Update this file after every meaningful implementation change.
 
 - Game mode is chosen by the host at create time and stored on the
   room (`default` | `testing` | `wastes`). Joiners inherit it.
-  Optional host `devTest` (Wastes only) starts the run in the merchant
-  hall with 1000 GP before the first map vote. Wastes uses phase
+  Optional host `devTest` (Wastes only) grants 1000 GP at start.
+  Wastes Start always loads the Testing zone staging hall (merchant +
+  TO THE WASTES hold) before the first map vote. Wastes uses phase
   `expedition` for map voting, then `generateLevel` +
   `loadGeneratedLevel` before `startMission`. Testing disables the
   Director and uses edge-triggered summon pads instead of horde
-  pacing. Hand-authored ASCII remains for Default, Testing, merchant,
-  and camp.
+  pacing; its end-zone pad never ends the mission. Hand-authored ASCII
+  remains for Default, Testing, merchant, and camp.
 - Q toggles melee / ranged. While ranged is drawn, left click fires
   (hold to keep shooting on cooldown); Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting

@@ -15,6 +15,8 @@ export const MSG = {
   buyShopItem: "buyShopItem",
   /** Merchant hall: buy a hero perk by id. */
   buyPerk: "buyPerk",
+  /** Merchant hall: buy and equip a full hero armor set by id. */
+  buyArmorSet: "buyArmorSet",
   fx: "fx",
 } as const;
 
@@ -61,7 +63,7 @@ export type HitSide = "front" | "side" | "back";
 
 /** One-off events the server broadcasts each tick for effects and sounds. */
 export type FxEvent =
-  | { t: "hit"; id: string; by: string; x: number; y: number; dmg: number; side: HitSide; armor: boolean; heavy: boolean; crit?: boolean }
+  | { t: "hit"; id: string; by: string; x: number; y: number; dmg: number; side: HitSide; head?: boolean; armor: boolean; heavy: boolean; crit?: boolean }
   | { t: "block"; id: string; x: number; y: number; broke: boolean }
   | { t: "dodge"; id: string }
   | { t: "death"; id: string; x: number; y: number; kind: string; by: string }

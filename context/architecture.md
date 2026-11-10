@@ -71,6 +71,25 @@ Every creature (hero or enemy) has:
   staggered, dodging, downed, dead
 - `hp`, plus heroes have `blockStamina` and `dodgeCharges`
 - Combat rules read these fields the same way for heroes and enemies.
+- An armor loadout: a level (none / light / medium / heavy / super heavy)
+  at each location (head, front, side, back). Enemies take it from their
+  data entry; heroes from their equipped full armor set, whose trade-offs
+  feed `hero.stats` (speed, turn rate, dodges, dodge speed, stamina).
+
+## Damage Resolution
+
+1. Hit location: `head` if the attack is head-flagged (or a precision
+   headshot), otherwise front / side / back from the defender's facing
+   (unaware enemies always count as back).
+2. Location multiplier (`ENEMY_DAMAGE_TAKEN` / `HERO_DAMAGE_TAKEN`);
+   a backstab on an enemy doubles the attack's base damage, plus any
+   weapon `backstabMul`.
+3. Armor: the location's level, stepped down by the attack's
+   `armorPierce` levels, removes its reduction fraction. Back armor
+   applies to backstabs like any other location.
+4. Then shop damage stacks and crits (hero attacks).
+Armor levels per location are hand-picked per enemy / armor set; no rule
+constrains back armor relative to front or side.
 
 ## Storage Model
 

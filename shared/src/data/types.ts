@@ -1,3 +1,5 @@
+import type { ArmorLoadout } from "./armor";
+
 /** One attack in a chain. Durations are seconds; angles are radians; distances are world pixels. */
 export interface AttackDef {
   id: string;
@@ -15,7 +17,10 @@ export interface AttackDef {
   stagger: number;
   /** Stamina a blocker spends to block this attack. */
   blockCost: number;
-  armorPierce?: boolean;
+  /** Armor levels this attack strips off the target (1 = heavy acts as medium). */
+  armorPierce?: number;
+  /** Lands on the head armor location instead of front / side / back. */
+  head?: boolean;
   /** Extra multiplier for hits from behind, on top of the normal back-hit bonus. */
   backstabMul?: number;
   /** Forward speed (px/s) during the active phase. */
@@ -46,7 +51,10 @@ export interface RangedDef {
   pierce: number;
   spread: number;
   range: number;
-  armorPierce: boolean;
+  /** Armor levels each shot strips off the target. */
+  armorPierce: number;
+  /** Every shot lands on the head armor location. Precision headshots always do. */
+  head?: boolean;
   stagger: number;
 }
 
@@ -90,7 +98,7 @@ export interface EnemyDef {
   hp: number;
   speed: number;
   turnRate: number;
-  armored: boolean;
+  armor: ArmorLoadout;
   staggerResist: number;
   attacks: AttackDef[];
   behavior: EnemyBehavior;

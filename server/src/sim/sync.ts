@@ -24,14 +24,14 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.maxHp = hero.def.hp;
   s.downHp = r1(Math.max(0, hero.downHp));
   s.stamina = r2(hero.stamina);
-  s.maxStamina = hero.def.stamina;
+  s.maxStamina = hero.stats.stamina;
   s.guardBroken = hero.guardBrokenT > 0;
   s.guarding =
     !hero.rangedMode &&
     hero.guardBrokenT <= 0 &&
     (hero.state === "blocking" || hero.state === "pushing" || (hero.state === "reviving" && hero.held.block));
   s.dodgeCharges = hero.dodgeCharges;
-  s.maxDodges = hero.def.dodges;
+  s.maxDodges = hero.stats.dodges;
   s.ammo = hero.ammo;
   s.maxAmmo = hero.def.ranged.ammo;
   s.rangedMode = hero.rangedMode;
@@ -47,6 +47,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.moveSpeed = r2(mods.speed);
   s.turnRate = r2(mods.turnRate);
   s.canDodge = mods.canDodge;
+  s.dodgeBaseSpeed = r2(mods.dodgeSpeed);
   s.dodgeT = r3(hero.dodgeT);
   s.dodgeDx = r3(hero.dodgeDx);
   s.dodgeDy = r3(hero.dodgeDy);
@@ -57,6 +58,7 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.gold = Math.max(0, Math.floor(hero.gold));
   s.dmgUpStacks = Math.max(0, Math.floor(hero.dmgUpStacks));
   s.perks = serializePerks(hero.perks);
+  s.armorSetId = hero.armorSetId;
   s.wardReady = hero.perks.has("rune_ward") && hero.wardCd <= 0;
   s.riposteReady = hero.perks.has("riposte") && hero.riposteReady;
   s.riposteStrike = !!hero.attack?.crit;

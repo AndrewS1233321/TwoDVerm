@@ -8,7 +8,7 @@ import { MISSION_1 } from "./levels/mission1";
 import { TESTING_ZONE } from "./levels/testingZone";
 import { WASTES_CAMP } from "./levels/wastesCamp";
 import { WASTES_MERCHANT } from "./levels/wastesMerchant";
-import { parseLevel, type Level } from "./level";
+import { parseLevel, tileCenter, type Level } from "./level";
 import { isExpeditionLocationId, WASTES_MERCHANT_LEVEL_ID, type ExpeditionLocationId } from "./data/expedition";
 
 export type GameMode = "default" | "testing" | "wastes";
@@ -73,9 +73,14 @@ export function levelRowsForMode(mode: GameMode): readonly string[] {
 export function parseLevelById(id: string): Level {
   const level = parseLevel(levelRowsForId(id));
   if (id === "testing") {
+    const wastesGate =
+      level.merchantSpawns.length > 0
+        ? level.merchantSpawns
+        : [...level.endZone].map((i) => tileCenter(i % level.width, Math.floor(i / level.width)));
     level.roomLabels = [
       { name: "central", ...averagePoint(level.playerStarts) },
       { name: "summon room", ...averagePoint(level.summonPads) },
+      { name: "wastes gate", ...averagePoint(wastesGate) },
     ];
   } else if (id === WASTES_MERCHANT_LEVEL_ID) {
     level.roomLabels = [{ name: "merchant hall", ...averagePoint(level.playerStarts) }];

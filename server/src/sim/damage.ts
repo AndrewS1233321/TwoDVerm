@@ -1,9 +1,11 @@
 import {
-  ARMOR_NON_PIERCE_MUL,
+  ARMOR_SETS,
+  armorReduction,
   BLOCK,
   DOWNED,
   ENEMY_DAMAGE_TAKEN,
   HERO_DAMAGE_TAKEN,
+  hitLocation,
   hitSide,
   MELEE,
   RIPOSTE,
@@ -34,7 +36,10 @@ function clearReviveIfNeeded(world: World, hero: Hero): void {
 export interface EnemyHit {
   damage: number;
   stagger: number;
-  armorPierce?: boolean;
+  /** Armor levels stripped off the target before reduction. */
+  armorPierce?: number;
+  /** Lands on head armor instead of front / side / back. */
+  head?: boolean;
   backstabMul?: number;
   heavy?: boolean;
   /** Guaranteed critical (Riposte): applies RIPOSTE.critMul. */
@@ -53,6 +58,8 @@ export interface HeroHit {
   srcY: number;
   srcId: string;
   unblockable?: boolean;
+  armorPierce?: number;
+  head?: boolean;
 }
 
 export type HeroHitResult = "dodged" | "blocked" | "hit" | "ignored";
@@ -76,10 +83,12 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     return;
   }
   const side = enemy.aggro ? hitSide(enemy.facing, enemy.x, enemy.y, hit.srcX, hit.srcY) : "back";
-  let mul = ENEMY_DAMAGE_TAKEN[side];
-  if (side === "back") mul *= hit.backstabMul ?? 1;
-  const armor = enemy.def.armored && !hit.armorPierce && side !== "back";
-  if (armor) mul *= ARMOR_NON_PIERCE_MUL;
+  const loc = hitLocation(side, hit.head);
+  let mul = ENEMY_DAMAGE_TAKEN[loc];
+  if (loc === "back") mul *= hit.backstabMul ?? 1;
+  const reduction = armorReduction(enemy.def.armor, loc, hit.armorPierce);
+  const armor = reduction > 0;
+  mul *= 1 - reduction;
   if (hero) mul *= shopDamageMul(hero.dmgUpStacks);
   if (hit.crit) mul *= RIPOSTE.critMul;
   const dmg = hit.damage * mul;
@@ -99,6 +108,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     y: enemy.y,
     dmg: Math.round(dmg),
     side,
+    head: loc === "head",
     armor,
     heavy: hit.heavy ?? false,
     crit: hit.crit === true,
@@ -214,8 +224,21 @@ export function strikeHero(world: World, hero: Hero, hit: HeroHit): HeroHitResul
     return "blocked";
   }
 
-  const dmg = damage * HERO_DAMAGE_TAKEN[side];
-  world.emit({ t: "hit", id: hero.id, by: hit.srcId, x: hero.x, y: hero.y, dmg: Math.round(dmg), side, armor: false, heavy: hit.stagger >= 2 });
+  const loc = hitLocation(side, hit.head);
+  const reduction = armorReduction(ARMOR_SETS[hero.armorSetId].loadout, loc, hit.armorPierce);
+  const dmg = damage * HERO_DAMAGE_TAKEN[loc] * (1 - reduction);
+  world.emit({
+    t: "hit",
+    id: hero.id,
+    by: hit.srcId,
+    x: hero.x,
+    y: hero.y,
+    dmg: Math.round(dmg),
+    side,
+    head: loc === "head",
+    armor: reduction > 0,
+    heavy: hit.stagger >= 2,
+  });
   damageHero(world, hero, dmg);
   if (hit.stagger >= hero.def.staggerResist) {
     clearReviveIfNeeded(world, hero);
