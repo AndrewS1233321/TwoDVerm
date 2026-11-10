@@ -46,7 +46,8 @@ Update this file after every meaningful implementation change.
   grants `DEV_TEST_START_GOLD` (1000). Mid-run merchant halls stay on
   `wastes_merchant`. Testing mode ignores the pad for victory. The
   wastes-gate room is open to the central/summon corridor (no sealed
-  wall).
+  wall). Central hall has **two ammo crates** (left/right above the
+  dummy row).
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the

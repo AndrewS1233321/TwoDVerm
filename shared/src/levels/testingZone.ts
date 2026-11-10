@@ -5,7 +5,8 @@
  *
  * Extra markers (see shared/src/level.ts):
  *   u/l/m/k/z  armor dummies (none / light / medium / heavy / super heavy)
- *   N  merchant NPC             E  TO THE WASTES hold zone
+ *   A  ammo crate               N  merchant NPC
+ *   E  TO THE WASTES hold zone
  *   1–7 summon pads (slave, clanrat, stormvermin, gunner, gas, hooker, ogre)
  *
  * Dummy markers are spaced 5 tiles apart (~5 hero diameters at radius 14).
@@ -18,7 +19,7 @@ export const TESTING_ZONE: readonly string[] = [
   "##############......................######################",
   "##############........SSSS..........######################",
   "##############........SSSS..........######################",
-  "##############......................######################",
+  "##############..A................A..######################",
   "##############.u....l....m....k....z######################",
   "##############......................######################",
   "##############...........#################################",
