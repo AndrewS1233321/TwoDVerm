@@ -227,6 +227,47 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   check("Left click is a melee swing again after holstering", ids[0] === HEROES.soldier.weapon.light[0]!.id, ids.join(" > "));
 }
 
+// Markus repeater: first two held shots are accurate; further shots spray fast + wild.
+{
+  const gun = HEROES.soldier.ranged;
+  check("Repeater sprays after 2 held shots", gun.holdSprayAfterShots === 2, `${gun.holdSprayAfterShots}`);
+  check("Repeater spray cooldown is 0.03s", gun.holdSprayCooldown === 0.03, `${gun.holdSprayCooldown}`);
+  check("Repeater spray spread is much wider than base", (gun.holdSpraySpread ?? 0) > gun.spread * 5, `${gun.holdSpraySpread} vs ${gun.spread}`);
+
+  const { world, hero } = setup("soldier");
+  // Deterministic angle offset for spray checks.
+  let rngI = 0;
+  const seq = [0.0, 0.5, 1.0, 0.25, 0.75];
+  world.rng = () => seq[rngI++ % seq.length]!;
+
+  run(world, hero, DT, { fire: true });
+  const ammo0 = hero.ammo;
+  const cds: number[] = [];
+  const spreads: number[] = [];
+  // Capture shotCd and infer spread mode via rangedHoldShots after each successful fire.
+  for (let t = 0; t < 1.2 && hero.ammo > ammo0 - 8; t += DT) {
+    const before = hero.ammo;
+    const holdBefore = hero.rangedHoldShots;
+    tick(world, hero, { attack: true });
+    if (hero.ammo < before) {
+      cds.push(hero.shotCd);
+      spreads.push(holdBefore >= (gun.holdSprayAfterShots ?? 99) ? 1 : 0);
+    }
+  }
+  check("First two held shots use normal cooldown", cds[0] === gun.cooldown && cds[1] === gun.cooldown, `cds ${cds.slice(0, 3).join(",")}`);
+  check("Shots after the first two use spray cooldown", cds.slice(2).every((c) => c === gun.holdSprayCooldown), `later ${cds.slice(2, 6).join(",")}`);
+  check("First two held shots are not in spray mode", spreads[0] === 0 && spreads[1] === 0, `${spreads.slice(0, 4).join(",")}`);
+  check("Later held shots are in spray mode", spreads.slice(2).every((s) => s === 1), `${spreads.slice(2, 6).join(",")}`);
+
+  // Release resets the streak so the next two shots are accurate again.
+  tick(world, hero, { attack: false });
+  run(world, hero, 0.25);
+  check("Releasing LMB resets the hold spray streak", hero.rangedHoldShots === 0, `${hero.rangedHoldShots}`);
+  const before = hero.ammo;
+  tick(world, hero, { attack: true });
+  check("First shot after release is accurate again", hero.ammo === before - 1 && hero.shotCd === gun.cooldown && hero.rangedHoldShots === 1, `cd ${hero.shotCd} hold ${hero.rangedHoldShots}`);
+}
+
 // Kerri's longbow: hold to draw (damage scales), release to fire; no multi-pierce.
 {
   const bow = HEROES.ranger.ranged;

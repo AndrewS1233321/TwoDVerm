@@ -63,6 +63,15 @@ export interface RangedDef {
   drawTime?: number;
   /** Damage at 0 draw when `drawTime` is set (linear to `damage` at full draw). */
   minDamage?: number;
+  /**
+   * Hip-fire hold spray: after this many shots in one continuous LMB hold,
+   * further shots use `holdSprayCooldown` / `holdSpraySpread`. Release resets.
+   */
+  holdSprayAfterShots?: number;
+  /** Cooldown between spray shots (seconds). */
+  holdSprayCooldown?: number;
+  /** Half-angle spread (radians) while spraying — much wider than `spread`. */
+  holdSpraySpread?: number;
 }
 
 export type UltId = "rally" | "volley" | "impenetrable" | "dash";

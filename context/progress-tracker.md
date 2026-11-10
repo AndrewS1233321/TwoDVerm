@@ -70,6 +70,11 @@ Update this file after every meaningful implementation change.
   release to fire. Damage scales linearly from 20 → 40; full draw flashes
   white (`bowDrawn`). Ammo 45, pierce 1 (no multi-target). RMB precision
   still fires instantly at full damage. Guns keep hold-to-auto-fire.
+- **Markus repeater spray**: while holding LMB, the first
+  `holdSprayAfterShots` (2) hip-fire shots use normal cooldown/spread;
+  further shots in that hold use `holdSprayCooldown` (0.03s) and a very
+  wide `holdSpraySpread`. Releasing LMB (or precision aim / dodge)
+  resets the streak. RMB precision is unchanged.
 - **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit
@@ -195,8 +200,9 @@ Update this file after every meaningful implementation change.
   pacing; its end-zone pad never ends the mission. Hand-authored ASCII
   remains for Default, Testing, merchant, and camp.
 - Q toggles melee / ranged. Guns: hold left click to keep firing on
-  cooldown. Kerri's longbow: hold to draw, release to fire (RMB
-  precision is still click-to-fire). Q again returns to melee.
+  cooldown (Markus's repeater sprays after the first two shots in a
+  hold). Kerri's longbow: hold to draw, release to fire (RMB precision
+  is still click-to-fire). Q again returns to melee.
 - Server-authoritative simulation from the start, because retrofitting
   multiplayer onto a single-player game is very costly.
 - Colyseus for rooms and state sync, to avoid writing low-level netcode.

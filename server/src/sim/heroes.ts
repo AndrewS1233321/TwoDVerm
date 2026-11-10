@@ -100,6 +100,7 @@ export function createHero(
     ammo: def.ranged.ammo,
     shotCd: 0,
     rangedMode: false,
+    rangedHoldShots: 0,
     bowDrawing: false,
     bowDrawT: 0,
     carryingBarrelId: "",
@@ -264,6 +265,7 @@ export function processHeroInputs(world: World, hero: Hero): void {
         hero.heavyQueued = false;
       }
       cancelBowDraw(hero);
+      hero.rangedHoldShots = 0;
       world.emit({ t: "dodge", id: hero.id });
       if (hero.perks.has("smoke_bomb")) {
         dropSmokeBomb(world, hero, dropX, dropY);
@@ -399,13 +401,15 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       hero.stateT -= dt;
       if (hero.rangedMode && hero.held.block) {
         cancelBowDraw(hero);
+        hero.rangedHoldShots = 0;
         if (hero.edges.attackPressed) shoot(world, hero, true);
         else if (hero.stateT <= 0) hero.state = "idle";
       } else if (hero.rangedMode && hero.held.attack && !hero.def.ranged.drawTime) {
         // Guns keep firing while held; bows draw on hold / fire on release in idle.
         shoot(world, hero, false);
-      } else if (hero.stateT <= 0) {
-        hero.state = "idle";
+      } else {
+        if (!hero.held.attack) hero.rangedHoldShots = 0;
+        if (hero.stateT <= 0) hero.state = "idle";
       }
       break;
     case "idle":
@@ -592,6 +596,7 @@ function toggleRanged(hero: Hero): void {
   hero.lightBufferT = 0;
   hero.attackHeldT = 0;
   hero.heavyQueued = false;
+  hero.rangedHoldShots = 0;
   cancelBowDraw(hero);
   if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting" || hero.state === "blocking" || hero.state === "pushing") {
     hero.attack = null;
@@ -629,6 +634,7 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
     hero.lightBufferT = 0;
     if (hero.held.block) {
       cancelBowDraw(hero);
+      hero.rangedHoldShots = 0;
       // Precision aim: fire once per click at the cursor, not a ray.
       if (hero.edges.attackPressed) shoot(world, hero, true);
       return;
@@ -642,6 +648,7 @@ function updateIdle(world: World, hero: Hero, dt: number): void {
       shoot(world, hero, false);
       return;
     }
+    hero.rangedHoldShots = 0;
   } else if (tryStartAttack(hero)) {
     return;
   }
@@ -709,8 +716,12 @@ function tryPush(world: World, hero: Hero): void {
 function shoot(world: World, hero: Hero, precision = false, damageOverride?: number): void {
   const r = hero.def.ranged;
   if (hero.ammo <= 0 || hero.shotCd > 0) return;
+  const spraying =
+    !precision &&
+    r.holdSprayAfterShots !== undefined &&
+    hero.rangedHoldShots >= r.holdSprayAfterShots;
   hero.ammo--;
-  hero.shotCd = r.cooldown;
+  hero.shotCd = spraying ? (r.holdSprayCooldown ?? r.cooldown) : r.cooldown;
   hero.state = "shooting";
   hero.stateT = SHOOT_RECOVERY;
   hero.actionSeq++;
@@ -721,8 +732,10 @@ function shoot(world: World, hero: Hero, precision = false, damageOverride?: num
     firePrecisionShot(world, hero, damage, r.armorPierce, r.head ?? false, r.stagger, r.range, kind);
     return;
   }
-  const angle = hero.facing + (world.rng() - 0.5) * 2 * r.spread;
+  const spread = spraying ? (r.holdSpraySpread ?? r.spread) : r.spread;
+  const angle = hero.facing + (world.rng() - 0.5) * 2 * spread;
   fireRay(world, hero, angle, r.range, r.pierce, damage, r.armorPierce, r.head ?? false, r.stagger, kind);
+  hero.rangedHoldShots++;
 }
 
 /**
@@ -930,6 +943,7 @@ function interruptForUlt(world: World, hero: Hero): void {
   hero.attackHeldT = 0;
   hero.barrelCharge = 0;
   cancelBowDraw(hero);
+  hero.rangedHoldShots = 0;
   hero.staggerT = 0;
   hero.state = keepBlock ? "blocking" : "idle";
   hero.actionSeq++;

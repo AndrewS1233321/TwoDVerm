@@ -173,6 +173,7 @@ export class World {
       hero.wrathChargeT = 0;
       hero.bowDrawing = false;
       hero.bowDrawT = 0;
+      hero.rangedHoldShots = 0;
     }
   }
 

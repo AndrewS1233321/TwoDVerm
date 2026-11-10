@@ -81,6 +81,11 @@ export interface Hero extends MoveBody {
   shotCd: number;
   /** True while the ranged weapon is equipped; left-click fires instead of melee. */
   rangedMode: boolean;
+  /**
+   * Hip-fire shots fired during the current continuous LMB hold (guns with hold spray).
+   * Resets when LMB is released or precision aim starts.
+   */
+  rangedHoldShots: number;
   /** Longbow hip-fire: currently holding left click to draw. */
   bowDrawing: boolean;
   /** Seconds the longbow string has been drawn (0–drawTime). */

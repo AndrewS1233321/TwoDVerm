@@ -70,7 +70,22 @@ export const RAPIER: WeaponDef = {
   ],
 };
 
-export const REPEATER: RangedDef = { id: "repeater", name: "Repeater Handgun", damage: 22, ammo: 30, cooldown: 0.18, pierce: 1, spread: 0.04, range: 650, armorPierce: 0, stagger: 1 };
+export const REPEATER: RangedDef = {
+  id: "repeater",
+  name: "Repeater Handgun",
+  damage: 22,
+  ammo: 30,
+  cooldown: 0.18,
+  pierce: 1,
+  spread: 0.04,
+  range: 650,
+  armorPierce: 0,
+  stagger: 1,
+  /** First N hip-fire shots in a hold stay accurate; after that, dump the mag. */
+  holdSprayAfterShots: 2,
+  holdSprayCooldown: 0.03,
+  holdSpraySpread: 0.55,
+};
 export const LONGBOW: RangedDef = {
   id: "longbow",
   name: "Longbow",
