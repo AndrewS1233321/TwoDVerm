@@ -70,6 +70,10 @@ export class PlayerState extends Schema {
   @type("boolean") riposteReady = false;
   /** True while the current melee swing is a Riposte crit. */
   @type("boolean") riposteStrike = false;
+  /** Kerri Elvish Wrath: currently holding F to charge. */
+  @type("boolean") wrathCharging = false;
+  /** Kerri Elvish Wrath charge 0–1. */
+  @type("float32") wrathCharge = 0;
   /** Seconds of Smoke Bomb stealth remaining. */
   @type("float32") invisT = 0;
 

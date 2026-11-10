@@ -66,6 +66,10 @@ export interface PlayerView {
   riposteReady: boolean;
   /** Current melee swing is a Riposte crit. */
   riposteStrike: boolean;
+  /** Kerri Elvish Wrath: holding F to charge. */
+  wrathCharging: boolean;
+  /** Kerri Elvish Wrath charge 0–1. */
+  wrathCharge: number;
   /** Seconds of Smoke Bomb stealth remaining. */
   invisT: number;
   /** Gingey Wastes vote (location id) or "". */

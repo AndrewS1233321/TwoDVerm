@@ -169,6 +169,8 @@ export class World {
       hero.invisT = 0;
       hero.vanishAfterDodge = false;
       hero.riposteReady = false;
+      hero.wrathCharging = false;
+      hero.wrathChargeT = 0;
     }
   }
 

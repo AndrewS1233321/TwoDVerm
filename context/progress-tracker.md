@@ -78,7 +78,12 @@ Update this file after every meaningful implementation change.
   Kerri's **Smoke Bomb** — a dodge drops a smoke cloud (radius =
   2.5 × her diameter) for 0.75s that staggers enemies inside it and
   deals no damage; when the dodge ends she is hidden for 1.5s (no
-  aggro, not a target, current chasers drop her). Viktor's **Riposte**
+  aggro, not a target, current chasers drop her). Kerri's **Elvish
+  Wrath** — hold F to charge Trueflight Volley (purple pulsing glow);
+  every 0.5s adds +2 arrows and +25 range (max 4s, purple flash +
+  rapid glow); release fires with the same targeting as the base
+  volley. Without the perk, F still fires the base 3-arrow volley
+  instantly. Viktor's **Riposte**
   — after a player dodge (not Animosity), the next melee attack has
   1.5× reach and deals a guaranteed critical (`RIPOSTE.critMul`); gold
   arc shows when charged, and the strike draws a white flash along the

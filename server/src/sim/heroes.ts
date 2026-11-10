@@ -27,10 +27,13 @@ import {
   OLD_GOAT,
   PUSH,
   raycastWalls,
+  ELVISH_WRATH,
+  elvishWrathShot,
   RIPOSTE,
   SMOKE_BOMB,
   smokeCloudRadius,
   stepMovement,
+  VOLLEY,
   type AttackDef,
   inAttackArc,
   dist,
@@ -110,8 +113,17 @@ export function createHero(
     lastInput: null,
     aimX: x,
     aimY: y,
-    held: { attack: false, block: false, interact: false },
-    edges: { dodgeStarted: false, fire: false, ult: false, interact: false, attackPressed: false, attackReleased: false },
+    held: { attack: false, block: false, interact: false, ult: false },
+    prevUltHeld: false,
+    edges: {
+      dodgeStarted: false,
+      fire: false,
+      ult: false,
+      ultReleased: false,
+      interact: false,
+      attackPressed: false,
+      attackReleased: false,
+    },
     ackSeq: 0,
     kills: 0,
     damageDealt: 0,
@@ -124,6 +136,8 @@ export function createHero(
     invisT: 0,
     vanishAfterDodge: false,
     riposteReady: false,
+    wrathCharging: false,
+    wrathChargeT: 0,
     noRetreatHit: new Set(),
   };
   return hero;
@@ -181,7 +195,15 @@ export function heroMoveMods(hero: Hero): MoveMods {
 }
 
 export function processHeroInputs(world: World, hero: Hero): void {
-  hero.edges = { dodgeStarted: false, fire: false, ult: false, interact: false, attackPressed: false, attackReleased: false };
+  hero.edges = {
+    dodgeStarted: false,
+    fire: false,
+    ult: false,
+    ultReleased: false,
+    interact: false,
+    attackPressed: false,
+    attackReleased: false,
+  };
   const mods = heroMoveMods(hero);
   let n = 0;
   while (hero.inputs.length > 0 && n < MAX_INPUTS_PER_TICK) {
@@ -215,11 +237,13 @@ export function processHeroInputs(world: World, hero: Hero): void {
         toggleRanged(hero);
       }
     }
-    if (input.ult) hero.edges.ult = true;
+    if (input.ult && !hero.prevUltHeld) hero.edges.ult = true;
+    if (!input.ult && hero.prevUltHeld) hero.edges.ultReleased = true;
+    hero.prevUltHeld = input.ult;
     if (input.interact && !hero.held.interact) hero.edges.interact = true;
     hero.aimX = input.aimX;
     hero.aimY = input.aimY;
-    hero.held = { attack: input.attack, block: input.block, interact: input.interact };
+    hero.held = { attack: input.attack, block: input.block, interact: input.interact, ult: input.ult };
 
     const dropX = hero.x;
     const dropY = hero.y;
@@ -321,8 +345,9 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       break;
   }
 
-  // Ult fires immediately, interrupting attacks/etc. Block and dodge stay active.
+  // Ult fires immediately (or Elvish Wrath starts charging). Block and dodge stay active.
   if (hero.edges.ult) tryUlt(world, hero);
+  updateWrathCharge(world, hero, dt);
 
   if (hero.state === "staggered") {
     hero.staggerT -= dt;
@@ -844,11 +869,8 @@ function tryRespawn(world: World, hero: Hero): void {
   world.emit({ t: "revive", id: hero.id });
 }
 
-function tryUlt(world: World, hero: Hero): void {
-  if (hero.ultCd > 0) return;
-  if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") return;
-
-  // Cancel the current action/animation, but leave block and dodge alone.
+/** Cancel attack/revive/etc for an ult, but leave block and dodge alone. */
+function interruptForUlt(world: World, hero: Hero): void {
   const keepBlock = !hero.rangedMode && hero.guardBrokenT <= 0 && (hero.state === "blocking" || hero.held.block);
   if (hero.state === "reviving") {
     const target = world.heroes.get(hero.reviveTargetId);
@@ -863,10 +885,86 @@ function tryUlt(world: World, hero: Hero): void {
   hero.barrelCharge = 0;
   hero.staggerT = 0;
   hero.state = keepBlock ? "blocking" : "idle";
-  // dodgeT / dodgeDx / dodgeDy / dodgeSpeed intentionally untouched.
-
-  hero.ultCd = hero.def.ultCooldown;
   hero.actionSeq++;
+}
+
+function fireVolley(world: World, hero: Hero, arrows: number, range: number): void {
+  const candidates = [...world.enemies.values()]
+    .filter(
+      (e) =>
+        e.def.id !== "merchant" &&
+        dist(hero.x, hero.y, e.x, e.y) < range &&
+        hasLineOfSight(world.level, world.gateOpen, hero.x, hero.y, e.x, e.y),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.def.special) - Number(a.def.special) ||
+        dist(hero.x, hero.y, a.x, a.y) - dist(hero.x, hero.y, b.x, b.y),
+    );
+  for (let i = 0; i < arrows && candidates.length > 0; i++) {
+    const e = candidates[i % candidates.length]!;
+    world.emit({ t: "tracer", x1: hero.x, y1: hero.y, x2: e.x, y2: e.y, kind: "arrow" });
+    damageEnemy(world, hero, e, {
+      damage: VOLLEY.damage,
+      stagger: VOLLEY.stagger,
+      armorPierce: VOLLEY.armorPierce,
+      srcX: hero.x,
+      srcY: hero.y,
+    });
+  }
+}
+
+function cancelWrathCharge(hero: Hero): void {
+  hero.wrathCharging = false;
+  hero.wrathChargeT = 0;
+}
+
+function beginWrathCharge(world: World, hero: Hero): void {
+  if (hero.wrathCharging) return;
+  interruptForUlt(world, hero);
+  hero.wrathCharging = true;
+  hero.wrathChargeT = 0;
+}
+
+function releaseWrathCharge(world: World, hero: Hero): void {
+  if (!hero.wrathCharging) return;
+  const shot = elvishWrathShot(hero.wrathChargeT);
+  cancelWrathCharge(hero);
+  hero.ultCd = hero.def.ultCooldown;
+  world.emit({ t: "ult", id: hero.id, ult: hero.def.ult, x: hero.x, y: hero.y });
+  fireVolley(world, hero, shot.arrows, shot.range);
+}
+
+function updateWrathCharge(world: World, hero: Hero, dt: number): void {
+  if (!hero.wrathCharging) return;
+  if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") {
+    cancelWrathCharge(hero);
+    return;
+  }
+  if (hero.edges.ultReleased || !hero.held.ult) {
+    releaseWrathCharge(world, hero);
+    return;
+  }
+  const prev = hero.wrathChargeT;
+  hero.wrathChargeT = Math.min(ELVISH_WRATH.maxHold, hero.wrathChargeT + dt);
+  if (prev < ELVISH_WRATH.maxHold && hero.wrathChargeT >= ELVISH_WRATH.maxHold) {
+    world.emit({ t: "wrathMax", id: hero.id, x: hero.x, y: hero.y });
+  }
+}
+
+function tryUlt(world: World, hero: Hero): void {
+  if (hero.ultCd > 0) return;
+  if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") return;
+  if (hero.wrathCharging) return;
+
+  // Elvish Wrath: hold to charge, release to fire (see updateWrathCharge).
+  if (hero.perks.has("elvish_wrath") && hero.def.ult === "volley") {
+    beginWrathCharge(world, hero);
+    return;
+  }
+
+  interruptForUlt(world, hero);
+  hero.ultCd = hero.def.ultCooldown;
   world.emit({ t: "ult", id: hero.id, ult: hero.def.ult, x: hero.x, y: hero.y });
 
   switch (hero.def.ult) {
@@ -888,14 +986,7 @@ function tryUlt(world: World, hero: Hero): void {
       break;
     }
     case "volley": {
-      const candidates = [...world.enemies.values()]
-        .filter((e) => dist(hero.x, hero.y, e.x, e.y) < 700 && hasLineOfSight(world.level, world.gateOpen, hero.x, hero.y, e.x, e.y))
-        .sort((a, b) => Number(b.def.special) - Number(a.def.special) || dist(hero.x, hero.y, a.x, a.y) - dist(hero.x, hero.y, b.x, b.y));
-      for (let i = 0; i < 3 && candidates.length > 0; i++) {
-        const e = candidates[i % candidates.length]!;
-        world.emit({ t: "tracer", x1: hero.x, y1: hero.y, x2: e.x, y2: e.y, kind: "arrow" });
-        damageEnemy(world, hero, e, { damage: 60, stagger: 2, armorPierce: 1, srcX: hero.x, srcY: hero.y });
-      }
+      fireVolley(world, hero, VOLLEY.arrows, VOLLEY.range);
       break;
     }
     case "impenetrable": {

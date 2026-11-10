@@ -23,8 +23,8 @@ export class Controls {
   /** Latest cursor position in screen / HudScene space. */
   screenX = 0;
   screenY = 0;
-  private keys: Record<"w" | "a" | "s" | "d" | "up" | "down" | "left" | "right" | "e", Phaser.Input.Keyboard.Key>;
-  private pressed = { dodge: false, fire: false, ult: false };
+  private keys: Record<"w" | "a" | "s" | "d" | "up" | "down" | "left" | "right" | "e" | "f", Phaser.Input.Keyboard.Key>;
+  private pressed = { dodge: false, fire: false };
   /** Bitmask mirrored from pointer events (more reliable than polling alone). */
   private buttons = 0;
 
@@ -41,10 +41,10 @@ export class Controls {
       left: kb.addKey(K.LEFT, false),
       right: kb.addKey(K.RIGHT, false),
       e: kb.addKey(K.E, false),
+      f: kb.addKey(K.F, false),
     };
     kb.addKey(K.SPACE, false).on("down", () => (this.pressed.dodge = true));
     kb.addKey(K.Q, false).on("down", () => (this.pressed.fire = true));
-    kb.addKey(K.F, false).on("down", () => (this.pressed.ult = true));
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) e.preventDefault();
     });
@@ -105,9 +105,10 @@ export class Controls {
       out.interact = k.e.isDown;
       out.dodge = this.pressed.dodge;
       out.fire = this.pressed.fire;
-      out.ult = this.pressed.ult;
+      // Held while F is down so Elvish Wrath can charge; other ults fire on press edge server-side.
+      out.ult = k.f.isDown;
     }
-    this.pressed = { dodge: false, fire: false, ult: false };
+    this.pressed = { dodge: false, fire: false };
     return out;
   }
 }

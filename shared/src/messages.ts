@@ -39,6 +39,10 @@ export interface InputMessage {
   dodge: boolean;
   /** Pressed since the previous input: toggles melee / ranged weapon. */
   fire: boolean;
+  /**
+   * Ultimate button. Held while F is down (Elvish Wrath charges on hold;
+   * other ults still fire on the press edge).
+   */
   ult: boolean;
 }
 
@@ -76,6 +80,8 @@ export type FxEvent =
   | { t: "grab"; id: string; by: string }
   | { t: "release"; id: string }
   | { t: "ult"; id: string; ult: string; x: number; y: number }
+  /** Kerri Elvish Wrath reached maximum charge. */
+  | { t: "wrathMax"; id: string; x: number; y: number }
   | { t: "pickup"; id: string; kind: string }
   | { t: "gasburst"; x: number; y: number }
   | { t: "gold"; x: number; y: number; amount: number }

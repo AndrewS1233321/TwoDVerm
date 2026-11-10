@@ -32,7 +32,10 @@ export type HeroState =
 export interface HeroEdges {
   dodgeStarted: boolean;
   fire: boolean;
+  /** Rising edge of the F / ult button. */
   ult: boolean;
+  /** Falling edge of the F / ult button (Elvish Wrath release). */
+  ultReleased: boolean;
   interact: boolean;
   attackPressed: boolean;
   attackReleased: boolean;
@@ -97,7 +100,9 @@ export interface Hero extends MoveBody {
   /** Latest world-space cursor aim (precision shots). */
   aimX: number;
   aimY: number;
-  held: { attack: boolean; block: boolean; interact: boolean };
+  held: { attack: boolean; block: boolean; interact: boolean; ult: boolean };
+  /** Previous tick's ult hold, for press/release edges. */
+  prevUltHeld: boolean;
   edges: HeroEdges;
   ackSeq: number;
 
@@ -121,6 +126,10 @@ export interface Hero extends MoveBody {
   vanishAfterDodge: boolean;
   /** Riposte charged: next melee attack is extended + critical. */
   riposteReady: boolean;
+  /** Elvish Wrath: holding F to charge Trueflight Volley. */
+  wrathCharging: boolean;
+  /** Seconds F has been held while charging (0–ELVISH_WRATH.maxHold). */
+  wrathChargeT: number;
   /** Enemies already body-checked during the current No retreating dodge. */
   noRetreatHit: Set<string>;
 }

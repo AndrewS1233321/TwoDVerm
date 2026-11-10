@@ -31,12 +31,17 @@ export interface PoseInfo {
   riposteReady?: boolean;
   /** Current melee swing is a Riposte crit (extend thrust visuals). */
   riposteStrike?: boolean;
+  /** Kerri Elvish Wrath charging. */
+  wrathCharging?: boolean;
+  /** Kerri Elvish Wrath charge 0–1. */
+  wrathCharge?: number;
   /** Smoke Bomb stealth. Local player stays faintly visible. */
   hidden?: boolean;
 }
 
 const WARD_GLOW = 0x8fd3ff;
 const RIPOSTE_GLOW = 0xe8b84a;
+const WRATH_GLOW = 0xb44dff;
 
 export interface ViewOptions {
   kind: "hero" | "enemy";
@@ -378,6 +383,22 @@ export class CreatureView {
       top.beginPath();
       top.arc(info.x, info.y, r + 7, info.facing - 0.55, info.facing + 0.55, false);
       top.strokePath();
+    }
+    if (info.wrathCharging && info.state !== "downed" && info.state !== "dead") {
+      const charge = clamp(info.wrathCharge ?? 0, 0, 1);
+      const maxed = charge >= 0.999;
+      const pulse = maxed
+        ? 0.55 + 0.45 * Math.sin(now * 0.045)
+        : 0.35 + 0.45 * Math.sin(now * 0.006);
+      const rad = r + 8 + charge * 6;
+      ground.fillStyle(WRATH_GLOW, (maxed ? 0.2 : 0.1) + 0.14 * pulse);
+      ground.fillCircle(info.x, info.y, rad);
+      top.lineStyle(maxed ? 3 : 2, WRATH_GLOW, 0.35 + 0.45 * pulse);
+      top.strokeCircle(info.x, info.y, rad - 2);
+      if (maxed) {
+        top.lineStyle(2, 0xe8d0ff, 0.4 + 0.5 * pulse);
+        top.strokeCircle(info.x, info.y, rad + 4 + pulse * 3);
+      }
     }
     // Riposte strike: white flash along the (extended) attack path.
     if (info.riposteStrike && def && (info.phase === 1 || info.phase === 2)) {

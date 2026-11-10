@@ -404,6 +404,8 @@ export class GameScene extends Phaser.Scene {
       wardReady: p.wardReady,
       riposteReady: p.riposteReady,
       riposteStrike: p.riposteStrike,
+      wrathCharging: p.wrathCharging,
+      wrathCharge: p.wrathCharge,
       hidden: p.invisT > 0,
     };
   }
@@ -698,6 +700,13 @@ export class GameScene extends Phaser.Scene {
           const color = e.ult === "rally" ? colors.accent : e.ult === "volley" ? colors.success : e.ult === "impenetrable" ? colors.accent : 0xc070e0;
           this.effects.ring(e.x, e.y, color, e.ult === "rally" ? 220 : 90, 500);
           this.sfxAt("ult", e, 0.9);
+          break;
+        }
+        case "wrathMax": {
+          this.effects.ring(e.x, e.y, 0xb44dff, 70, 420);
+          this.effects.ring(e.x, e.y, 0xe8d0ff, 110, 520);
+          this.effects.sparks(e.x, e.y, 0xd8a0ff, 14);
+          this.sfxAt("ult", e, 0.55);
           break;
         }
         case "pickup":

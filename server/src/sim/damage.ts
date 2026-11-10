@@ -284,6 +284,8 @@ export function downHero(world: World, hero: Hero): void {
   hero.invisT = 0;
   hero.vanishAfterDodge = false;
   hero.riposteReady = false;
+  hero.wrathCharging = false;
+  hero.wrathChargeT = 0;
   if (hero.grabbedBy) {
     const e = world.enemies.get(hero.grabbedBy);
     if (e) releaseGrab(world, e);
@@ -304,6 +306,8 @@ export function killHero(world: World, hero: Hero): void {
   hero.invisT = 0;
   hero.vanishAfterDodge = false;
   hero.riposteReady = false;
+  hero.wrathCharging = false;
+  hero.wrathChargeT = 0;
   hero.state = "dead";
   hero.downHp = 0;
   hero.respawnT = DOWNED.respawnTime;

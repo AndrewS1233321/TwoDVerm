@@ -1,4 +1,4 @@
-import { BARREL, DOWNED, serializeLevelProps, serializePerks } from "@twodverm/shared";
+import { BARREL, DOWNED, ELVISH_WRATH, serializeLevelProps, serializePerks } from "@twodverm/shared";
 import { BarrelState, EnemyState, HazardState, PickupState, type GameState, type PlayerState } from "../state/GameState";
 import { phaseNumber } from "./attacks";
 import { heroMoveMods } from "./heroes";
@@ -62,6 +62,8 @@ export function syncHero(hero: Hero, s: PlayerState): void {
   s.wardReady = hero.perks.has("rune_ward") && hero.wardCd <= 0;
   s.riposteReady = hero.perks.has("riposte") && hero.riposteReady;
   s.riposteStrike = !!hero.attack?.crit;
+  s.wrathCharging = hero.wrathCharging;
+  s.wrathCharge = hero.wrathCharging ? r2(hero.wrathChargeT / ELVISH_WRATH.maxHold) : 0;
   s.invisT = r2(hero.invisT);
 }
 

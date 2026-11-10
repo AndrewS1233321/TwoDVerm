@@ -16,6 +16,9 @@ import {
   noRetreatingWeight,
   OLD_GOAT,
   perksOfferedFor,
+  ELVISH_WRATH,
+  elvishWrathShot,
+  VOLLEY,
   RIPOSTE,
   SMOKE_BOMB,
   smokeCloudRadius,
@@ -320,6 +323,72 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   other.world.phase = "merchant";
   other.world.spawnEnemy("merchant", other.hero.x + 10, other.hero.y, false);
   check("Other heroes cannot buy Smoke Bomb", !other.world.buyPerk(other.hero.id, "smoke_bomb") && other.hero.gold === 50);
+}
+
+// Kerri's Elvish Wrath: hold F to charge Trueflight Volley.
+{
+  const offered = perksOfferedFor("ranger", new Set()).map((p) => p.id);
+  check("Merchant offers Kerri Elvish Wrath", offered.includes("elvish_wrath"));
+  check("Elvish Wrath is not offered to Markus", perksOfferedFor("soldier", new Set()).every((p) => p.id !== "elvish_wrath"));
+
+  const maxShot = elvishWrathShot(ELVISH_WRATH.maxHold);
+  check(
+    "Max Elvish Wrath is +8 ticks of arrows/range",
+    maxShot.arrows === VOLLEY.arrows + 8 * ELVISH_WRATH.arrowsPerTick &&
+      maxShot.range === VOLLEY.range + 8 * ELVISH_WRATH.rangePerTick,
+    `${maxShot.arrows} arrows / ${maxShot.range} range`,
+  );
+
+  const { world, hero } = setup("ranger");
+  hero.perks.add("elvish_wrath");
+  hero.ultCd = 0;
+  const rats = [0, 1, 2].map((i) => {
+    const e = world.spawnEnemy("clanrat", hero.x + 80 + i * 8, hero.y, true)!;
+    e.hp = 9999;
+    e.cooldown = 999;
+    e.state = "staggered";
+    e.stateT = 99;
+    return e;
+  });
+  const hp0 = rats.reduce((s, e) => s + e.hp, 0);
+
+  tick(world, hero, { ult: true });
+  check("Holding F starts Elvish Wrath charge", hero.wrathCharging && hero.ultCd === 0);
+  run(world, hero, 0.2, { ult: true });
+  check("Charge does not fire arrows while held", rats.every((e) => e.hp === 9999));
+
+  run(world, hero, 0.85, { ult: true });
+  const shot = elvishWrathShot(hero.wrathChargeT);
+  const fx = tick(world, hero, { ult: false });
+  const tracers = fx.filter((f) => f.t === "tracer" && f.kind === "arrow").length;
+  const hp1 = rats.reduce((s, e) => s + e.hp, 0);
+  check("Release fires charged volley", !hero.wrathCharging && hero.ultCd > 0 && hp1 < hp0);
+  check("1s charge fires 7 arrows", tracers === shot.arrows && shot.arrows === 7, `${tracers} tracers, expected ${shot.arrows}`);
+
+  hero.ultCd = 0;
+  for (const e of rats) e.hp = 9999;
+  tick(world, hero, { ult: true });
+  const holdFx = run(world, hero, ELVISH_WRATH.maxHold + 0.05, { ult: true });
+  check("Max charge emits wrathMax flash", holdFx.some((f) => f.t === "wrathMax"));
+  check("Charge clamps at max hold", Math.abs(hero.wrathChargeT - ELVISH_WRATH.maxHold) < 0.05, `${hero.wrathChargeT}`);
+  const maxFx = tick(world, hero, { ult: false });
+  const maxTracers = maxFx.filter((f) => f.t === "tracer" && f.kind === "arrow").length;
+  check("Max charge fires 19 arrows", maxTracers === maxShot.arrows, `${maxTracers}`);
+
+  const buy = setup("ranger");
+  buy.hero.gold = 50;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check("Kerri can buy Elvish Wrath for 50 GP", buy.world.buyPerk(buy.hero.id, "elvish_wrath") && buy.hero.perks.has("elvish_wrath") && buy.hero.gold === 0);
+
+  const plain = setup("ranger");
+  plain.hero.ultCd = 0;
+  plain.world.spawnEnemy("clanrat", plain.hero.x + 60, plain.hero.y, true)!;
+  const plainFx = tick(plain.world, plain.hero, { ult: true });
+  check(
+    "Without Elvish Wrath, F fires instantly",
+    !plain.hero.wrathCharging && plain.hero.ultCd > 0 && plainFx.some((f) => f.t === "ult" && f.ult === "volley"),
+  );
 }
 
 // Viktor's Riposte: after a dodge (not ult), next melee is 1.5× reach + guaranteed crit.

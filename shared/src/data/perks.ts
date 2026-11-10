@@ -1,6 +1,12 @@
 import type { HeroId } from "./types";
 
-export type PerkId = "rune_ward" | "smoke_bomb" | "riposte" | "no_retreating" | "old_goat";
+export type PerkId =
+  | "rune_ward"
+  | "smoke_bomb"
+  | "elvish_wrath"
+  | "riposte"
+  | "no_retreating"
+  | "old_goat";
 
 export interface PerkDef {
   id: PerkId;
@@ -39,6 +45,37 @@ export const SMOKE_BOMB = {
 /** Smoke cloud radius in world pixels for a hero of the given body radius. */
 export function smokeCloudRadius(heroRadius: number): number {
   return SMOKE_BOMB.radiusDiameters * heroRadius * 2;
+}
+
+/** Kerri's base Trueflight Volley (also the uncharged Elvish Wrath shot). */
+export const VOLLEY = {
+  arrows: 3,
+  range: 700,
+  damage: 60,
+  stagger: 2,
+  armorPierce: 1,
+} as const;
+
+/**
+ * Kerri: hold F to charge Trueflight Volley.
+ * Each tick adds arrows and range; release fires. Caps at `maxHold` seconds.
+ */
+export const ELVISH_WRATH = {
+  tick: 0.5,
+  rangePerTick: 25,
+  arrowsPerTick: 2,
+  maxHold: 4,
+} as const;
+
+/** Arrow count / range after holding for `holdSec` seconds (clamped to max). */
+export function elvishWrathShot(holdSec: number): { arrows: number; range: number; charged: number } {
+  const charged = Math.max(0, Math.min(ELVISH_WRATH.maxHold, holdSec));
+  const ticks = Math.floor(charged / ELVISH_WRATH.tick + 1e-9);
+  return {
+    arrows: VOLLEY.arrows + ticks * ELVISH_WRATH.arrowsPerTick,
+    range: VOLLEY.range + ticks * ELVISH_WRATH.rangePerTick,
+    charged,
+  };
 }
 
 /** Viktor: after a dodge (not his ult dash), the next melee strike is extended and critical. */
@@ -98,6 +135,14 @@ export const PERKS: Record<PerkId, PerkDef> = {
     id: "smoke_bomb",
     name: "Smoke Bomb",
     description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 1.5s, and enemies stop chasing you.",
+    cost: PERK_COST,
+    heroIds: ["ranger"],
+  },
+  elvish_wrath: {
+    id: "elvish_wrath",
+    name: "Elvish Wrath",
+    description:
+      "Hold F to charge Trueflight Volley: every 0.5s adds +2 arrows and +25 range (max 4s). Release to fire. Without this perk, F still fires the base volley instantly.",
     cost: PERK_COST,
     heroIds: ["ranger"],
   },
