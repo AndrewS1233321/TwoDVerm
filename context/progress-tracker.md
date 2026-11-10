@@ -44,7 +44,9 @@ Update this file after every meaningful implementation change.
   opens Gingey's Map. HUD shows the countdown, or "Waiting on other
   players..." when only some are on the pad. `devTest` still only
   grants `DEV_TEST_START_GOLD` (1000). Mid-run merchant halls stay on
-  `wastes_merchant`. Testing mode ignores the pad for victory.
+  `wastes_merchant`. Testing mode ignores the pad for victory. The
+  wastes-gate room is open to the central/summon corridor (no sealed
+  wall).
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the
