@@ -278,7 +278,9 @@ export class World {
 
   private setupTestingZone(): void {
     for (const d of this.level.dummySpawns) {
-      this.spawnEnemy(d.armored ? "dummyArmored" : "dummy", d.x, d.y, false);
+      // Face +X so the painted head / front / back read clearly in the hall.
+      const e = this.spawnEnemy(d.type, d.x, d.y, false);
+      if (e) e.facing = 0;
     }
     for (const p of this.level.merchantSpawns) {
       this.spawnEnemy("merchant", p.x, p.y, false);

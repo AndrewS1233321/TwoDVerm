@@ -1,12 +1,14 @@
 /**
  * Testing zone for combat and spawn checks.
- * Rooms: central (starts + armour dummies), summon room (one pad per enemy
- * type), and wastes gate (merchant + party hold to open Gingey's Map).
+ * Rooms: central (starts + one dummy per armor tier), summon room (one pad
+ * per enemy type), and wastes gate (merchant + party hold to open Gingey's Map).
  *
  * Extra markers (see shared/src/level.ts):
- *   D  unarmoured test dummy    F  armoured test dummy
+ *   u/l/m/k/z  armor dummies (none / light / medium / heavy / super heavy)
  *   N  merchant NPC             E  TO THE WASTES hold zone
  *   1–7 summon pads (slave, clanrat, stormvermin, gunner, gas, hooker, ogre)
+ *
+ * Dummy markers are spaced 5 tiles apart (~5 hero diameters at radius 14).
  */
 export const TESTING_ZONE: readonly string[] = [
   "##########################################################",
@@ -16,8 +18,8 @@ export const TESTING_ZONE: readonly string[] = [
   "##############......................######################",
   "##############........SSSS..........######################",
   "##############........SSSS..........######################",
-  "##############..........D.F.........######################",
   "##############......................######################",
+  "##############.u....l....m....k....z######################",
   "##############......................######################",
   "##############...........#################################",
   "##############............................................#",

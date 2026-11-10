@@ -91,14 +91,16 @@ Update this file after every meaningful implementation change.
   location (head / front / side / back) at one of five levels (none 0%,
   light 25%, medium 50%, heavy 75%, super heavy 95% reduction). Enemies
   carry an `armor` loadout (placeholders: Stormvermin head/front heavy,
-  side medium, back light; Armoured Dummy heavy everywhere; others
-  unarmored). `armorPierce` is now a number of levels stripped (all old
-  piercing attacks start at 1). Head hits come from `head`-flagged
-  attacks (overhead heavies `gs_h2` / `wh_h1`, rapier thrusts `ra_l3` /
-  `ra_h1`, handgun, Stormvermin overhead) and precision headshots.
-  Backstabs double the attack's base damage, then back armor applies
-  (no longer ignored). Back armor levels are chosen per enemy by hand;
-  there is no rule tying them to front/side armor.
+  side medium, back light; others unarmored). Testing / Staging hall
+  spawns one dummy per armor tier (none / light / medium / heavy /
+  super heavy); each has matching head/front/side and a back one tier
+  lighter (`dummyArmorLoadout`). `armorPierce` is now a number of levels
+  stripped (all old piercing attacks start at 1). Head hits come from
+  `head`-flagged attacks (overhead heavies `gs_h2` / `wh_h1`, rapier
+  thrusts `ra_l3` / `ra_h1`, handgun, Stormvermin overhead) and
+  precision headshots. Backstabs double the attack's base damage, then
+  back armor applies (no longer ignored). Back armor levels are chosen
+  per enemy by hand; there is no rule tying them to front/side armor.
   Heroes wear one full armor set (`ARMOR_SETS`, starting on
   `markusDefault` / `kerriDefault` / `bardinDefault` / `viktorDefault`,
   all unarmored with no trade-offs). Sets carry trade-offs (speed, turn,
@@ -123,10 +125,12 @@ Update this file after every meaningful implementation change.
   map vote; 4 stops then results.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
-  central room (starts + unarmoured/armoured dummies), a summon
-  room with one green pad per combat enemy type (step on pad to
-  spawn), a merchant, and a **TO THE WASTES** hold room. Director
-  disabled in testing; no auto-victory (the wastes pad is ignored).
+  central room (starts + five armor-tier dummies spaced ~5 hero
+  diameters apart, clear head/front/back), a summon room with one
+  green pad per combat enemy type (step on pad to spawn), a merchant,
+  and a **TO THE WASTES** hold room. Director disabled in testing; no
+  auto-victory (the wastes pad is ignored). Staging Hall uses the same
+  Testing zone map.
 - Unit 01: context files and build plan written.
 - Unit 02: skeleton. `npm run dev` starts Colyseus (port 2567) and Vite
   (port 5173). Colyseus 0.16, Phaser 3, Vite 6.

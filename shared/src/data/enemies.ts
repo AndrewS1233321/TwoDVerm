@@ -1,6 +1,25 @@
 import { deg } from "../math";
-import { UNARMORED } from "./armor";
-import type { CombatEnemyId, EnemyDef, EnemyId } from "./types";
+import { dummyArmorLoadout, UNARMORED, type ArmorLevel } from "./armor";
+import type { CombatEnemyId, DummyEnemyId, EnemyDef, EnemyId } from "./types";
+
+function makeDummy(id: DummyEnemyId, name: string, level: ArmorLevel, radius = 14): EnemyDef {
+  return {
+    id,
+    name,
+    radius,
+    hp: 9999,
+    speed: 0,
+    turnRate: 0,
+    armor: dummyArmorLoadout(level),
+    staggerResist: 99,
+    behavior: "dummy",
+    large: false,
+    special: false,
+    elite: false,
+    race: "none",
+    attacks: [],
+  };
+}
 
 export const ENEMIES: Record<EnemyId, EnemyDef> = {
   slave: {
@@ -127,38 +146,11 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
       { id: "ogre_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
     ],
   },
-  dummy: {
-    id: "dummy",
-    name: "Test Dummy",
-    radius: 14,
-    hp: 9999,
-    speed: 0,
-    turnRate: 0,
-    armor: UNARMORED,
-    staggerResist: 99,
-    behavior: "dummy",
-    large: false,
-    special: false,
-    elite: false,
-    race: "none",
-    attacks: [],
-  },
-  dummyArmored: {
-    id: "dummyArmored",
-    name: "Armoured Dummy",
-    radius: 15,
-    hp: 9999,
-    speed: 0,
-    turnRate: 0,
-    armor: { head: "heavy", front: "heavy", side: "heavy", back: "heavy" },
-    staggerResist: 99,
-    behavior: "dummy",
-    large: false,
-    special: false,
-    elite: false,
-    race: "none",
-    attacks: [],
-  },
+  dummy: makeDummy("dummy", "Unarmored Dummy", "none"),
+  dummyLight: makeDummy("dummyLight", "Light Armor Dummy", "light"),
+  dummyMedium: makeDummy("dummyMedium", "Medium Armor Dummy", "medium"),
+  dummyHeavy: makeDummy("dummyHeavy", "Heavy Armor Dummy", "heavy", 15),
+  dummySuperHeavy: makeDummy("dummySuperHeavy", "Super Heavy Dummy", "superHeavy", 15),
   merchant: {
     id: "merchant",
     name: "Wastes Merchant",
@@ -178,6 +170,28 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
 };
 
 export const ENEMY_IDS = Object.keys(ENEMIES) as EnemyId[];
+
+/** Training dummies spawned in the Testing / Staging hall. */
+export const DUMMY_ENEMY_IDS: DummyEnemyId[] = [
+  "dummy",
+  "dummyLight",
+  "dummyMedium",
+  "dummyHeavy",
+  "dummySuperHeavy",
+];
+
+/** ASCII marker → dummy type for the Testing zone. */
+export const DUMMY_SPAWN_MARKERS: Record<string, DummyEnemyId> = {
+  u: "dummy",
+  l: "dummyLight",
+  m: "dummyMedium",
+  k: "dummyHeavy",
+  z: "dummySuperHeavy",
+};
+
+export function isDummyEnemyId(v: unknown): v is DummyEnemyId {
+  return typeof v === "string" && (DUMMY_ENEMY_IDS as string[]).includes(v);
+}
 
 /** Mission / summon-pad enemies only (excludes test dummies). */
 export const COMBAT_ENEMY_IDS: CombatEnemyId[] = ["slave", "clanrat", "stormvermin", "gunner", "gas", "hooker", "ogre"];

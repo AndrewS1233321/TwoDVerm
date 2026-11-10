@@ -30,6 +30,25 @@ export type ArmorLoadout = Record<ArmorLocation, ArmorLevel>;
 
 export const UNARMORED: ArmorLoadout = { head: "none", front: "none", side: "none", back: "none" };
 
+/** One armor tier lighter, floored at unarmored. */
+export function lighterArmorLevel(level: ArmorLevel): ArmorLevel {
+  const i = ARMOR_LEVELS.indexOf(level);
+  return ARMOR_LEVELS[Math.max(0, i - 1)]!;
+}
+
+/**
+ * Training-dummy loadout: head / front / side at `level`, back one tier
+ * lighter (unarmored stays fully unarmored).
+ */
+export function dummyArmorLoadout(level: ArmorLevel): ArmorLoadout {
+  return {
+    head: level,
+    front: level,
+    side: level,
+    back: lighterArmorLevel(level),
+  };
+}
+
 /** Armor level after `pierce` levels are stripped off (never below none). */
 export function effectiveArmorLevel(level: ArmorLevel, pierce = 0): ArmorLevel {
   const i = Math.max(0, ARMOR_LEVELS.indexOf(level) - Math.max(0, Math.floor(pierce)));

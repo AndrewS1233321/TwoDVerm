@@ -211,28 +211,6 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
       g.fillCircle(cx + R * 0.85, cy, R * 0.3);
     },
   },
-  dummy: {
-    fur: 0x8a7a60,
-    width: 1.5,
-    extra: (g, cx, cy, R) => {
-      g.fillStyle(0xc9a14a, 0.9);
-      g.fillRect(cx - R * 0.55, cy - R * 0.55, R * 1.1, R * 1.1);
-      g.lineStyle(TEX_SCALE, 0x3a3020, 0.9);
-      g.strokeRect(cx - R * 0.55, cy - R * 0.55, R * 1.1, R * 1.1);
-    },
-  },
-  dummyArmored: {
-    fur: 0x6a6a70,
-    width: 1.55,
-    extra: (g, cx, cy, R) => {
-      g.fillStyle(0x9aa3ad);
-      g.fillEllipse(cx - R * 0.05, cy, R * 1.45, R * 1.5);
-      g.lineStyle(TEX_SCALE, 0xd8d0c0, 0.9);
-      g.strokeEllipse(cx - R * 0.05, cy, R * 1.45, R * 1.5);
-      g.fillStyle(0x4b4f58);
-      g.fillRect(cx - R * 0.7, cy - R * 0.12, R * 1.0, R * 0.24);
-    },
-  },
 };
 
 function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
@@ -240,7 +218,13 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
     drawOgre(scene, g);
     return;
   }
-  if (id === "dummy" || id === "dummyArmored") {
+  if (
+    id === "dummy" ||
+    id === "dummyLight" ||
+    id === "dummyMedium" ||
+    id === "dummyHeavy" ||
+    id === "dummySuperHeavy"
+  ) {
     drawDummy(scene, g, id);
     return;
   }
@@ -316,24 +300,80 @@ function drawMerchant(scene: Phaser.Scene, g: G): void {
   finish(scene, g, enemyTextureKey("merchant"), w, h);
 }
 
-function drawDummy(scene: Phaser.Scene, g: G, id: "dummy" | "dummyArmored"): void {
+/** Body / front / back colors per training-dummy armor tier (sprites face +X). */
+const DUMMY_LOOK: Record<
+  "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy",
+  { body: number; front: number; back: number; head: number }
+> = {
+  dummy: { body: 0x8a7a60, front: 0xa89070, back: 0x6e5e48, head: 0xc4b090 },
+  dummyLight: { body: 0x6b5340, front: 0x8a6848, back: 0x8a7a60, head: 0xb89a78 },
+  dummyMedium: { body: 0x5a6460, front: 0x7a8a82, back: 0x6b5340, head: 0x9aa89e },
+  dummyHeavy: { body: 0x4a5058, front: 0x8a929c, back: 0x5a6460, head: 0xa8b0b8 },
+  dummySuperHeavy: { body: 0x2e3238, front: 0x6a7078, back: 0x4a5058, head: 0x9aa3ad },
+};
+
+/**
+ * Training dummy facing +X: distinct head (right), front plate, and lighter back.
+ * Matches combat facing so players can read hit locations at a glance.
+ */
+function drawDummy(
+  scene: Phaser.Scene,
+  g: G,
+  id: "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy",
+): void {
   const def = ENEMIES[id];
-  const look = RAT_LOOKS[id]!;
+  const look = DUMMY_LOOK[id];
   const R = def.radius * TEX_SCALE;
-  const w = R * 4.2;
-  const h = R * 4.2;
+  const w = R * 4.6;
+  const h = R * 3.6;
   const cx = w / 2;
   const cy = h / 2;
+
+  // Stake
   g.fillStyle(0x5a4a38);
-  g.fillRect(cx - R * 0.22, cy + R * 0.55, R * 0.44, R * 1.1);
-  g.fillStyle(look.fur);
-  g.fillCircle(cx, cy - R * 0.1, R * 1.15);
+  g.fillRect(cx - R * 0.18, cy + R * 0.55, R * 0.36, R * 1.0);
+
+  // Back (left / rear of facing)
+  g.fillStyle(look.back);
+  g.fillEllipse(cx - R * 0.55, cy, R * 0.85, R * 1.35);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.35);
+  g.strokeEllipse(cx - R * 0.55, cy, R * 0.85, R * 1.35);
+  g.fillStyle(0xffffff, 0.12);
+  g.fillTriangle(cx - R * 1.15, cy, cx - R * 0.35, cy - R * 0.35, cx - R * 0.35, cy + R * 0.35);
+
+  // Torso
+  g.fillStyle(look.body);
+  g.fillEllipse(cx - R * 0.05, cy, R * 1.15, R * 1.45);
   g.lineStyle(TEX_SCALE, 0x000000, 0.45);
-  g.strokeCircle(cx, cy - R * 0.1, R * 1.15);
-  look.extra?.(g, cx, cy - R * 0.1, R);
-  g.fillStyle(0x2a2218, 0.9);
-  g.fillCircle(cx - R * 0.35, cy - R * 0.25, R * 0.12);
-  g.fillCircle(cx + R * 0.35, cy - R * 0.25, R * 0.12);
+  g.strokeEllipse(cx - R * 0.05, cy, R * 1.15, R * 1.45);
+
+  // Front plate (chest toward +X)
+  g.fillStyle(look.front);
+  g.fillEllipse(cx + R * 0.35, cy, R * 0.7, R * 1.15);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.4);
+  g.strokeEllipse(cx + R * 0.35, cy, R * 0.7, R * 1.15);
+  if (id !== "dummy") {
+    g.fillStyle(0xffffff, 0.18);
+    g.fillRect(cx + R * 0.05, cy - R * 0.55, R * 0.55, R * 0.12);
+    g.fillRect(cx + R * 0.05, cy + R * 0.4, R * 0.55, R * 0.12);
+  }
+
+  // Head (clearly on the facing / +X side)
+  g.fillStyle(look.head);
+  g.fillCircle(cx + R * 0.95, cy, R * 0.62);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.5);
+  g.strokeCircle(cx + R * 0.95, cy, R * 0.62);
+  g.fillStyle(0x1a1410, 0.95);
+  g.fillCircle(cx + R * 1.1, cy - R * 0.18, R * 0.11);
+  g.fillCircle(cx + R * 1.1, cy + R * 0.18, R * 0.11);
+  g.fillStyle(0xe8dcc8, 0.9);
+  g.fillTriangle(cx + R * 1.45, cy - R * 0.12, cx + R * 1.45, cy + R * 0.12, cx + R * 1.7, cy);
+
+  if (id === "dummySuperHeavy") {
+    g.fillStyle(0xc9a14a, 0.85);
+    g.fillCircle(cx + R * 0.35, cy - R * 0.15, R * 0.12);
+  }
+
   finish(scene, g, enemyTextureKey(id), w, h);
 }
 

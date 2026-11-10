@@ -1,5 +1,6 @@
 import { TILE_SIZE } from "./constants";
-import type { EnemyId } from "./data/types";
+import { DUMMY_SPAWN_MARKERS } from "./data/enemies";
+import type { DummyEnemyId, EnemyId } from "./data/types";
 
 export const TILE_FLOOR = 0;
 export const TILE_WALL = 1;
@@ -21,6 +22,8 @@ export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
   "7": "ogre",
 };
 
+export { DUMMY_SPAWN_MARKERS };
+
 export interface Point {
   x: number;
   y: number;
@@ -33,7 +36,7 @@ export interface SummonPad {
 }
 
 export interface DummySpawn {
-  armored: boolean;
+  type: DummyEnemyId;
   x: number;
   y: number;
 }
@@ -126,6 +129,11 @@ export function parseLevel(rows: readonly string[]): Level {
         level.summonPads.push({ type: summonType, x: c.x, y: c.y });
         continue;
       }
+      const dummyType = DUMMY_SPAWN_MARKERS[ch];
+      if (dummyType) {
+        level.dummySpawns.push({ type: dummyType, x: c.x, y: c.y });
+        continue;
+      }
       switch (ch) {
         case ",": decor[i] = DECOR_COBBLE; break;
         case "_": decor[i] = DECOR_SEWER; break;
@@ -140,8 +148,6 @@ export function parseLevel(rows: readonly string[]): Level {
         case "O": level.ogreSpawn = c; break;
         case "A": level.ammoCrates.push(c); break;
         case "M": level.medKits.push(c); break;
-        case "D": level.dummySpawns.push({ armored: false, x: c.x, y: c.y }); break;
-        case "F": level.dummySpawns.push({ armored: true, x: c.x, y: c.y }); break;
         case "N": level.merchantSpawns.push(c); break;
       }
     }

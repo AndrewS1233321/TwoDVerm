@@ -86,7 +86,10 @@ export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "boss" | "du
 /** Combat enemies that appear in missions and on testing-zone summon pads. */
 export type CombatEnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "gas" | "hooker" | "ogre";
 
-export type EnemyId = CombatEnemyId | "dummy" | "dummyArmored" | "merchant";
+/** Training dummies in the Testing / Staging hall (one per armor tier). */
+export type DummyEnemyId = "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy";
+
+export type EnemyId = CombatEnemyId | DummyEnemyId | "merchant";
 
 /** Faction / race tag for procedural level filters. */
 export type EnemyRace = "skaven" | "beastmen" | "orcs" | "undead" | "human" | "chaos" | "none";

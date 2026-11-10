@@ -22,7 +22,10 @@ export const GOLD_DROPS: Record<EnemyId, GoldDropTable> = {
   hooker: { chance: 0.5, ...MOB_AMOUNT },
   ogre: { chance: 1, min: 100, max: 200 },
   dummy: { chance: 0, min: 0, max: 0 },
-  dummyArmored: { chance: 0, min: 0, max: 0 },
+  dummyLight: { chance: 0, min: 0, max: 0 },
+  dummyMedium: { chance: 0, min: 0, max: 0 },
+  dummyHeavy: { chance: 0, min: 0, max: 0 },
+  dummySuperHeavy: { chance: 0, min: 0, max: 0 },
   merchant: { chance: 0, min: 0, max: 0 },
 };
 
