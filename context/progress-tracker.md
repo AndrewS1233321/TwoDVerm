@@ -56,6 +56,9 @@ Update this file after every meaningful implementation change.
   stagger, idle). It cancels the current action/animation but does
   not cancel blocking or an in-progress dodge. Still blocked while
   dead / downed / grabbed.
+- **Staging-hall barrels**: merchant-phase sim now runs `updateBarrels`
+  so carried barrels follow the hero and thrown barrels land/explode
+  like on wastes proc maps (previously stuck mid-air / not attached).
 - **Bardin barrel handling**: built-in — 0.35s throw release (range
   charges from hold start), full move speed while carrying.
 - **Ranged precision aim**: with a ranged weapon drawn, RMB no longer

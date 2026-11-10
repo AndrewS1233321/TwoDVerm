@@ -457,6 +457,8 @@ export class World {
     updateHazards(this, dt);
 
     if (this.phase === "merchant") {
+      // Same barrel carry / throw / blast sim as mission play (staging hall has barrels too).
+      updateBarrels(this, dt);
       if (this.level.summonPads.length > 0) this.updateSummonPads();
       this.updateMerchantExit(dt);
       return;
