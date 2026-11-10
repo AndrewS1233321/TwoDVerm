@@ -10,10 +10,10 @@ import {
 } from "./types";
 
 const LOCATION_TYPE_BIAS: Record<ExpeditionLocationId, LevelType[]> = {
-  grim_causeway: ["castle", "dungeon"],
-  weeping_quarry: ["dungeon", "caverns", "sewer"],
-  salt_hollow: ["caverns", "forest"],
-  cinder_watch: ["castle", "forest", "dungeon"],
+  grim_causeway: ["castle"],
+  weeping_quarry: ["caverns"],
+  salt_hollow: ["caverns"],
+  cinder_watch: ["castle"],
 };
 
 /**

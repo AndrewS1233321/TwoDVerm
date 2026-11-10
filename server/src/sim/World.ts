@@ -268,17 +268,22 @@ export class World {
       const start = this.level.playerStarts[i++ % this.level.playerStarts.length]!;
       resetHeroForMission(hero, start.x, start.y);
     }
+    this.spawnLevelPickupsAndBarrels();
+    if (this.mode === "testing") this.setupTestingZone();
+    else if (this.mode === "wastes" && this.procMeta) this.director.reset();
+    else if (this.mode !== "wastes") this.director.reset();
+    this.rebuildFlow();
+    this.phase = "playing";
+  }
+
+  /** Place ammo / med pickups and map-authored barrels from the current level. */
+  private spawnLevelPickupsAndBarrels(): void {
     for (const p of this.level.ammoCrates) this.addPickup("ammo", p.x, p.y);
     for (const p of this.level.medKits) this.addPickup("med", p.x, p.y);
     for (const p of this.level.barrelSpawns) {
       const id = this.newId("b");
       this.barrels.set(id, createBarrel(id, p.x, p.y));
     }
-    if (this.mode === "testing") this.setupTestingZone();
-    else if (this.mode === "wastes" && this.procMeta) this.director.reset();
-    else if (this.mode !== "wastes") this.director.reset();
-    this.rebuildFlow();
-    this.phase = "playing";
   }
 
   private setupTestingZone(): void {
@@ -327,6 +332,7 @@ export class World {
       const start = this.level.playerStarts[i++ % this.level.playerStarts.length]!;
       resetHeroForMission(hero, start.x, start.y);
     }
+    this.spawnLevelPickupsAndBarrels();
     this.setupTestingZone();
     this.rebuildFlow();
     this.phase = "merchant";

@@ -20,5 +20,6 @@ Each unit ends with something playable. Write the spec file for a unit
 | 10   | Heroes                  | 4 archetypes, ranged weapons and ammo, ultimates, hero-select lobby                          | 09         |
 | 11   | Boss and event          | Rat ogre; hold-the-point horde event                                                         | 10         |
 | 12   | Polish                  | Sound, music, full HUD, improved sprites and effects, settings                               | 11         |
+| 13   | Authored Wastes missions | One hand-designed map per Gingey Wastes location replacing room procgen; `check:wastes`     | 12         |
 
 Units 01 to 06 deliver a playable multiplayer brawler.

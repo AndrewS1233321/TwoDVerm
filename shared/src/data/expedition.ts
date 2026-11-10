@@ -1,7 +1,8 @@
 /**
  * Gingey Wastes expedition locations — Chaos Wastes–style path choices.
  * Info fields mirror Holseher's Map tooltips (name, curse god, factions,
- * modifiers, completion reward). Content is placeholder for now.
+ * modifiers, completion reward). Rewards are still placeholder; each
+ * location's layout lives in `levels/expeditionLevels.ts`.
  */
 
 export type ExpeditionLocationId =
@@ -29,7 +30,8 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
   grim_causeway: {
     id: "grim_causeway",
     name: "Grim Causeway",
-    description: "A cracked stone bridge over a fogged ravine. Placeholder layout.",
+    description:
+      "Storm a ravine fort: through the gatehouse and bailey, hold the causeway platform, clear the keep courtyard, then face what waits on the tower top.",
     factions: "Skaven, Chaos",
     curse: null,
     modifiers: ["+ Hordes", "- Specials"],
@@ -38,7 +40,8 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
   weeping_quarry: {
     id: "weeping_quarry",
     name: "Weeping Quarry",
-    description: "Flooded pits and rusted scaffolding. Placeholder layout.",
+    description:
+      "Descend a flooded quarry: cross the scaffolds, hold the pump room, break through the collapsed gallery, and fight in the deep pit.",
     factions: "Skaven, Beastmen",
     curse: "Nurgle",
     modifiers: ["+ Elites", "Extra health items"],
@@ -47,7 +50,8 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
   salt_hollow: {
     id: "salt_hollow",
     name: "Salt Hollow",
-    description: "A bleached canyon cut by dry wind. Placeholder layout.",
+    description:
+      "Cross the open salt flats, hold the canyon choke, raid the camp in the side canyon, and survive the basin beyond.",
     factions: "Skaven, Chaos",
     curse: "Tzeentch",
     modifiers: ["+ Specials", "- Hordes"],
@@ -56,7 +60,8 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
   cinder_watch: {
     id: "cinder_watch",
     name: "Cinder Watch",
-    description: "Burned outposts and ash dunes. Placeholder layout.",
+    description:
+      "Fight through ash streets and burned houses, hold the watchtower, clear the market square, and end it in the gutted keep.",
     factions: "Skaven, Chaos",
     curse: "Khorne",
     modifiers: ["+ Monsters", "Extra Pilgrim's Coins"],

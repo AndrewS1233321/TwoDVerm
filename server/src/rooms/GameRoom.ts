@@ -1,9 +1,9 @@
 import { Room, type Client } from "colyseus";
 import {
   DEV_TEST_START_GOLD,
+  buildWastesLevel,
   DT,
   EXPEDITION_LOCATION_IDS,
-  generateLevel,
   HERO_IDS,
   HEROES,
   isExpeditionLocationId,
@@ -244,7 +244,7 @@ export class GameRoom extends Room<GameState> {
     const stop = this.state.expeditionStop;
     const seed = rollProcSeed(this.world.roomSeed, stop, winner);
     const props = rollLevelProperties(stop, winner, seed);
-    const { level, meta } = generateLevel(props, seed);
+    const { level, meta } = buildWastesLevel(winner, props, seed);
     this.world.loadGeneratedLevel(winner, level, meta, props, seed);
     this.state.levelId = winner;
     this.state.expeditionPropsA = "";

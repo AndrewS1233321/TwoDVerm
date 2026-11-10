@@ -16,6 +16,7 @@
     "mission-test": "tsx scripts/mission-test.ts",
     "check:level": "tsx scripts/check-level.ts",
     "check:procgen": "tsx scripts/check-procgen.ts",
+    "check:wastes": "tsx scripts/check-wastes.ts",
     "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client --noEmit",
     "build": "npm run build -w client",
     "start": "npm run start -w server"

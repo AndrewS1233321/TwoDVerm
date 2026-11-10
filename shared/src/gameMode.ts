@@ -1,15 +1,11 @@
-import {
-  CINDER_WATCH,
-  GRIM_CAUSEWAY,
-  SALT_HOLLOW,
-  WEEPING_QUARRY,
-} from "./levels/expeditionLevels";
 import { MISSION_1 } from "./levels/mission1";
 import { TESTING_ZONE } from "./levels/testingZone";
 import { WASTES_CAMP } from "./levels/wastesCamp";
 import { WASTES_MERCHANT } from "./levels/wastesMerchant";
 import { parseLevel, tileCenter, type Level } from "./level";
 import { isExpeditionLocationId, WASTES_MERCHANT_LEVEL_ID, type ExpeditionLocationId } from "./data/expedition";
+import { parseAuthoredMission } from "./procgen/authoredMission";
+import { rollLevelProperties } from "./procgen/rollProps";
 
 export type GameMode = "default" | "testing" | "wastes";
 
@@ -43,6 +39,7 @@ export function initialLevelIdForMode(mode: GameMode): LevelId {
   return "default";
 }
 
+/** ASCII rows for plain hand-authored maps (Wastes missions go through `parseAuthoredMission`). */
 export function levelRowsForId(id: string): readonly string[] {
   switch (id) {
     case "testing":
@@ -51,14 +48,6 @@ export function levelRowsForId(id: string): readonly string[] {
       return WASTES_CAMP;
     case WASTES_MERCHANT_LEVEL_ID:
       return WASTES_MERCHANT;
-    case "grim_causeway":
-      return GRIM_CAUSEWAY;
-    case "weeping_quarry":
-      return WEEPING_QUARRY;
-    case "salt_hollow":
-      return SALT_HOLLOW;
-    case "cinder_watch":
-      return CINDER_WATCH;
     case "default":
     default:
       return MISSION_1;
@@ -71,6 +60,9 @@ export function levelRowsForMode(mode: GameMode): readonly string[] {
 }
 
 export function parseLevelById(id: string): Level {
+  if (isExpeditionLocationId(id)) {
+    return parseAuthoredMission(id, rollLevelProperties(1, id, 0), 0).level;
+  }
   const level = parseLevel(levelRowsForId(id));
   if (id === "testing") {
     const wastesGate =
@@ -84,8 +76,6 @@ export function parseLevelById(id: string): Level {
     ];
   } else if (id === WASTES_MERCHANT_LEVEL_ID) {
     level.roomLabels = [{ name: "merchant hall", ...averagePoint(level.playerStarts) }];
-  } else if (isExpeditionLocationId(id)) {
-    level.roomLabels = [{ name: id.replace(/_/g, " "), ...averagePoint(level.playerStarts) }];
   }
   return level;
 }

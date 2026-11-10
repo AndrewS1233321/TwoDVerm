@@ -8,10 +8,24 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Playtest Default, Testing zone, and The Gingey Wastes procedural
-  expedition loop.
+- Playtest Default, Testing zone, and The Gingey Wastes expedition
+  loop; playtest the four authored Wastes missions and tune layout,
+  spawn spots and pacing from feedback.
 
 ## Completed
+
+- **Authored Wastes missions** (spec `13-authored-wastes-missions.md`):
+  Grim Causeway, Weeping Quarry, Salt Hollow and Cinder Watch each load
+  one fixed layout (`shared/src/levels/expeditionLevels.ts`) instead of
+  room procgen. Pacing loosely follows Vermintide 2 missions; layouts
+  and names are original. Legend: `H` hold, `K` mini-boss, `B` boss
+  arena, gates `1`/`2`/`3` (open after each objective; `3` seals the
+  exit), `b` barrel spot (seed keeps ~2/3). `buildWastesLevel` (server
+  + client) returns the same `{ level, meta }` as procgen, so the
+  objective / gate / Director logic is unchanged. Level types are fixed
+  per location (castle, caverns, caverns, castle). Maps are capped at
+  180x90 tiles. `npm run check:wastes` validates gating, markers and
+  determinism. `generateLevel` is no longer used by the vote flow.
 
 - **Sewer layout**: each section rolls 5–12 rooms; tunnels between
   rooms / sections are 10–25 tiles long and 2 wide; barrel density
@@ -46,8 +60,10 @@ Update this file after every meaningful implementation change.
   grants `DEV_TEST_START_GOLD` (1000). Mid-run merchant halls stay on
   `wastes_merchant`. Testing mode ignores the pad for victory. The
   wastes-gate room is open to the central/summon corridor (no sealed
-  wall). Central hall has **two ammo crates** (left/right above the
-  dummy row).
+  wall).   Central hall has **two ammo crates** (left/right above the
+  dummy row). Wastes staging (`enterWastesHub`) now spawns those
+  pickups too — it previously cleared pickups and never re-added them
+  (Testing mode `startMission` already did).
 - **Block interrupt**: holding block immediately cancels attack /
   charge / shoot / push / barrel charge and raises guard. Revive can
   continue while RMB is held (front blocks still work during the
@@ -128,7 +144,8 @@ Update this file after every meaningful implementation change.
   15% many / 10% lots); barrels are pushable, destroyable, pick-upable
   (E), throw with charged left-click (breaks for AoE damage), Q drops;
   carry halves move speed. Testing zone also spawns a few near start.
-- **Procedural Gingey Wastes levels**: shared `generateLevel(props, seed)`
+- **Procedural Gingey Wastes levels** (superseded by authored missions
+  above; kept as a fallback): shared `generateLevel(props, seed)`
   room-based layouts (castle/dungeon aesthetics; other types stub the
   same generator). `LevelProperties` (type, difficulty, races), Skaven
   race tags, Director budgets from difficulty, section objectives

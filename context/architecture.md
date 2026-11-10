@@ -10,7 +10,7 @@
 | Server         | Node.js + Colyseus                  | Rooms, room codes, joining, state sync over WebSockets        |
 | State sync     | @colyseus/schema                    | Declares synced state; sends only changes each tick           |
 | Server runtime | tsx                                 | Runs TypeScript server directly in dev and production         |
-| Levels         | ASCII maps + shared procgen         | Hand-authored ASCII in `shared/src/levels/`; Gingey Wastes missions from `shared/src/procgen/` (seed + `LevelProperties`) |
+| Levels         | ASCII maps                          | Hand-authored ASCII in `shared/src/levels/`. Gingey Wastes missions are authored maps (`expeditionLevels.ts`) built by `buildWastesLevel` in `shared/src/procgen/` with seed + `LevelProperties`; `generateLevel` (room procgen) remains as a fallback |
 | Menus          | HTML/CSS overlay (`client/index.html`, `client/src/ui/overlay.ts`) | Main menu, lobby, results, pause, settings |
 | Hosting        | Fly.io (single region near players) | Serves the built client and runs the game server on one URL   |
 | Repo layout    | npm workspaces                      | `client`, `server`, `shared` packages in one repository       |
@@ -32,7 +32,7 @@
   and sounds and music are synthesised with WebAudio (`client/src/audio/`),
   so there are no asset files to download.
 - `scripts/` — Headless tools run on the server simulation: `combat-test`,
-  `mission-test`, `check:level`, `check:procgen`, `bot-test` (network smoke
+  `mission-test`, `check:level`, `check:procgen`, `check:wastes`, `bot-test` (network smoke
   test) and `bot` (bot teammates that join a room by code).
 - `context/` — Project documentation and specs for AI-driven development.
 
@@ -123,9 +123,10 @@ constrains back armor relative to front or side.
    tables in `shared/`, not hard-coded branches in logic.
 7. Simulation code uses the fixed tick delta, never wall-clock time
    or frame rate.
-8. Procedural wastes layouts are deterministic: server and client both
-   call `generateLevel(props, seed)` so tile data is not synced wholesale.
-9. Wastes proc missions enable the Director with difficulty budgets;
+8. Wastes layouts are deterministic: server and client both call
+   `buildWastesLevel(locationId, props, seed)` (authored map + seeded
+   barrels) so tile data is not synced wholesale.
+9. Wastes missions enable the Director with difficulty budgets;
    exit victory requires the final boss objective, then a 10s party hold.
 10. Destructible barrels are world entities (synced separately from
     pickups): push, melee/ranged damage, E to pick up, Q to drop,

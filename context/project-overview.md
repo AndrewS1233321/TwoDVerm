@@ -33,12 +33,12 @@ game is moderately fast-paced; reaction time and attack timing matter.
    pads), whether or not DevTest is checked. DevTest still grants
    starting gold. When the whole party holds the green
    "TO THE WASTES" pad for 10s, Gingey's Map opens so the party votes
-   on a forked path (Chaos Wastes style). Each option shows rolled
-   level type, difficulty, and races; Travel generates a room-based
-   layout from those props.
+   on a forked path (Chaos Wastes style). Each option shows its level
+   type, rolled difficulty, and races; Travel loads that location's
+   hand-designed mission (one fixed layout per location).
 6. All players spawn at the start zone of the chosen level.
 7. Players fight through the level; the Director spawns hordes,
-   specials and a boss (Default mission and Wastes proc levels).
+   specials and a boss (Default mission and Wastes missions).
    Wastes maps have section objectives (hold / mini-boss) and a final
    boss; the exit unlocks after the boss, then a 10s party hold.
 8. Downed players can be revived by teammates.
@@ -86,7 +86,9 @@ game is moderately fast-paced; reaction time and attack timing matter.
 
 ### World and pacing
 
-- One linear level, drawn as an ASCII map in `shared/src/levels/`
+- Linear levels drawn as ASCII maps in `shared/src/levels/`: the
+  Default mission plus four Gingey Wastes missions (Grim Causeway,
+  Weeping Quarry, Salt Hollow, Cinder Watch)
 - AI Director controls hordes, specials and boss timing
 - Mid-level "hold the point" horde event
 
@@ -110,7 +112,7 @@ game is moderately fast-paced; reaction time and attack timing matter.
 - Bots to fill empty player slots
 - Accounts, logins, saved progression, loot or unlocks
 - Mobile or controller support
-- More than one mission
+- Missions beyond the Default mission and the four Wastes missions
 - Public matchmaking or server browser
 - Voice or text chat (friends use Discord)
 - Anti-cheat beyond server authority

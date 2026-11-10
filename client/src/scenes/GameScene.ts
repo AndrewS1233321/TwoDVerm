@@ -5,9 +5,9 @@ import {
   barrelLandingPoint,
   barrelThrowDistance,
   barrelThrowReady,
+  buildWastesLevel,
   clamp,
   ENEMIES,
-  generateLevel,
   HEROES,
   isHeroId,
   MSG,
@@ -148,7 +148,7 @@ export class GameScene extends Phaser.Scene {
     this.activeProcKey = procKey;
     this.appliedProcProgress = -1;
     if (props && state.procSeed) {
-      const { level, meta } = generateLevel(props, state.procSeed);
+      const { level, meta } = buildWastesLevel(state.levelId, props, state.procSeed);
       this.level = level;
       this.procMeta = meta;
     } else {
