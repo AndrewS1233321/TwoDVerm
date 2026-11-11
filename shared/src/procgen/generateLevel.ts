@@ -276,6 +276,7 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     barrelSpawns: [],
     dummySpawns: [],
     summonPads: [],
+    summonPortal: null,
     merchantSpawns: [],
     roomLabels: [],
   };

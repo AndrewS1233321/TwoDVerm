@@ -39,6 +39,10 @@ export class SummonPadRenderer {
       this.root.add([g, icon, label]);
     }
 
+    if (level.summonPortal) {
+      this.root.add(drawSummonPortal(scene, level.summonPortal.x, level.summonPortal.y));
+    }
+
     for (const room of level.roomLabels) {
       const label = scene.add
         .text(room.x, room.y, room.name, {
@@ -56,4 +60,44 @@ export class SummonPadRenderer {
   destroy(): void {
     this.root.destroy(true);
   }
+}
+
+/** Tall warp oval on the far-right wall of the summon room. */
+function drawSummonPortal(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Container {
+  const root = scene.add.container(x, y);
+  const g = scene.add.graphics();
+  g.fillStyle(0x0a1208, 0.72);
+  g.fillEllipse(0, 0, 36, 78);
+  g.lineStyle(3, colors.warp, 0.95);
+  g.strokeEllipse(0, 0, 36, 78);
+  g.lineStyle(2, 0xb8ff8a, 0.55);
+  g.strokeEllipse(0, 0, 22, 52);
+  g.fillStyle(colors.warp, 0.18);
+  g.fillEllipse(0, 0, 18, 44);
+  const glow = scene.add.graphics();
+  glow.lineStyle(5, colors.warp, 0.35);
+  glow.strokeEllipse(0, 0, 42, 88);
+  root.add([glow, g]);
+  scene.tweens.add({
+    targets: glow,
+    alpha: { from: 0.35, to: 0.85 },
+    scaleX: { from: 1, to: 1.08 },
+    scaleY: { from: 1, to: 1.04 },
+    duration: 900,
+    yoyo: true,
+    repeat: -1,
+    ease: "Sine.easeInOut",
+  });
+  const label = scene.add
+    .text(0, 48, "PORTAL", {
+      fontFamily: "Georgia, serif",
+      fontSize: "11px",
+      color: "#b8ff8a",
+      align: "center",
+      stroke: "#0e0c0b",
+      strokeThickness: 3,
+    })
+    .setOrigin(0.5, 0);
+  root.add(label);
+  return root;
 }

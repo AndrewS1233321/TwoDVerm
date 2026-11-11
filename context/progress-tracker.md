@@ -15,6 +15,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Summon Room portal**: Testing-zone pads still trigger on step, but
+  creatures emerge from a far-right warp portal (`P` marker) instead of
+  spawning on the pad sprite; client draws a pulsing portal and a warp
+  burst FX on each summon.
 - **Gutter Runner push-block**: while pushing, heroes cannot be pounced;
   a push that hits the runner knocks it back, stuns for 1.25s, then it
   flees until its 5s pounce cooldown ends.
@@ -200,8 +204,9 @@ Update this file after every meaningful implementation change.
 - Game modes: create-menu select for **Default** (mission 1) and
   **Testing zone**. Mode is fixed for the room. Testing zone has a
   central room (starts + five armor-tier dummies spaced ~5 hero
-  diameters apart, clear head/front/back), a summon room with one
-  green pad per combat enemy type (step on pad to spawn), a merchant,
+  diameters apart, clear head/front/back), a summon room (green pad per
+  combat enemy; step to summon — creatures emerge from a far-right
+  portal), a merchant,
   and a **TO THE WASTES** hold room. Director disabled in testing; no
   auto-victory (the wastes pad is ignored). Staging Hall uses the same
   Testing zone map.

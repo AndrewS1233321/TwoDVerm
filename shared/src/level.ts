@@ -83,6 +83,11 @@ export interface Level {
   barrelSpawns: Point[];
   dummySpawns: DummySpawn[];
   summonPads: SummonPad[];
+  /**
+   * World centre of the warp portal used by summon pads (Testing zone).
+   * Pads stay as stand-to-summon triggers; creatures spawn here instead.
+   */
+  summonPortal: Point | null;
   /** Centres where a merchant NPC should stand (Gingey Wastes hall). */
   merchantSpawns: Point[];
   roomLabels: RoomLabel[];
@@ -130,6 +135,7 @@ export function parseLevel(rows: readonly string[]): Level {
     barrelSpawns: [],
     dummySpawns: [],
     summonPads: [],
+    summonPortal: null,
     merchantSpawns: [],
     roomLabels: [],
   };
@@ -171,6 +177,7 @@ export function parseLevel(rows: readonly string[]): Level {
         case "A": level.ammoCrates.push(c); break;
         case "M": level.medKits.push(c); break;
         case "N": level.merchantSpawns.push(c); break;
+        case "P": level.summonPortal = c; break;
       }
     }
   }

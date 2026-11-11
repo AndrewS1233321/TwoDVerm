@@ -788,6 +788,10 @@ export class GameScene extends Phaser.Scene {
           this.effects.gasBurst(e.x, e.y, 72);
           this.sfxAt("gas", e, 0.9);
           break;
+        case "portal":
+          this.effects.portalBurst(e.x, e.y);
+          this.sfxAt("gas", e, 0.55);
+          break;
         case "slashflash":
           this.effects.slashFlash(e.x, e.y, e.facing, e.reach, e.arc);
           this.sfxAt("heavySwing", e, 0.45);

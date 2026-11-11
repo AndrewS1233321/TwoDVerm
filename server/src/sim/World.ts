@@ -795,8 +795,16 @@ export class World {
         const key = `${hero.id}:${i}`;
         next.add(key);
         if (!this.padOccupancy.has(key)) {
-          const offset = 40 + (ENEMIES[pad.type].large ? 20 : 0);
-          this.spawnEnemy(pad.type, pad.x, pad.y + offset, true);
+          const portal = this.level.summonPortal;
+          if (portal) {
+            // Emerge slightly into the room (left of the far-right portal).
+            const out = 28 + (ENEMIES[pad.type].large ? 18 : 0);
+            this.spawnEnemy(pad.type, portal.x - out, portal.y, true);
+            this.emit({ t: "portal", x: portal.x, y: portal.y });
+          } else {
+            const offset = 40 + (ENEMIES[pad.type].large ? 20 : 0);
+            this.spawnEnemy(pad.type, pad.x, pad.y + offset, true);
+          }
         }
       });
     }

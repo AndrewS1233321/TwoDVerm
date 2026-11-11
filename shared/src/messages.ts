@@ -86,6 +86,7 @@ export type FxEvent =
   | { t: "bowDrawn"; id: string; x: number; y: number }
   | { t: "pickup"; id: string; kind: string }
   | { t: "gasburst"; x: number; y: number }
+  | { t: "portal"; x: number; y: number }
   | { t: "gold"; x: number; y: number; amount: number }
   /** Opens the merchant shop UI for this player. */
   | { t: "shop"; id: string }

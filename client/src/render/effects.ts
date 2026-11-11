@@ -103,6 +103,13 @@ export class Effects {
     this.sparks(x, y, colors.warp, 16, 160);
   }
 
+  /** Warp flare when a creature emerges from the summon portal. */
+  portalBurst(x: number, y: number): void {
+    this.ring(x, y, colors.warp, 56, 420);
+    this.sparks(x, y, colors.warp, 18, 180);
+    this.sparks(x, y, 0xb8ff8a, 10, 110);
+  }
+
   /** Cannon muzzle flash and smoke. */
   cannonBlast(x: number, y: number): void {
     this.ring(x, y, 0xffd27a, 70, 300);
