@@ -15,7 +15,10 @@ import { colors, shade } from "./palette";
 const CHUNK = 1024;
 const TORCH_SPACING = 7;
 const LANTERN_SPACING = 6;
-const ROCK_WALL = 0x3d3832;
+/** Near-black basalt; kept well below mine floor (~0x3a342e) for contrast. */
+const ROCK_WALL = 0x161310;
+const ROCK_FACE = 0x24201c;
+const ROCK_HIGHLIGHT = 0x3a342e;
 
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) | 0;
@@ -291,7 +294,7 @@ export class LevelRenderer {
     }
   }
 
-  /** Crumbling quarry rock: uneven faces, cracks, rubble chips on the floor edge. */
+  /** Crumbling quarry rock: dark basalt base, boulder blobs, deep cracks. */
   private drawMineWall(
     g: Phaser.GameObjects.Graphics,
     x: number,
@@ -301,28 +304,36 @@ export class LevelRenderer {
     ty: number,
     r: number,
   ): void {
-    g.fillStyle(shade(ROCK_WALL, 0.75 + r * 0.35));
+    g.fillStyle(shade(ROCK_WALL, 0.9 + r * 0.15));
     g.fillRect(x, y, T, T);
-    // Layered rock faces.
-    g.fillStyle(shade(ROCK_WALL, 0.95 + hash(tx + 2, ty) * 0.2), 0.7);
-    g.fillCircle(x + T * (0.25 + r * 0.2), y + T * (0.3 + hash(tx, ty + 3) * 0.25), 5 + r * 4);
-    g.fillStyle(shade(0x2a2622, 0.9), 0.55);
-    g.fillCircle(x + T * (0.65 + hash(tx + 5, ty) * 0.15), y + T * (0.55 + r * 0.2), 4 + hash(tx, ty) * 5);
-    // Cracks.
-    g.lineStyle(1, shade(0x1a1714, 1.1), 0.55 + r * 0.25);
-    g.lineBetween(x + 4, y + 6 + r * 8, x + T * 0.55, y + T * 0.7);
-    if (r > 0.45) g.lineBetween(x + T * 0.4, y + 4, x + T - 5, y + T * 0.45);
-    // Broken edge notches where the wall meets open floor.
-    g.fillStyle(shade(ROCK_WALL, 0.55), 0.9);
+    // Overlapping boulder faces — keep all faces darker than the floor.
+    g.fillStyle(shade(ROCK_FACE, 0.85 + hash(tx + 2, ty) * 0.2), 0.95);
+    g.fillCircle(x + T * (0.28 + r * 0.15), y + T * (0.32 + hash(tx, ty + 3) * 0.2), 7 + r * 5);
+    g.fillStyle(shade(ROCK_FACE, 0.7 + hash(tx + 5, ty) * 0.15), 0.9);
+    g.fillCircle(x + T * (0.68 + hash(tx + 5, ty) * 0.12), y + T * (0.58 + r * 0.15), 6 + hash(tx, ty) * 5);
+    g.fillStyle(shade(ROCK_WALL, 1.05), 0.75);
+    g.fillCircle(x + T * hash(tx + 9, ty + 1), y + T * hash(ty + 4, tx + 2), 4 + r * 3);
+    // Deep fissures.
+    g.lineStyle(1.5, 0x0a0908, 0.85);
+    g.lineBetween(x + 3, y + 5 + r * 10, x + T * 0.55, y + T * 0.75);
+    if (r > 0.35) g.lineBetween(x + T * 0.35, y + 3, x + T - 4, y + T * 0.5);
+    if (r > 0.65) g.lineBetween(x + 6, y + T * 0.55, x + T * 0.7, y + T - 4);
+    // Soft mineral flecks (still below floor brightness).
+    if (r > 0.55) {
+      g.fillStyle(shade(ROCK_HIGHLIGHT, 0.55), 0.35);
+      g.fillCircle(x + T * hash(tx + 1, ty + 7), y + T * (0.15 + hash(ty, tx) * 0.2), 2);
+    }
+    // Jagged edge where rock meets the passage.
+    g.fillStyle(shade(ROCK_WALL, 0.75), 1);
     if (this.tile(tx, ty + 1) !== TILE_WALL) {
-      g.fillTriangle(x + r * 8, y + T, x + 10 + r * 10, y + T - 5 - r * 4, x + 18 + r * 6, y + T);
+      g.fillTriangle(x + r * 6, y + T, x + 8 + r * 12, y + T - 6 - r * 5, x + 20 + r * 4, y + T);
+      g.fillTriangle(x + 14 + r * 8, y + T, x + T * 0.7, y + T - 4 - hash(tx, ty) * 5, x + T - 2, y + T);
     }
     if (this.tile(tx + 1, ty) !== TILE_WALL) {
-      g.fillTriangle(x + T, y + r * 6, x + T - 5 - r * 3, y + 12 + r * 8, x + T, y + 22);
+      g.fillTriangle(x + T, y + r * 5, x + T - 6 - r * 4, y + 10 + r * 10, x + T, y + 24);
     }
-    if (r > 0.78) {
-      g.fillStyle(0x5a5348, 0.35);
-      g.fillCircle(x + T * hash(tx + 1, ty + 7), y + T * 0.2, 2.5);
+    if (this.tile(tx - 1, ty) !== TILE_WALL) {
+      g.fillTriangle(x, y + 4 + r * 8, x + 5 + r * 3, y + 14 + hash(tx, ty) * 8, x, y + 26);
     }
   }
 
@@ -335,13 +346,13 @@ export class LevelRenderer {
     ty: number,
     r: number,
   ): void {
-    g.fillStyle(shade(0x2c2824, 0.92 + r * 0.2));
+    // Warm packed earth — clearly lighter than the near-black rock walls.
+    g.fillStyle(shade(0x3a342c, 0.95 + r * 0.18));
     g.fillRect(x, y, T, T);
-    // Packed dirt / gravel flecks.
-    g.fillStyle(shade(0x3a342e, 0.9 + hash(tx + 4, ty) * 0.25), 0.55);
+    g.fillStyle(shade(0x4a4338, 0.9 + hash(tx + 4, ty) * 0.2), 0.5);
     g.fillCircle(x + T * (0.2 + r * 0.5), y + T * (0.25 + hash(ty, tx) * 0.45), 2 + r * 3);
     if (r > 0.55) {
-      g.fillStyle(0x4a433c, 0.28);
+      g.fillStyle(0x5a5248, 0.28);
       g.fillCircle(x + T * hash(tx + 8, ty + 2), y + T * hash(ty + 6, tx), 2);
     }
     const axis = this.corridorAxis(tx, ty);
@@ -441,10 +452,10 @@ export class LevelRenderer {
     const cy = y + T * (0.3 + hash(ty, tx + 4) * 0.4);
     if (kind === 0) {
       // Broken rock pile.
-      g.fillStyle(shade(ROCK_WALL, 0.7 + r * 0.2), 0.85);
+      g.fillStyle(shade(ROCK_FACE, 0.85 + r * 0.15), 0.9);
       g.fillCircle(cx, cy, 4 + r * 3);
       g.fillCircle(cx + 5, cy + 2, 3);
-      g.fillStyle(0x1a1714, 0.35);
+      g.fillStyle(0x0a0908, 0.45);
       g.fillCircle(cx - 2, cy + 3, 2.5);
     } else if (kind === 1) {
       // Pickaxe (handle + head), decorative only.
