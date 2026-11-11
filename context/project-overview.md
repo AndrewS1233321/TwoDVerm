@@ -41,6 +41,9 @@ game is moderately fast-paced; reaction time and attack timing matter.
    specials and a boss (Default mission and Wastes missions).
    Wastes maps have section objectives (hold / mini-boss) and a final
    boss; the exit unlocks after the boss, then a 10s party hold.
+   Campaign-style Wastes maps (Hallowed Rampart) swap in set pieces
+   instead: an elite-mix hold, a cannon breach and a bell finale that
+   unlocks the exit.
 8. Downed players can be revived by teammates.
 9. Mission ends in victory (end zone — instant on Default; hold after
    boss on Wastes) or defeat (all players downed). Wastes then enters
@@ -112,7 +115,7 @@ game is moderately fast-paced; reaction time and attack timing matter.
 - Bots to fill empty player slots
 - Accounts, logins, saved progression, loot or unlocks
 - Mobile or controller support
-- Missions beyond the Default mission and the four Wastes missions
+- Missions beyond the Default mission and the five Wastes missions
 - Public matchmaking or server browser
 - Voice or text chat (friends use Discord)
 - Anti-cheat beyond server authority

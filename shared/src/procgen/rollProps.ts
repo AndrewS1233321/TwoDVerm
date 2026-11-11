@@ -14,6 +14,7 @@ const LOCATION_TYPE_BIAS: Record<ExpeditionLocationId, LevelType[]> = {
   weeping_quarry: ["caverns"],
   salt_hollow: ["caverns"],
   cinder_watch: ["castle"],
+  hallowed_rampart: ["castle"],
 };
 
 /**

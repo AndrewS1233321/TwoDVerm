@@ -9,7 +9,8 @@ export type ExpeditionLocationId =
   | "grim_causeway"
   | "weeping_quarry"
   | "salt_hollow"
-  | "cinder_watch";
+  | "cinder_watch"
+  | "hallowed_rampart";
 
 export interface ExpeditionLocation {
   id: ExpeditionLocationId;
@@ -66,6 +67,16 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
     curse: "Khorne",
     modifiers: ["+ Monsters", "Extra Pilgrim's Coins"],
     reward: "Placeholder boon: Melee power",
+  },
+  hallowed_rampart: {
+    id: "hallowed_rampart",
+    name: "Hallowed Rampart",
+    description:
+      "Retake a besieged holy city: hold the training yard against stormvermin, fire the gatehouse cannon to breach the inner wall, then ring the temple bell and survive until the hammer falls.",
+    factions: "Skaven, Chaos",
+    curse: null,
+    modifiers: ["+ Elites", "Extra ammunition"],
+    reward: "Placeholder boon: Blessed hammer",
   },
 };
 

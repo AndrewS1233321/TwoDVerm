@@ -91,6 +91,8 @@ export type FxEvent =
   | { t: "shop"; id: string }
   /** A hero's Rune Ward absorbed a hit. */
   | { t: "ward"; id: string; x: number; y: number }
+  /** Wastes set piece: cannon fired, wall breached, bell rung, or the bell's clearing blast. */
+  | { t: "setpiece"; kind: "cannon" | "breach" | "bell" | "hammer"; x: number; y: number }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {

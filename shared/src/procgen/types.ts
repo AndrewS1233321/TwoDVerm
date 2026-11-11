@@ -43,7 +43,13 @@ export interface LevelProperties {
   allowableRaces: CreatureRace[];
 }
 
-export type ObjectiveKind = "hold" | "mini_boss" | "boss";
+/**
+ * hold: survive a timer in the zone. mini_boss / boss: kill the spawned enemy.
+ * cannon: hold E at the cannon to blast open the section's rubble wall.
+ * bell: ring the bell with the whole party inside; doors seal and waves come
+ * until the kill target is reached, then a blast clears every enemy.
+ */
+export type ObjectiveKind = "hold" | "mini_boss" | "boss" | "cannon" | "bell";
 
 export interface ProcRoom {
   id: number;
@@ -67,6 +73,12 @@ export interface ProcObjective {
   center: Point;
   /** Enemy to spawn for mini_boss / boss; hold has none. */
   spawnType: EnemyId | null;
+  /** Hold only: entry and mid-hold hordes include stormvermin (budgets.holdEliteCount). */
+  eliteMix?: boolean;
+  /** Cannon / bell: where heroes press E. */
+  interactPoint?: Point;
+  /** Bell: wave spawn points inside the sealed room. */
+  spawnPoints?: Point[];
 }
 
 export interface ProcSection {
@@ -87,6 +99,16 @@ export interface SpawnBudgets {
   maxSpecials: number;
   raceSlots: number;
   holdDuration: number;
+  /** Stormvermin added to an elite-mix hold's entry horde (half again mid-hold). */
+  holdEliteCount: number;
+  /** Seconds of held E at the cannon before it fires. */
+  cannonChannel: number;
+  /** Kills during the bell event before the clearing blast. */
+  bellKillTarget: number;
+  /** Seconds between bell waves. */
+  bellWaveInterval: number;
+  /** Stormvermin per bell wave. */
+  bellWaveElites: number;
 }
 
 export interface GeneratedLevelMeta {

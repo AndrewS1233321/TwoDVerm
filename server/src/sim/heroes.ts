@@ -873,6 +873,7 @@ function tryInteract(world: World, hero: Hero): void {
     hero.actionSeq++;
     return;
   }
+  if (!hero.carryingBarrelId && world.interactObjective(hero)) return;
   if (!hero.edges.interact) return;
   if (tryOpenMerchantShop(world, hero)) return;
   if (tryPickupBarrel(world, hero)) return;

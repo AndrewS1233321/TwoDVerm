@@ -79,6 +79,19 @@ export interface Level {
   /** Centres where a merchant NPC should stand (Gingey Wastes hall). */
   merchantSpawns: Point[];
   roomLabels: RoomLabel[];
+  /** Authored Wastes set pieces; absent on maps without them. */
+  setPieces?: LevelSetPieces;
+}
+
+export interface LevelSetPieces {
+  cannon: Point | null;
+  bell: Point | null;
+  /** Floor tiles of the bell room (sealed during the bell event). */
+  bellZone: Set<number>;
+  /** Gate tiles drawn as a rubble wall (opened by the cannon). */
+  rubbleGates: Set<number>;
+  /** Floor tiles that become gates while the bell room is sealed. */
+  sealDoors: number[];
 }
 
 export function tileCenter(tx: number, ty: number): Point {
@@ -230,6 +243,22 @@ export function allLivingInBossRoom(
   return n > 0;
 }
 
+/** True when every living hero is standing on a tile of `zone`. */
+export function allLivingInZone(
+  level: Level,
+  zone: Set<number>,
+  heroes: Iterable<{ x: number; y: number; state: string }>,
+): boolean {
+  if (zone.size === 0) return false;
+  let n = 0;
+  for (const h of heroes) {
+    if (h.state === "dead") continue;
+    n++;
+    if (!isInZone(level, zone, h.x, h.y)) return false;
+  }
+  return n > 0;
+}
+
 /** Snap a body back into the nearest boss-room tile if it left the arena. */
 export function confineToBossRoom(
   level: Level,
@@ -237,13 +266,19 @@ export function confineToBossRoom(
   y: number,
   radius: number,
 ): Point {
-  if (level.bossRoom.size === 0 || isInZone(level, level.bossRoom, x, y)) {
+  void radius;
+  return confineToZone(level, level.bossRoom, x, y);
+}
+
+/** Snap a point back into the nearest tile of `zone` if it left it. */
+export function confineToZone(level: Level, zone: Set<number>, x: number, y: number): Point {
+  if (zone.size === 0 || isInZone(level, zone, x, y)) {
     return { x, y };
   }
   let bestX = x;
   let bestY = y;
   let bestD = Infinity;
-  for (const i of level.bossRoom) {
+  for (const i of zone) {
     const c = tileCenter(i % level.width, Math.floor(i / level.width));
     const d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
     if (d < bestD) {
@@ -256,7 +291,6 @@ export function confineToBossRoom(
   const inward = 0.15;
   bestX = bestX * (1 - inward) + x * inward;
   bestY = bestY * (1 - inward) + y * inward;
-  void radius;
   return { x: bestX, y: bestY };
 }
 

@@ -14,6 +14,7 @@ import {
   parseLevelById,
   parseLevelProps,
   TILE_FLOOR,
+  TILE_GATE,
   TICK_MS,
   type EnemyId,
   type FxEvent,
@@ -72,6 +73,7 @@ export class GameScene extends Phaser.Scene {
   private backdropT = 0;
   private activeProcKey = "";
   private appliedProcProgress = -1;
+  private appliedDoorsSealed = false;
   procMeta: GeneratedLevelMeta | null = null;
   /** Local barrel charge timer for throw preview (seconds). */
   private localBarrelCharge = 0;
@@ -138,15 +140,18 @@ export class GameScene extends Phaser.Scene {
     levelProps: string;
     procProgress: number;
     finalObjectiveComplete: boolean;
+    doorsSealed: boolean;
   }): void {
     const props = state.procSeed && state.levelProps ? parseLevelProps(state.levelProps) : null;
     const procKey = props ? `${state.levelId}:${state.procSeed}:${state.levelProps}` : state.levelId;
     if (procKey === this.activeProcKey && this.levelRenderer) {
       this.applyProcProgress(state.procProgress, state.finalObjectiveComplete);
+      this.applyDoorsSealed(state.doorsSealed);
       return;
     }
     this.activeProcKey = procKey;
     this.appliedProcProgress = -1;
+    this.appliedDoorsSealed = false;
     if (props && state.procSeed) {
       const { level, meta } = buildWastesLevel(state.levelId, props, state.procSeed);
       this.level = level;
@@ -166,6 +171,16 @@ export class GameScene extends Phaser.Scene {
     const start = this.level.playerStarts[0];
     if (start) cam.centerOn(start.x, start.y);
     this.applyProcProgress(state.procProgress, state.finalObjectiveComplete);
+    this.applyDoorsSealed(state.doorsSealed);
+  }
+
+  /** Mirror the server's bell-room doors so prediction collides with them. */
+  private applyDoorsSealed(sealed: boolean): void {
+    const doors = this.level.setPieces?.sealDoors;
+    if (!doors || doors.length === 0 || sealed === this.appliedDoorsSealed) return;
+    this.appliedDoorsSealed = sealed;
+    for (const i of doors) this.level.tiles[i] = sealed ? TILE_GATE : TILE_FLOOR;
+    this.levelRenderer?.redrawGates();
   }
 
   private applyProcProgress(progress: number, finalDone: boolean): void {
@@ -738,6 +753,23 @@ export class GameScene extends Phaser.Scene {
         case "gasburst":
           this.effects.gasBurst(e.x, e.y, 72);
           this.sfxAt("gas", e, 0.9);
+          break;
+        case "setpiece":
+          if (e.kind === "cannon") {
+            this.effects.cannonBlast(e.x, e.y);
+            this.sfxAt("gun", e, 1);
+            this.shake(260, 0.012);
+          } else if (e.kind === "breach") {
+            this.effects.breachDust(e.x, e.y);
+            this.sfxAt("guardBreak", e, 1);
+          } else if (e.kind === "bell") {
+            this.effects.bellToll(e.x, e.y);
+            this.sfxAt("horn", e, 1);
+          } else {
+            this.effects.hammerBlast(e.x, e.y);
+            this.sfxAt("ult", e, 1);
+            this.shake(420, 0.016);
+          }
           break;
         case "announce":
           this.hud.emit("announce", { text: e.text, kind: e.kind } satisfies Announcement);

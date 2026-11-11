@@ -9,10 +9,25 @@ Update this file after every meaningful implementation change.
 ## Current Goal
 
 - Playtest Default, Testing zone, and The Gingey Wastes expedition
-  loop; playtest the four authored Wastes missions and tune layout,
-  spawn spots and pacing from feedback.
+  loop; playtest the five authored Wastes missions (including Hallowed
+  Rampart's set pieces) and tune layout, spawn spots and pacing from
+  feedback.
 
 ## Completed
+
+- **Hallowed Rampart** (spec `14-campaign-style-wastes-missions.md`):
+  fifth Wastes location in the shared random pool (castle, Righteous
+  Stand pacing, original layout). `AuthoredMission.sections` lets a
+  mission define its own objective chain; new objective kinds `cannon`
+  (hold E 2.5s at `C`, blasts the rubble-wall gate) and `bell` (whole
+  party in `R`, E at `L`; doors `4` seal, kill-target waves spawn at `V`,
+  hammer blast clears enemies and opens the exit). Hold sections with
+  `eliteMix` add difficulty-scaled stormvermin on entry and mid-hold.
+  New synced state `objectiveCharge` / `objectiveCount` /
+  `objectiveTarget` / `doorsSealed`, `setpiece` FX, HUD prompts and
+  progress. Generator `scripts/build-hallowed-rampart.ts`;
+  `check:wastes` validates custom sections, seal doors and spawn
+  distances.
 
 - **Weeping Quarry mine pass**: layout rebuilt with winding 3-wide
   corridors between rooms; `theme: "mine"` paints `DECOR_MINE` floors

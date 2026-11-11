@@ -31,6 +31,11 @@ const COLORS: Record<string, [number, number, number]> = {
   N: [200, 180, 80],
   T: [200, 50, 50],
   G: [160, 140, 50],
+  C: [255, 140, 40],
+  R: [150, 120, 70],
+  L: [255, 215, 90],
+  V: [200, 60, 200],
+  "4": [120, 80, 40],
 };
 
 function crcTable(): Uint32Array {

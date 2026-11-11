@@ -14,8 +14,10 @@ import {
   isHeroId,
   isInZone,
   MERCHANT_EXIT_HOLD,
+  OBJECTIVE_INTERACT_RANGE,
   parseLevelProps,
   WASTES_MERCHANT_LEVEL_ID,
+  type ProcObjective,
 } from "@twodverm/shared";
 import { hasState } from "../net/connection";
 import type { PlayerView } from "../net/types";
@@ -358,11 +360,14 @@ export class HudScene extends Phaser.Scene {
         ? "Staging hall — trade, then gather on TO THE WASTES"
         : "Merchant hall — gather in the exit to continue";
     } else if (room.state.phase === "playing" && room.state.procSeed && room.state.finalObjectiveComplete) {
-      eventText = "Boss down — gather in the exit to leave";
+      const last = this.game_.procMeta?.objectives.at(-1);
+      eventText = last?.kind === "boss" ? "Boss down — gather in the exit to leave" : "Exit unlocked — gather in the exit to leave";
     } else if (room.state.phase === "playing" && room.state.procSeed && !room.state.finalObjectiveComplete) {
-      eventText = room.state.eventActive
-        ? `Hold the chamber: ${Math.ceil(room.state.eventTimeLeft)}s`
-        : `Section ${room.state.procProgress + 1} objective`;
+      eventText = this.objectiveText(this.currentObjective());
+      if (this.currentObjective()?.kind === "cannon" && room.state.objectiveCharge > 0) {
+        const bw = 220;
+        bar(this.g, W / 2 - bw / 2, 34, bw, 8, room.state.objectiveCharge, colors.accent);
+      }
     } else if (room.state.eventActive) {
       eventText = `Hold the square: ${Math.ceil(room.state.eventTimeLeft)}s`;
     }
@@ -387,6 +392,43 @@ export class HudScene extends Phaser.Scene {
     else if (me.state === "downed") status = "You are down! A teammate must hold E next to you";
     else if (me.state === "grabbed") status = "GRABBED! Teammates must strike the Packmaster!";
     t.status!.setPosition(W / 2, H * 0.68).setText(status);
+  }
+
+  private currentObjective(): ProcObjective | null {
+    const room = this.game_.room;
+    if (!room) return null;
+    return this.game_.procMeta?.objectives[room.state.procProgress] ?? null;
+  }
+
+  private objectiveText(obj: ProcObjective | null): string {
+    const s = this.game_.room!.state;
+    if (!obj) return `Section ${s.procProgress + 1} objective`;
+    switch (obj.kind) {
+      case "hold":
+        return s.eventActive
+          ? `${obj.eliteMix ? "Hold the yard" : "Hold the chamber"}: ${Math.ceil(s.eventTimeLeft)}s`
+          : obj.eliteMix
+            ? "Reach the yard and hold it until the gate opens"
+            : `Section ${s.procProgress + 1} objective`;
+      case "cannon":
+        return s.objectiveCharge > 0 ? "Loading the cannon…" : "Fire the cannon to breach the wall";
+      case "bell":
+        return s.eventActive ? `Survive: ${s.objectiveCount} / ${s.objectiveTarget}` : "Ring the bell in the temple";
+      default:
+        return `Section ${s.procProgress + 1} objective`;
+    }
+  }
+
+  /** E prompt next to the active cannon or bell. */
+  private setPiecePrompt(): string {
+    const room = this.game_.room!;
+    const obj = this.currentObjective();
+    if (room.state.phase !== "playing" || !obj?.interactPoint) return "";
+    const pos = this.game_.localPosition;
+    if (dist(pos.x, pos.y, obj.interactPoint.x, obj.interactPoint.y) > OBJECTIVE_INTERACT_RANGE) return "";
+    if (obj.kind === "cannon") return room.state.objectiveCharge > 0 ? "Keep holding E…" : "Hold E: fire the cannon";
+    if (obj.kind === "bell" && !room.state.eventActive) return "E: Ring the bell (whole party inside)";
+    return "";
   }
 
   /**
@@ -428,6 +470,7 @@ export class HudScene extends Phaser.Scene {
           prompt = me.state === "reviving" ? `Reviving ${p.name}...` : `Hold E to revive ${p.name}`;
         }
       });
+      if (!prompt && !me.carryingBarrel) prompt = this.setPiecePrompt();
       if (!prompt && me.carryingBarrel) {
         const hold = me.barrelCharge * BARREL.throwMaxHold;
         const minHold = barrelThrowMinHold(me.heroId);

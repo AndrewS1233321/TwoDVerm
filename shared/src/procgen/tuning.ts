@@ -1,5 +1,8 @@
 import type { LevelProperties, SpawnBudgets } from "./types";
 
+/** Stormvermin in an elite-mix hold's entry horde, by difficulty 1–4. */
+const HOLD_ELITES_BY_DIFFICULTY = [1, 2, 3, 5];
+
 /** Derive spawn / layout budgets from level difficulty. */
 export function budgetsFromDifficulty(difficulty: number): SpawnBudgets {
   const d = Math.max(1, Math.min(4, difficulty));
@@ -15,6 +18,11 @@ export function budgetsFromDifficulty(difficulty: number): SpawnBudgets {
     maxSpecials: Math.min(4, 1 + Math.floor(d)),
     raceSlots: Math.min(3, 1 + Math.floor(d / 2)),
     holdDuration: Math.round(18 + d * 4),
+    holdEliteCount: HOLD_ELITES_BY_DIFFICULTY[Math.round(d) - 1]!,
+    cannonChannel: 2.5,
+    bellKillTarget: Math.round(25 + d * 15),
+    bellWaveInterval: Math.max(6, 11 - d),
+    bellWaveElites: Math.floor(d / 2),
   };
 }
 

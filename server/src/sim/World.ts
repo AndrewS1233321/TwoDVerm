@@ -1,8 +1,10 @@
 import {
   allLivingInBossRoom,
+  allLivingInZone,
   ARMOR_SETS,
   collideCircle,
   confineToBossRoom,
+  confineToZone,
   createRng,
   dist,
   DEV_TEST_START_GOLD,
@@ -15,10 +17,13 @@ import {
   isShopItemId,
   MAX_ENEMIES,
   MERCHANT_EXIT_HOLD,
+  OBJECTIVE_INTERACT_RANGE,
   parseLevelById,
   perksOfferedFor,
   SHOP_ITEMS,
   TILE_FLOOR,
+  TILE_GATE,
+  tileCenter,
   tileIndexAt,
   WASTES_MERCHANT_LEVEL_ID,
   type EnemyId,
@@ -29,8 +34,10 @@ import {
   type HeroDef,
   type Level,
   type LevelProperties,
+  type ProcObjective,
 } from "@twodverm/shared";
 import { createBarrel, updateBarrels } from "./barrels";
+import { killEnemy } from "./damage";
 import { Director } from "./director";
 import { updateEnemy } from "./enemies";
 import { FlowField } from "./flowField";
@@ -85,6 +92,17 @@ export class World {
   private objectiveArmed = false;
   private objectiveEnemyIds = new Set<string>();
   private holdObjectiveId: string | null = null;
+  /** Cannon channel progress 0–1 (synced for the HUD bar). */
+  objectiveCharge = 0;
+  /** Bell event: kills so far and the kill target (synced). */
+  objectiveCount = 0;
+  objectiveTarget = 0;
+  /** True while the bell room's doors are closed. */
+  doorsSealed = false;
+  private cannonHeldThisTick = false;
+  private holdMidWaveDone = false;
+  private bellKillsAtStart = 0;
+  private bellWaveT = 0;
 
   private nextId = 1;
   private flowT = 0;
@@ -129,6 +147,7 @@ export class World {
     this.objectiveArmed = false;
     this.objectiveEnemyIds.clear();
     this.holdObjectiveId = null;
+    this.resetSetPieceState();
     this.flowSmall = new FlowField(this.level, false);
     this.flowWide = new FlowField(this.level, true);
   }
@@ -142,6 +161,21 @@ export class World {
     this.objectiveArmed = false;
     this.objectiveEnemyIds.clear();
     this.holdObjectiveId = null;
+    this.resetSetPieceState();
+  }
+
+  private resetSetPieceState(): void {
+    this.objectiveCharge = 0;
+    this.objectiveCount = 0;
+    this.objectiveTarget = 0;
+    this.cannonHeldThisTick = false;
+    this.holdMidWaveDone = false;
+    this.bellKillsAtStart = 0;
+    this.bellWaveT = 0;
+    if (this.doorsSealed) {
+      for (const i of this.level.setPieces?.sealDoors ?? []) this.level.tiles[i] = TILE_FLOOR;
+    }
+    this.doorsSealed = false;
   }
 
   newId(prefix: string): string {
@@ -262,6 +296,7 @@ export class World {
     this.objectiveArmed = false;
     this.objectiveEnemyIds.clear();
     this.holdObjectiveId = null;
+    this.resetSetPieceState();
     this.padOccupancy.clear();
     let i = 0;
     for (const hero of this.heroes.values()) {
@@ -453,6 +488,7 @@ export class World {
     for (const hero of this.heroes.values()) processHeroInputs(this, hero);
     for (const hero of this.heroes.values()) updateHero(this, hero, dt);
     this.confineHeroesToBossRoom();
+    this.confineHeroesToBellRoom();
 
     this.flowT -= dt;
     if (this.flowT <= 0) {
@@ -519,26 +555,45 @@ export class World {
     const zone = new Set(obj.zone);
     const inZone = standing.some((h) => isInZone(this.level, zone, h.x, h.y));
 
+    const budgets = this.procMeta!.budgets;
     if (obj.kind === "hold") {
       if (!this.eventDone && !this.eventActive && inZone) {
         this.eventActive = true;
         this.holdObjectiveId = obj.id;
-        this.eventTimeLeft = this.procMeta!.budgets.holdDuration;
+        this.holdMidWaveDone = false;
+        this.eventTimeLeft = budgets.holdDuration;
         this.emit({
           t: "announce",
-          text: `Hold the chamber (${Math.ceil(this.eventTimeLeft)}s)!`,
+          text: obj.eliteMix
+            ? `Hold the yard until the gate opens (${Math.ceil(this.eventTimeLeft)}s)!`
+            : `Hold the chamber (${Math.ceil(this.eventTimeLeft)}s)!`,
           kind: "event",
         });
-        this.director.triggerHoldEntryHorde();
+        this.director.triggerHoldEntryHorde(obj.eliteMix ? budgets.holdEliteCount : 0);
       }
       if (this.eventActive && this.holdObjectiveId === obj.id) {
         this.eventTimeLeft -= dt;
+        if (obj.eliteMix && !this.holdMidWaveDone && this.eventTimeLeft <= budgets.holdDuration / 2) {
+          this.holdMidWaveDone = true;
+          this.director.triggerHoldMidWave(Math.ceil(budgets.holdEliteCount / 2));
+          this.emit({ t: "announce", text: "Stormvermin storm the yard!", kind: "special" });
+        }
         if (this.eventTimeLeft <= 0) {
           this.eventActive = false;
           this.eventDone = true;
-          this.completeCurrentObjective("Chamber secured!");
+          this.completeCurrentObjective(obj.eliteMix ? "The gate grinds open!" : "Chamber secured!");
         }
       }
+      return;
+    }
+
+    if (obj.kind === "cannon") {
+      this.updateCannon(obj, dt);
+      return;
+    }
+
+    if (obj.kind === "bell") {
+      this.updateBell(obj, dt);
       return;
     }
 
@@ -576,6 +631,111 @@ export class World {
     }
   }
 
+  /**
+   * E at the active cannon or bell. Returns true when the press was used by
+   * the set piece (so it does not also pick up a nearby barrel or pickup).
+   */
+  interactObjective(hero: Hero): boolean {
+    const obj = this.currentObjective();
+    if (!obj?.interactPoint || (obj.kind !== "cannon" && obj.kind !== "bell")) return false;
+    if (dist(hero.x, hero.y, obj.interactPoint.x, obj.interactPoint.y) > OBJECTIVE_INTERACT_RANGE) return false;
+    if (obj.kind === "cannon") {
+      this.cannonHeldThisTick = true;
+      return true;
+    }
+    if (this.eventActive || !hero.edges.interact) return true;
+    this.ringBell(obj);
+    return true;
+  }
+
+  /** Hold E at the cannon for `cannonChannel` seconds; letting go or getting staggered resets it. */
+  private updateCannon(obj: ProcObjective, dt: number): void {
+    const channel = this.procMeta!.budgets.cannonChannel;
+    this.objectiveCharge = this.cannonHeldThisTick ? Math.min(1, this.objectiveCharge + dt / channel) : 0;
+    this.cannonHeldThisTick = false;
+    if (this.objectiveCharge < 1) return;
+    this.objectiveCharge = 0;
+    const muzzle = obj.interactPoint ?? obj.center;
+    this.emit({ t: "setpiece", kind: "cannon", x: muzzle.x, y: muzzle.y });
+    const wall = this.gateCenter(this.procProgress);
+    if (wall) this.emit({ t: "setpiece", kind: "breach", x: wall.x, y: wall.y });
+    this.director.triggerHorde();
+    this.completeCurrentObjective("The wall is breached! Push through!");
+  }
+
+  private ringBell(obj: ProcObjective): void {
+    const zone = this.level.setPieces?.bellZone;
+    if (!zone || !allLivingInZone(this.level, zone, this.heroes.values())) {
+      this.emit({ t: "announce", text: "Gather the whole party in the temple first!", kind: "info" });
+      return;
+    }
+    const at = obj.interactPoint ?? obj.center;
+    this.eventActive = true;
+    this.setDoorsSealed(true);
+    this.bellKillsAtStart = this.totalKills;
+    this.objectiveCount = 0;
+    this.objectiveTarget = this.procMeta!.budgets.bellKillTarget;
+    this.bellWaveT = 1.5;
+    this.emit({ t: "setpiece", kind: "bell", x: at.x, y: at.y });
+    this.emit({ t: "announce", text: "The bell tolls! The doors are sealed. Survive!", kind: "event" });
+  }
+
+  /** Kill-dependent waves inside the sealed room; reaching the target fires the clearing blast. */
+  private updateBell(obj: ProcObjective, dt: number): void {
+    if (!this.eventActive) return;
+    const budgets = this.procMeta!.budgets;
+    this.objectiveCount = Math.min(this.objectiveTarget, this.totalKills - this.bellKillsAtStart);
+    if (this.objectiveCount >= this.objectiveTarget) {
+      const at = obj.interactPoint ?? obj.center;
+      this.emit({ t: "setpiece", kind: "hammer", x: at.x, y: at.y });
+      for (const e of [...this.enemies.values()]) {
+        if (e.def.behavior === "dummy" || e.def.id === "merchant") continue;
+        killEnemy(this, e, null);
+      }
+      this.director.clearQueue();
+      this.setDoorsSealed(false);
+      this.completeCurrentObjective("The hammer falls! The way out is open.");
+      return;
+    }
+    this.bellWaveT -= dt;
+    if (this.bellWaveT > 0) return;
+    this.bellWaveT = budgets.bellWaveInterval;
+    const difficulty = this.levelProps?.difficulty ?? 1;
+    const size = Math.round(4 + 2 * difficulty) + 3 * Math.max(1, this.heroes.size);
+    this.director.spawnWaveAt(obj.spawnPoints?.length ? obj.spawnPoints : [obj.center], size, budgets.bellWaveElites);
+  }
+
+  private setDoorsSealed(sealed: boolean): void {
+    const doors = this.level.setPieces?.sealDoors ?? [];
+    for (const i of doors) this.level.tiles[i] = sealed ? TILE_GATE : TILE_FLOOR;
+    this.doorsSealed = sealed;
+    this.rebuildFlow();
+  }
+
+  private gateCenter(index: number): { x: number; y: number } | null {
+    const gates = this.procMeta?.sectionGates[index];
+    if (!gates || gates.length === 0) return null;
+    let sx = 0;
+    let sy = 0;
+    for (const i of gates) {
+      const c = tileCenter(i % this.level.width, Math.floor(i / this.level.width));
+      sx += c.x;
+      sy += c.y;
+    }
+    return { x: sx / gates.length, y: sy / gates.length };
+  }
+
+  private confineHeroesToBellRoom(): void {
+    const zone = this.level.setPieces?.bellZone;
+    if (!this.doorsSealed || !zone || zone.size === 0) return;
+    for (const hero of this.heroes.values()) {
+      if (hero.state === "dead") continue;
+      const p = confineToZone(this.level, zone, hero.x, hero.y);
+      hero.x = p.x;
+      hero.y = p.y;
+    }
+  }
+
   private completeCurrentObjective(announce: string): void {
     if (!this.procMeta) return;
     const idx = this.procProgress;
@@ -587,6 +747,9 @@ export class World {
     this.eventActive = false;
     this.eventDone = false;
     this.eventTimeLeft = 0;
+    this.objectiveCharge = 0;
+    this.objectiveCount = 0;
+    this.objectiveTarget = 0;
 
     if (this.procProgress >= this.procMeta.objectives.length) {
       this.finalObjectiveComplete = true;

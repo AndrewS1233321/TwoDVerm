@@ -161,6 +161,13 @@ export class GameState extends Schema {
   @type("boolean") eventDone = false;
   @type("float32") eventTimeLeft = 0;
   @type("boolean") bossActive = false;
+  /** Cannon channel progress 0–1. */
+  @type("float32") objectiveCharge = 0;
+  /** Bell event kills so far / kill target. */
+  @type("uint16") objectiveCount = 0;
+  @type("uint16") objectiveTarget = 0;
+  /** True while the bell room's doors are closed. */
+  @type("boolean") doorsSealed = false;
   @type("float32") missionTime = 0;
   @type("uint16") totalKills = 0;
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();

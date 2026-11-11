@@ -102,6 +102,8 @@ export const DOWNED = {
 };
 
 export const INTERACT_RANGE = 48;
+/** Reach for set-piece interactions (cannon, bell); the props are larger than pickups. */
+export const OBJECTIVE_INTERACT_RANGE = 72;
 export const MED_HEAL_FRACTION = 0.6;
 
 /** RMB precision aim while a ranged weapon is drawn. */

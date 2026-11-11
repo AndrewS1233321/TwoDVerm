@@ -102,4 +102,31 @@ export class Effects {
     this.ring(x, y, colors.warp, radius, 500);
     this.sparks(x, y, colors.warp, 16, 160);
   }
+
+  /** Cannon muzzle flash and smoke. */
+  cannonBlast(x: number, y: number): void {
+    this.ring(x, y, 0xffd27a, 70, 300);
+    this.sparks(x, y, 0xffb45a, 18, 220);
+    this.sparks(x, y, colors.smoke, 14, 90);
+  }
+
+  /** Stone dust where the rubble wall collapses. */
+  breachDust(x: number, y: number): void {
+    this.ring(x, y, colors.smoke, 110, 700);
+    this.sparks(x, y, colors.smoke, 30, 200);
+    this.sparks(x, y, colors.wall, 20, 160);
+  }
+
+  /** Bell toll: slow expanding bronze rings. */
+  bellToll(x: number, y: number): void {
+    this.ring(x, y, 0xd9b45a, 160, 900);
+    this.scene.time.delayedCall(350, () => this.ring(x, y, 0xd9b45a, 240, 1100));
+  }
+
+  /** Holy hammer blast that clears the bell room. */
+  hammerBlast(x: number, y: number): void {
+    this.ring(x, y, 0xfff0b0, 420, 900);
+    this.ring(x, y, colors.accent, 300, 700);
+    this.sparks(x, y, 0xfff0b0, 40, 320);
+  }
 }

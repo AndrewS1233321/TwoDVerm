@@ -147,6 +147,10 @@ export interface GameStateView {
   eventDone: boolean;
   eventTimeLeft: number;
   bossActive: boolean;
+  objectiveCharge: number;
+  objectiveCount: number;
+  objectiveTarget: number;
+  doorsSealed: boolean;
   missionTime: number;
   totalKills: number;
   players: MapLike<PlayerView>;

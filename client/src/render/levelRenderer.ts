@@ -68,8 +68,13 @@ export class LevelRenderer {
     this.gateGfx = scene.add.graphics().setDepth(4);
     this.disposables.push(this.gateGfx);
     this.drawGate();
+    this.drawSetPieces();
     if (this.mine) this.placeLanterns();
     else this.placeTorches();
+  }
+
+  private lockedExitText(): string {
+    return this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0 ? "EXIT — CLEAR BOSS FIRST" : "EXIT — LOCKED";
   }
 
   destroy(): void {
@@ -95,7 +100,7 @@ export class LevelRenderer {
           ? "HOLD TO DEPART"
           : unlocked
             ? "EXIT"
-            : "EXIT — CLEAR BOSS FIRST",
+            : this.lockedExitText(),
       );
     }
   }
@@ -237,27 +242,39 @@ export class LevelRenderer {
     };
     zone(this.level.holdZone, colors.accent, this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0 ? "HOLD" : "HOLD THE SQUARE");
     zone(this.level.bossRoom.size > 0 ? this.level.bossRoom : this.level.bossTrigger, 0x9a2a1a, "BOSS");
+    if (this.level.setPieces) zone(this.level.setPieces.bellZone, 0xb08a3a, "RING THE BELL");
     const exitText =
       this.level.summonPads.length > 0 && this.level.endZone.size > 0
         ? "TO THE WASTES"
         : this.level.merchantSpawns.length > 0
           ? "HOLD TO DEPART"
           : this.exitUnlocked
-            ? this.level.holdZone.size > 0 || this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0
+            ? this.level.holdZone.size > 0 || this.level.bossRoom.size > 0 || this.level.bossTrigger.size > 0 || !!this.level.setPieces
               ? "EXIT"
               : "SAFE ROOM"
-            : "EXIT — CLEAR BOSS FIRST";
+            : this.lockedExitText();
     this.exitLabel = zone(this.level.endZone, colors.success, exitText);
   }
 
   private drawGate(): void {
     const T = TILE_SIZE;
     const g = this.gateGfx;
+    const rubble = this.level.setPieces?.rubbleGates;
+    const doors = new Set(this.level.setPieces?.sealDoors ?? []);
     for (let ty = 0; ty < this.level.height; ty++) {
       for (let tx = 0; tx < this.level.width; tx++) {
         if (this.tile(tx, ty) !== TILE_GATE) continue;
         const x = tx * T;
         const y = ty * T;
+        const i = ty * this.level.width + tx;
+        if (rubble?.has(i)) {
+          this.drawRubbleWall(g, x, y, T, tx, ty);
+          continue;
+        }
+        if (doors.has(i)) {
+          this.drawSealDoor(g, x, y, T);
+          continue;
+        }
         g.fillStyle(0x2b2b2e, 1);
         g.fillRect(x + 4, y, T - 8, T);
         g.lineStyle(3, 0x6a6f78, 1);
@@ -265,6 +282,81 @@ export class LevelRenderer {
         g.lineStyle(2, 0x9aa3ad, 1);
         g.lineBetween(x + T / 2, y, x + T / 2, y + T);
       }
+    }
+  }
+
+  /** Mortared block wall the cannon has to breach. */
+  private drawRubbleWall(g: Phaser.GameObjects.Graphics, x: number, y: number, T: number, tx: number, ty: number): void {
+    g.fillStyle(shade(colors.wall, 0.8), 1);
+    g.fillRect(x, y, T, T);
+    const off = ty % 2 === 0 ? 0 : T / 4;
+    g.lineStyle(2, shade(colors.wall, 0.45), 1);
+    g.lineBetween(x, y + T / 2, x + T, y + T / 2);
+    g.lineBetween(x + off + T / 4, y, x + off + T / 4, y + T / 2);
+    g.lineBetween(x + ((off + T * 0.75) % T), y + T / 2, x + ((off + T * 0.75) % T), y + T);
+    g.fillStyle(shade(colors.wall, 1.25), 0.5);
+    g.fillCircle(x + T * hash(tx, ty), y + T * hash(ty, tx + 3), 3);
+    g.lineStyle(1.5, 0xc9a14a, 0.35);
+    g.strokeRect(x + 1, y + 1, T - 2, T - 2);
+  }
+
+  /** Heavy wooden temple door, shown while the bell room is sealed. */
+  private drawSealDoor(g: Phaser.GameObjects.Graphics, x: number, y: number, T: number): void {
+    g.fillStyle(0x4a3220, 1);
+    g.fillRect(x, y, T, T);
+    g.lineStyle(2, 0x2a1c12, 1);
+    for (let i = 8; i < T; i += 8) g.lineBetween(x + i, y + 2, x + i, y + T - 2);
+    g.fillStyle(0x6a6f78, 1);
+    g.fillRect(x, y + 6, T, 3);
+    g.fillRect(x, y + T - 9, T, 3);
+  }
+
+  /** Cannon on its carriage (aimed at the rubble wall) and the temple bell. */
+  private drawSetPieces(): void {
+    const sp = this.level.setPieces;
+    if (!sp) return;
+    const g = this.scene.add.graphics().setDepth(3);
+    this.disposables.push(g);
+    if (sp.cannon) {
+      const { x, y } = sp.cannon;
+      let aim = 0;
+      if (sp.rubbleGates.size > 0) {
+        let sx = 0;
+        let sy = 0;
+        for (const i of sp.rubbleGates) {
+          sx += (i % this.level.width + 0.5) * TILE_SIZE;
+          sy += (Math.floor(i / this.level.width) + 0.5) * TILE_SIZE;
+        }
+        aim = Math.atan2(sy / sp.rubbleGates.size - y, sx / sp.rubbleGates.size - x);
+      }
+      g.fillStyle(0x5a4028, 1);
+      g.fillRect(x - 14, y - 10, 28, 20);
+      g.fillStyle(0x2a1c12, 1);
+      g.fillCircle(x - 10, y - 11, 5);
+      g.fillCircle(x + 10, y - 11, 5);
+      g.fillCircle(x - 10, y + 11, 5);
+      g.fillCircle(x + 10, y + 11, 5);
+      const bx = Math.cos(aim);
+      const by = Math.sin(aim);
+      g.lineStyle(11, 0x2b2b2e, 1);
+      g.lineBetween(x - bx * 8, y - by * 8, x + bx * 24, y + by * 24);
+      g.lineStyle(3, 0x6a6f78, 1);
+      g.lineBetween(x - bx * 8, y - by * 8, x + bx * 24, y + by * 24);
+      g.fillStyle(0x111111, 1);
+      g.fillCircle(x + bx * 24, y + by * 24, 4);
+    }
+    if (sp.bell) {
+      const { x, y } = sp.bell;
+      g.fillStyle(0x3a2a1c, 1);
+      g.fillRect(x - 22, y - 4, 44, 8);
+      g.fillStyle(0xb08a3a, 1);
+      g.fillCircle(x, y, 15);
+      g.fillStyle(0xd9b45a, 1);
+      g.fillCircle(x - 4, y - 4, 6);
+      g.lineStyle(2, 0x6a4f1e, 1);
+      g.strokeCircle(x, y, 15);
+      g.fillStyle(0x3a2a1c, 1);
+      g.fillCircle(x, y, 3);
     }
   }
 

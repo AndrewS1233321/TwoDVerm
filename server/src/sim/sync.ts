@@ -77,6 +77,10 @@ export function syncWorld(world: World, state: GameState): void {
   state.eventDone = world.eventDone;
   state.eventTimeLeft = r1(Math.max(0, world.eventTimeLeft));
   state.bossActive = world.bossActive;
+  state.objectiveCharge = r2(world.objectiveCharge);
+  state.objectiveCount = world.objectiveCount;
+  state.objectiveTarget = world.objectiveTarget;
+  state.doorsSealed = world.doorsSealed;
   state.missionTime = Math.floor(world.missionTime);
   state.totalKills = world.totalKills;
   state.merchantHold = r1(world.merchantHold);

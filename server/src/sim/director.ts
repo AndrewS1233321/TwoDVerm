@@ -93,7 +93,7 @@ export class Director {
     }
   }
 
-  private hordeSize(): number {
+  hordeSize(): number {
     const base = this.budgets?.hordeSize ?? 10;
     return base + 5 * Math.max(1, this.world.heroes.size);
   }
@@ -153,9 +153,48 @@ export class Director {
     return "stormvermin";
   }
 
-  /** First entry into a hold event: a horde at twice the regular size. */
-  triggerHoldEntryHorde(): void {
+  /** First entry into a hold event: a horde at twice the regular size, plus any extra stormvermin. */
+  triggerHoldEntryHorde(eliteCount = 0): void {
     this.startHorde(this.hordeSize() * 2, this.world.missionTime > 120);
+    this.queueStormvermin(eliteCount);
+  }
+
+  /** Mid-hold reinforcement for elite-mix holds: a regular horde plus stormvermin. */
+  triggerHoldMidWave(eliteCount: number): void {
+    this.startHorde(this.hordeSize(), false, false);
+    this.queueStormvermin(eliteCount);
+  }
+
+  /** A regular horde right now (e.g. the cannon's noise draws the rats in). */
+  triggerHorde(): void {
+    this.startHorde(this.hordeSize(), this.world.missionTime > 120);
+  }
+
+  /**
+   * Bell wave: spawns straight onto the given points (inside the sealed room),
+   * ignoring the usual out-of-sight / distance rules.
+   */
+  spawnWaveAt(points: Point[], size: number, eliteCount: number): void {
+    if (points.length === 0) return;
+    const w = this.world;
+    for (let i = 0; i < size; i++) {
+      this.queue.push({ type: this.pickHordeType(), at: points[Math.floor(w.rng() * points.length)]! });
+    }
+    for (let i = 0; i < eliteCount; i++) {
+      this.queue.push({ type: "stormvermin", at: points[Math.floor(w.rng() * points.length)]! });
+    }
+  }
+
+  /** Drop spawns that have not trickled in yet (e.g. after the bell's clearing blast). */
+  clearQueue(): void {
+    this.queue = [];
+  }
+
+  private queueStormvermin(count: number): void {
+    if (count <= 0) return;
+    const points = this.pickSpawnPoints(this.world.level.hordeSpawns, 2);
+    if (points.length === 0) return;
+    for (let i = 0; i < count; i++) this.queue.push({ type: "stormvermin", at: points[i % points.length]! });
   }
 
   private checkTriggers(): void {
