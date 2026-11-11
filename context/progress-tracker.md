@@ -37,7 +37,8 @@ Update this file after every meaningful implementation change.
   straight into that map at the usual stop difficulty.
 - **Testing summon room spacing**: summon room + wastes gate shifted
   down 5 tiles; two empty tiles between the two summon-pad rows so the
-  green pad sprites no longer overlap.
+  green pad sprites no longer overlap. Summon room later grown +5 tiles
+  vertically; Chaos row left-aligned with Slave Rat and dropped 2 tiles.
 - **Globadier gas**: throw range doubled (max 680); globes no longer need
   line of sight (fly through walls); poison cloud damages other enemies
   at `enemyDps` 10 (bosses still immune).
