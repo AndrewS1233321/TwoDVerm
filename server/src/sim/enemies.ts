@@ -10,6 +10,7 @@ import {
   inAttackArc,
   moveCircle,
   raycastWalls,
+  MONK,
   RUNNER,
   SACK_RAT,
   STORMFIEND_FIRE,
@@ -210,24 +211,34 @@ function edgeDistance(e: Enemy, h: Hero): number {
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
   if (e.state === "attack" && e.attack) {
     const a = e.attack;
-    if (a.phase === "windup" && target) faceToward(e, target.x, target.y, 0.5, dt);
+    const monk = e.def.id === "plagueMonk";
+    if (target) {
+      if (monk) {
+        // Chase while flurrying so each slash's arc follows the new position.
+        faceToward(e, target.x, target.y, 1.6, dt);
+        moveToward(world, e, target.x, target.y, MONK.chaseSpeedMul, dt);
+      } else if (a.phase === "windup") {
+        faceToward(e, target.x, target.y, 0.5, dt);
+      }
+    }
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
-    applyLunge(world, e, a, dt);
+    if (!monk) applyLunge(world, e, a, dt);
     if (done) {
       if (e.chainLeft > 0 && target && target.state !== "dead" && target.state !== "downed") {
         e.chainLeft--;
-        if (e.def.id === "plagueMonk") {
-          startMonkDash(world, e, target, e.chainLeft);
-          return;
-        }
-        e.attack = newAttack(chainSwing(a.def, e.chainLeft, true), "enemy");
+        e.attack = newAttack(monk ? monkSwing(a.def, e.chainLeft) : chainSwing(a.def, e.chainLeft, true), "enemy");
         e.actionSeq++;
         return;
       }
       e.attack = null;
       e.state = "chase";
       e.stateT = 0;
-      e.cooldown = 0.25 + world.rng() * 0.6;
+      if (monk) {
+        e.monkOpened = true;
+        e.cooldown = MONK.pause;
+      } else {
+        e.cooldown = 0.25 + world.rng() * 0.6;
+      }
     }
     return;
   }
@@ -239,8 +250,14 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
   if (gap <= attack.reach * 0.85 && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
     const off = faceToward(e, target.x, target.y, 1, dt);
     if (off < 0.5 && e.cooldown <= 0) {
-      e.chainLeft = Math.max(0, (attack.chain ?? 1) - 1);
-      e.attack = newAttack(chainSwing(attack, e.chainLeft, false), "enemy");
+      if (e.def.id === "plagueMonk") {
+        const hits = e.monkOpened ? MONK.followHits : MONK.openerHits;
+        e.chainLeft = hits - 1;
+        e.attack = newAttack(monkSwing({ ...attack, chain: hits, windup: MONK.windup }, e.chainLeft), "enemy");
+      } else {
+        e.chainLeft = Math.max(0, (attack.chain ?? 1) - 1);
+        e.attack = newAttack(chainSwing(attack, e.chainLeft, false), "enemy");
+      }
       e.state = "attack";
       e.actionSeq++;
     }
@@ -259,38 +276,13 @@ function chainSwing(def: AttackDef, left: number, followUp: boolean): AttackDef 
   };
 }
 
-const MONK_DASH_DIST = 58;
-
-/** Plague Monk follow-up: face the hero, dash in, strike with no wind-up, flash the arc white. */
-function startMonkDash(world: World, e: Enemy, target: Hero, left: number): void {
-  faceToward(e, target.x, target.y, 100, 1);
-  const p = moveCircle(
-    world.level,
-    world.gateOpen,
-    e.x,
-    e.y,
-    e.radius,
-    Math.cos(e.facing) * MONK_DASH_DIST,
-    Math.sin(e.facing) * MONK_DASH_DIST,
-  );
-  e.x = p.x;
-  e.y = p.y;
-  const dash = e.def.attacks.find((a) => a.id === "monk_dash") ?? e.def.attacks[1]!;
-  const def: AttackDef = {
-    ...dash,
-    recovery: left > 0 ? dash.recovery * 0.85 : dash.recovery * 1.15,
+/** Plague Monk: every slash keeps the short wind-up; only the last hit of a flurry recovers longer. */
+function monkSwing(def: AttackDef, left: number): AttackDef {
+  return {
+    ...def,
+    windup: MONK.windup,
+    recovery: left > 0 ? def.recovery : Math.max(def.recovery, 0.2),
   };
-  e.attack = newAttack(def, "enemy");
-  e.state = "attack";
-  e.actionSeq++;
-  world.emit({
-    t: "slashflash",
-    x: e.x,
-    y: e.y,
-    facing: e.facing,
-    reach: e.radius + def.reach + 6,
-    arc: def.arc,
-  });
 }
 
 /** Damages every hero in a cone in front of `e` with line of sight; dodging heroes are skipped. */
@@ -622,7 +614,6 @@ function fleeFrom(world: World, e: Enemy, hx: number, hy: number, dt: number): v
 function chooseMeleeAttack(world: World, e: Enemy) {
   const list = e.def.attacks;
   if (list.length <= 1) return list[0];
-  // Plague Monk always opens with the wind-up combo (dashes are chain follow-ups).
   if (e.def.id === "plagueMonk") return list[0];
   if (e.def.behavior === "boss") {
     let near = 0;

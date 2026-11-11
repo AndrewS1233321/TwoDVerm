@@ -12,6 +12,7 @@ import {
   enemiesForRaces,
   HEROES,
   rollLevelProperties,
+  MONK,
   RUNNER,
   SHIELD,
   TILE_SIZE,
@@ -22,7 +23,6 @@ import {
   type InputMessage,
   type Point,
 } from "@twodverm/shared";
-import { newAttack } from "../server/src/sim/attacks";
 import { damageEnemy, downHero, killEnemy } from "../server/src/sim/damage";
 import { sprayCone } from "../server/src/sim/enemies";
 import type { Hero } from "../server/src/sim/types";
@@ -261,29 +261,71 @@ function place(h: Hero, p: Point): void {
   check("Back hit lands through a shield", shield.hp < hp1, `hp ${shield.hp}/${hp1}`);
   killEnemy(world, shield, h);
 
-  const monk = world.spawnEnemy("plagueMonk", origin.x + 28, origin.y, true)!;
-  const opener = ENEMIES.plagueMonk.attacks[0]!;
-  monk.chainLeft = 3;
-  monk.attack = newAttack(opener, "enemy");
-  monk.state = "attack";
+  const monk = world.spawnEnemy("plagueMonk", origin.x + 90, origin.y, true)!;
+  monk.x = origin.x + 90;
+  monk.y = origin.y;
   monk.targetId = h.id;
+  monk.cooldown = 0;
+  monk.monkOpened = false;
   place(h, origin);
-  // Finish the opener so the first dash follow-up starts.
-  let flashed = false;
-  for (let i = 0; i < 120 && monk.chainLeft === 3; i++) {
+  // Drive the monk into range and through the opening 6-hit flurry.
+  let sawSlash = false;
+  let maxChain = 0;
+  let flurryStartX = 0;
+  let flurryEndX = 0;
+  for (let i = 0; i < 300; i++) {
     place(h, origin);
-    const fx = run(world, DT, () => immortal(world));
-    if (fx.some((f) => f.t === "slashflash")) flashed = true;
+    h.state = "idle";
+    run(world, DT, () => immortal(world));
+    if (monk.attack?.def.id === "monk_slash") {
+      if (!sawSlash) flurryStartX = monk.x;
+      sawSlash = true;
+      maxChain = Math.max(maxChain, monk.chainLeft);
+      flurryEndX = monk.x;
+    }
+    if (monk.monkOpened) break;
   }
-  const dashed = monk.attack?.def.id === "monk_dash";
-  check("Plague Monk opener chains into a dash strike", monk.chainLeft === 2 && dashed, `state ${monk.state} chain ${monk.chainLeft} atk ${monk.attack?.def.id}`);
-  check("Plague Monk dash shows a white slash flash", flashed);
+  check(
+    "Plague Monk opens with a chasing 6-hit flurry",
+    sawSlash && maxChain >= MONK.openerHits - 1 && monk.monkOpened,
+    `saw ${sawSlash} maxChain ${maxChain} opened ${monk.monkOpened}`,
+  );
+  check(
+    "Plague Monk advances while flurrying",
+    flurryEndX < flurryStartX - 8,
+    `x ${flurryEndX.toFixed(0)} from ${flurryStartX.toFixed(0)}`,
+  );
+  check(
+    "Plague Monk pauses after the opener",
+    monk.cooldown >= MONK.pause - 0.15,
+    `cd ${monk.cooldown.toFixed(2)}`,
+  );
+  // After the pause, the next flurry should be 3 hits.
+  monk.cooldown = 0;
+  monk.x = origin.x + 28;
+  monk.y = origin.y;
+  maxChain = 0;
+  for (let i = 0; i < 200; i++) {
+    place(h, origin);
+    h.state = "idle";
+    run(world, DT, () => immortal(world));
+    if (monk.state === "attack") maxChain = Math.max(maxChain, monk.chainLeft);
+    if (monk.state === "attack" && monk.chainLeft === MONK.followHits - 1) break;
+  }
+  check(
+    "Plague Monk follow-up flurry is 3 hits",
+    maxChain === MONK.followHits - 1,
+    `maxChain ${maxChain}`,
+  );
   killEnemy(world, monk, h);
 
   place(h, origin);
+  place(buddy, { x: origin.x + 400, y: origin.y });
   h.state = "idle";
   h.grabbedBy = "";
   h.iframesT = 0;
+  buddy.state = "idle";
+  buddy.grabbedBy = "";
   const runner = world.spawnEnemy("gutterRunner", origin.x + 10, origin.y, true)!;
   runner.x = origin.x + 10;
   runner.y = origin.y;

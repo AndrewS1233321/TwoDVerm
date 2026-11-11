@@ -187,6 +187,8 @@ export interface Enemy {
   lonelyT: number;
   /** Swings left in the current melee flurry (AttackDef.chain). */
   chainLeft: number;
+  /** Plague Monk: true after the opening 6-hit frenzy finishes. */
+  monkOpened: boolean;
   /** Gutter Runner leap direction (radians). */
   leapAngle: number;
   /** Sack Rat: seconds spent out of sight and far from the party. */

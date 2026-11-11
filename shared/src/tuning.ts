@@ -190,6 +190,17 @@ export const STORMFIEND_FIRE = {
   groundBurnRays: 5,
 };
 
+/** Plague Monk: chasing claw flurries (opener 6 hits, then 3-hit loops). */
+export const MONK = {
+  windup: 0.2,
+  openerHits: 6,
+  followHits: 3,
+  /** Pause after a flurry before the next one may start. */
+  pause: 1,
+  /** Move speed while swinging (fraction of base). */
+  chaseSpeedMul: 1,
+};
+
 /** Gutter Runner: stalks unseen, leaps at an isolated hero, pins them. */
 export const RUNNER = {
   leapRange: 220,

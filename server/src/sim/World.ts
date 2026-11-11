@@ -442,6 +442,7 @@ export class World {
       lastDamagerId: "",
       lonelyT: 0,
       chainLeft: 0,
+      monkOpened: false,
       leapAngle: 0,
       escapeT: 0,
       fireCd: 0,

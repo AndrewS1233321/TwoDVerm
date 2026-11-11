@@ -15,6 +15,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Plague Monk flurry**: no more dash strikes. In melee it chases the
+  hero while swinging — first engagement is 6 slashes (0.2s wind-up each,
+  arcs follow its position), then a 1s pause, then repeating 3-hit
+  flurries (`MONK` in tuning).
 - **Gutter Runner leap connect**: pounce ignores movement collision and
   only lands when centres are within `leapConnectDist` (6 px, swept along
   the leap step); push / shield-bash still use the normal radius.
@@ -27,9 +31,6 @@ Update this file after every meaningful implementation change.
 - **Gutter Runner push-block**: while pushing, heroes cannot be pounced;
   a push that hits the runner knocks it back, stuns for 1.25s, then it
   flees until its 5s pounce cooldown ends.
-- **Plague Monk combo**: wind-up opener strike, then three no-wind-up
-  dashes toward the target; each dash emits a brief white `slashflash`
-  attack-arc FX.
 - **Stormfiend warpflame**: spray cone is 400px / 50° with animated green
   flame VFX; ground tiles hit by the cone stay lit for 5s and deal DoT
   (`warpflame` hazard, 14 DPS).
