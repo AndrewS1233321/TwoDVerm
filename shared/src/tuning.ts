@@ -4,7 +4,8 @@ export const HERO_TURN_RATE = 14;
 
 export const DODGE = {
   time: 0.2,
-  speed: 560,
+  /** World px/s; with `time`, base dodge travel is 60 px. */
+  speed: 300,
   cooldown: 0.25,
   /** Seconds after the last dodge before charges start refilling. */
   refillDelay: 0.7,

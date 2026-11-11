@@ -15,6 +15,8 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Dodge length**: base dodge travel reduced to 60 px (`DODGE.speed`
+  300 × `DODGE.time` 0.2s); charges and Viktor’s ult dash unchanged.
 - **Summon Room portal**: Testing-zone pads still trigger on step, but
   creatures emerge from a far-right warp portal (`P` marker) instead of
   spawning on the pad sprite; client draws a pulsing portal and a warp
