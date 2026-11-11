@@ -3,8 +3,27 @@
  * on the server simulation (no network):
  *   npm run mission-test
  */
-import { dist, DOWNED, DT, HEROES, TILE_SIZE, tileCenter, type FxEvent, type HeroId, type InputMessage, type Point } from "@twodverm/shared";
-import { damageEnemy, downHero } from "../server/src/sim/damage";
+import {
+  buildWastesLevel,
+  dist,
+  DOWNED,
+  DT,
+  ENEMIES,
+  enemiesForRaces,
+  HEROES,
+  rollLevelProperties,
+  SHIELD,
+  TILE_SIZE,
+  tileCenter,
+  WARPFIRE,
+  type FxEvent,
+  type HeroId,
+  type InputMessage,
+  type Point,
+} from "@twodverm/shared";
+import { newAttack } from "../server/src/sim/attacks";
+import { damageEnemy, downHero, killEnemy } from "../server/src/sim/damage";
+import { sprayCone } from "../server/src/sim/enemies";
 import type { Hero } from "../server/src/sim/types";
 import { World } from "../server/src/sim/World";
 
@@ -210,6 +229,130 @@ function place(h: Hero, p: Point): void {
   run(world, 10, () => immortal(world));
   const perTick = (performance.now() - t0) / (10 / DT);
   check("90 rats on 4 heroes runs fast enough for a small server", perTick < 8, `${perTick.toFixed(2)}ms per tick, ${world.enemies.size} rats left`);
+}
+
+// Full Skaven roster: shields, flurry, pin, warpfire cone, sack loot, stormfiend spray, boss pool.
+{
+  const world = new World(19, "testing");
+  const h = world.addHero("h0", "Hero 0", HEROES.soldier);
+  const buddy = world.addHero("h1", "Hero 1", HEROES.ranger);
+  world.startMission();
+  world.enemies.clear();
+  const origin = world.level.playerStarts[0]!;
+  place(h, origin);
+  place(buddy, { x: origin.x + 64, y: origin.y });
+  h.iframesT = 0;
+  buddy.iframesT = 0;
+
+  const shield = world.spawnEnemy("shieldClanrat", origin.x + 40, origin.y, true)!;
+  shield.x = origin.x + 40;
+  shield.y = origin.y;
+  shield.facing = Math.PI;
+  const hp0 = shield.hp;
+  damageEnemy(world, h, shield, { damage: 20, stagger: 0, srcX: h.x, srcY: h.y });
+  check("Shield blocks a frontal light hit", shield.hp === hp0 && shield.state !== "staggered", `hp ${shield.hp}/${hp0} state ${shield.state}`);
+  damageEnemy(world, h, shield, { damage: 20, stagger: SHIELD.breakPower, heavy: true, srcX: h.x, srcY: h.y });
+  check("Heavy hit breaks a raised shield", shield.state === "staggered", shield.state);
+  shield.state = "chase";
+  shield.stateT = 0;
+  const hp1 = shield.hp;
+  damageEnemy(world, h, shield, { damage: 20, stagger: 0, srcX: shield.x + 80, srcY: shield.y });
+  check("Back hit lands through a shield", shield.hp < hp1, `hp ${shield.hp}/${hp1}`);
+  killEnemy(world, shield, h);
+
+  const monk = world.spawnEnemy("plagueMonk", origin.x + 28, origin.y, true)!;
+  const flurry = ENEMIES.plagueMonk.attacks[0]!;
+  monk.chainLeft = 2;
+  monk.attack = newAttack(flurry, "enemy");
+  monk.state = "attack";
+  monk.targetId = h.id;
+  // Finish the first swing so the chain follow-up starts.
+  for (let i = 0; i < 90 && monk.chainLeft === 2; i++) run(world, DT, () => immortal(world));
+  check("Plague Monk starts a chained flurry", monk.chainLeft === 1 && monk.state === "attack", `state ${monk.state} chain ${monk.chainLeft}`);
+  killEnemy(world, monk, h);
+
+  place(h, origin);
+  h.state = "idle";
+  h.grabbedBy = "";
+  h.iframesT = 0;
+  const runner = world.spawnEnemy("gutterRunner", origin.x + 10, origin.y, true)!;
+  runner.x = origin.x + 10;
+  runner.y = origin.y;
+  runner.state = "leap";
+  runner.leapAngle = Math.PI;
+  runner.shotT = 1;
+  runner.facing = Math.PI;
+  run(world, DT, () => {
+    immortal(world);
+    h.iframesT = 0;
+  });
+  check("Gutter Runner pin grabs a hero", h.state === "grabbed" && runner.state === "pin", `hero ${h.state} runner ${runner.state}`);
+  damageEnemy(world, buddy, runner, { damage: 30, stagger: 1, srcX: buddy.x, srcY: buddy.y });
+  check("Teammate hit releases a pin", h.state !== "grabbed" && runner.state !== "pin", `hero ${h.state} runner ${runner.state}`);
+  if (world.enemies.has(runner.id)) killEnemy(world, runner, h);
+
+  place(h, origin);
+  h.hp = h.def.hp;
+  h.state = "idle";
+  const thrower = world.spawnEnemy("warpfire", origin.x + 80, origin.y, true)!;
+  thrower.x = origin.x + 80;
+  thrower.y = origin.y;
+  thrower.facing = Math.PI;
+  thrower.state = "spray";
+  thrower.shotT = 1;
+  const hpBefore = h.hp;
+  sprayCone(world, thrower, WARPFIRE.range, WARPFIRE.arc, WARPFIRE.dps, 0.5);
+  check("Warpfire damages heroes in its cone", h.hp < hpBefore, `hp ${h.hp}/${hpBefore}`);
+  const behind = world.spawnEnemy("warpfire", origin.x - 80, origin.y, true)!;
+  behind.x = origin.x - 80;
+  behind.y = origin.y;
+  behind.facing = Math.PI;
+  behind.state = "spray";
+  const hpMid = h.hp;
+  sprayCone(world, behind, WARPFIRE.range, WARPFIRE.arc, WARPFIRE.dps, 0.5);
+  check("Warpfire misses heroes behind the thrower", h.hp === hpMid, `hp ${h.hp}/${hpMid}`);
+  killEnemy(world, thrower, h);
+  killEnemy(world, behind, h);
+
+  const sack = world.spawnEnemy("sackRat", origin.x + 60, origin.y, false)!;
+  sack.state = "flee";
+  sack.aggro = true;
+  const pickupsBefore = world.pickups.size;
+  killEnemy(world, sack, h);
+  check("Sack Rat drops loot on death", world.pickups.size > pickupsBefore, `pickups ${world.pickups.size}`);
+
+  const open = { x: origin.x + 120, y: origin.y + 40 };
+  place(h, open);
+  const fiend = world.spawnEnemy("stormfiend", open.x + 200, open.y, true)!;
+  fiend.x = open.x + 200;
+  fiend.y = open.y;
+  fiend.targetId = h.id;
+  fiend.stateT = 1;
+  fiend.fireCd = 0;
+  fiend.cooldown = 1;
+  fiend.state = "chase";
+  fiend.aggro = true;
+  fiend.attack = null;
+  run(world, DT, () => {
+    immortal(world);
+    place(h, open);
+    h.iframesT = 0;
+  });
+  check("Stormfiend sprays warpfire at range", fiend.state === "spray_windup" || fiend.state === "spray", `${fiend.state} d=${Math.round(dist(fiend.x, fiend.y, h.x, h.y))}`);
+  killEnemy(world, fiend, h);
+}
+
+{
+  const seen = new Set<string>();
+  for (let seed = 1; seed <= 40; seed++) {
+    const props = rollLevelProperties(1, "grim_causeway", seed);
+    const { meta } = buildWastesLevel("grim_causeway", props, seed);
+    const boss = meta.objectives.find((o) => o.kind === "boss");
+    if (boss?.spawnType) seen.add(boss.spawnType);
+  }
+  const pools = enemiesForRaces(rollLevelProperties(1, "grim_causeway", 1));
+  check("Wastes boss pool includes Rat Ogre and Stormfiend", pools.bosses.includes("ogre") && pools.bosses.includes("stormfiend"), pools.bosses.join(","));
+  check("Wastes seeded boss pick covers both bosses", seen.has("ogre") && seen.has("stormfiend"), [...seen].join(","));
 }
 
 console.log(failures === 0 ? "\nAll mission checks passed" : `\n${failures} mission check(s) failed`);

@@ -16,6 +16,7 @@ export function enemiesForRaces(props: LevelProperties): {
   elite: CombatEnemyId[];
   special: CombatEnemyId[];
   boss: CombatEnemyId;
+  bosses: CombatEnemyId[];
   usedFallback: boolean;
 } {
   const races = uniqueRaces(props);
@@ -31,17 +32,31 @@ export function enemiesForRaces(props: LevelProperties): {
     }
   }
   const uniq = [...new Set(pools)];
-  const horde = uniq.filter((id) => !ENEMIES[id].elite && !ENEMIES[id].special && ENEMIES[id].behavior === "melee");
+  const shieldVariants = new Set(Object.values(SHIELD_VARIANTS));
+  const horde = uniq.filter(
+    (id) => !ENEMIES[id].elite && !ENEMIES[id].special && ENEMIES[id].behavior === "melee" && !shieldVariants.has(id),
+  );
   const elite = uniq.filter((id) => ENEMIES[id].elite);
   const special = uniq.filter((id) => ENEMIES[id].special);
   const bosses = uniq.filter((id) => ENEMIES[id].behavior === "boss");
   return {
     horde: horde.length > 0 ? horde : (["slave", "clanrat"] as CombatEnemyId[]),
     elite: elite.length > 0 ? elite : (["stormvermin"] as CombatEnemyId[]),
-    special: special.length > 0 ? special : (["gunner", "gas", "hooker"] as CombatEnemyId[]),
+    special: special.length > 0 ? special : (["gunner", "gas", "hooker", "gutterRunner", "warpfire"] as CombatEnemyId[]),
     boss: bosses[0] ?? "ogre",
+    bosses: bosses.length > 0 ? bosses : ["ogre"],
     usedFallback,
   };
+}
+
+/** Horde types that sometimes spawn carrying a shield. */
+export const SHIELD_VARIANTS: Partial<Record<CombatEnemyId, CombatEnemyId>> = { clanrat: "shieldClanrat" };
+/** Share of shield-capable horde picks that come with a shield. */
+export const SHIELD_VARIANT_CHANCE = 0.2;
+
+export function maybeShielded(id: EnemyId, rng: () => number): EnemyId {
+  const shielded = SHIELD_VARIANTS[id as CombatEnemyId];
+  return shielded && rng() < SHIELD_VARIANT_CHANCE ? shielded : id;
 }
 
 function uniqueRaces(props: LevelProperties): CreatureRace[] {
@@ -57,5 +72,5 @@ export function pickAmbientType(
   if (rng() < eliteChance && pools.elite.length > 0) {
     return pools.elite[Math.floor(rng() * pools.elite.length)]!;
   }
-  return pools.horde[Math.floor(rng() * pools.horde.length)]!;
+  return maybeShielded(pools.horde[Math.floor(rng() * pools.horde.length)]!, rng);
 }

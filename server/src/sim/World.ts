@@ -410,7 +410,7 @@ export class World {
     });
   }
 
-  private addPickup(kind: Pickup["kind"], x: number, y: number): void {
+  addPickup(kind: Pickup["kind"], x: number, y: number): void {
     const id = this.newId("p");
     this.pickups.set(id, { id, kind, x, y, used: false });
   }
@@ -441,6 +441,10 @@ export class World {
       shotT: 0,
       lastDamagerId: "",
       lonelyT: 0,
+      chainLeft: 0,
+      leapAngle: 0,
+      escapeT: 0,
+      fireCd: 0,
     };
     this.enemies.set(id, enemy);
     return enemy;
@@ -609,7 +613,7 @@ export class World {
         if (spawned) this.objectiveEnemyIds.add(spawned.id);
         if (obj.kind === "boss") {
           this.bossActive = true;
-          this.emit({ t: "announce", text: "A Rat Ogre approaches! The way out is sealed!", kind: "boss" });
+          this.emit({ t: "announce", text: `A ${ENEMIES[type].name} approaches! The way out is sealed!`, kind: "boss" });
         } else {
           this.emit({ t: "announce", text: "Elite vermin defend the chamber!", kind: "event" });
           if (this.rng() < 0.5) {
@@ -626,7 +630,7 @@ export class World {
       }
       if (this.objectiveEnemyIds.size === 0) {
         if (obj.kind === "boss") this.bossActive = false;
-        this.completeCurrentObjective(obj.kind === "boss" ? "The ogre falls! Exit unlocked." : "Path ahead opens!");
+        this.completeCurrentObjective(obj.kind === "boss" ? "The beast falls! Exit unlocked." : "Path ahead opens!");
       }
     }
   }
@@ -791,7 +795,7 @@ export class World {
         const key = `${hero.id}:${i}`;
         next.add(key);
         if (!this.padOccupancy.has(key)) {
-          const offset = 40 + (pad.type === "ogre" ? 20 : 0);
+          const offset = 40 + (ENEMIES[pad.type].large ? 20 : 0);
           this.spawnEnemy(pad.type, pad.x, pad.y + offset, true);
         }
       });

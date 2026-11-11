@@ -22,5 +22,6 @@ Each unit ends with something playable. Write the spec file for a unit
 | 12   | Polish                  | Sound, music, full HUD, improved sprites and effects, settings                               | 11         |
 | 13   | Authored Wastes missions | One hand-designed map per Gingey Wastes location replacing room procgen; `check:wastes`     | 12         |
 | 14   | Campaign-style Wastes missions | Custom section lists, elite-mix hold, cannon and bell set pieces; Hallowed Rampart | 13 |
+| 15   | Full Skaven roster | Shield rats, Plague Monk, Gutter Runner, Warpfire, Sack Rat, Stormfiend (no Lords) | 14 |
 
 Units 01 to 06 deliver a playable multiplayer brawler.

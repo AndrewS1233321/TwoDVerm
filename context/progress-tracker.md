@@ -9,12 +9,18 @@ Update this file after every meaningful implementation change.
 ## Current Goal
 
 - Playtest Default, Testing zone, and The Gingey Wastes expedition
-  loop; playtest the five authored Wastes missions (including Hallowed
-  Rampart's set pieces) and tune layout, spawn spots and pacing from
-  feedback.
+  loop; playtest the five authored Wastes missions and the new Skaven
+  roster (shields, Plague Monk, Gutter Runner, Warpfire, Sack Rat,
+  Stormfiend) and tune numbers from feedback.
 
 ## Completed
 
+- **Full Skaven roster** (spec `15-skaven-roster.md`): added Shielded
+  Clanrat, Shielded Stormvermin, Plague Monk (flurry), Gutter Runner
+  (leap + pin), Warpfire Thrower (cone spray), Sack Rat (flee + loot),
+  and Stormfiend (melee + warpfire). Shared shield / spray / pin
+  mechanics; Wastes boss pool seeded between Rat Ogre and Stormfiend;
+  Testing zone second summon-pad row. Lords still out of scope.
 - **Hallowed Rampart** (spec `14-campaign-style-wastes-missions.md`):
   fifth Wastes location in the shared random pool (castle, Righteous
   Stand pacing, original layout). `AuthoredMission.sections` lets a

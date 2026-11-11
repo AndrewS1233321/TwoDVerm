@@ -17,6 +17,7 @@ import {
   OBJECTIVE_INTERACT_RANGE,
   parseLevelProps,
   WASTES_MERCHANT_LEVEL_ID,
+  type EnemyId,
   type ProcObjective,
 } from "@twodverm/shared";
 import { hasState } from "../net/connection";
@@ -373,15 +374,15 @@ export class HudScene extends Phaser.Scene {
     }
     t.event!.setPosition(W / 2, 12).setText(eventText);
 
-    let boss: { hp: number; maxHp: number } | null = null;
+    let boss: { type: string; hp: number; maxHp: number } | null = null;
     room.state.enemies.forEach((e) => {
-      if (e.type === "ogre") boss = e;
+      if (ENEMIES[e.type as EnemyId]?.behavior === "boss") boss = e;
     });
     if (boss) {
-      const b = boss as { hp: number; maxHp: number };
+      const b = boss as { type: string; hp: number; maxHp: number };
       const bw = Math.min(500, W * 0.5);
       bar(this.g, W / 2 - bw / 2, 58, bw, 12, b.hp / b.maxHp, 0x9a2a1a);
-      t.boss!.setPosition(W / 2, 54).setText(ENEMIES.ogre.name);
+      t.boss!.setPosition(W / 2, 54).setText(ENEMIES[b.type as EnemyId].name);
     } else {
       t.boss!.setText("");
     }
@@ -390,7 +391,13 @@ export class HudScene extends Phaser.Scene {
     let status = "";
     if (me.state === "dead") status = `You have fallen. Rejoining the fight in ${Math.ceil(me.respawnIn)}s`;
     else if (me.state === "downed") status = "You are down! A teammate must hold E next to you";
-    else if (me.state === "grabbed") status = "GRABBED! Teammates must strike the Packmaster!";
+    else if (me.state === "grabbed") {
+      const by = room.state.enemies.get(me.grabbedBy);
+      status =
+        by?.type === "gutterRunner"
+          ? "PINNED by a Gutter Runner! Teammates must strike or push it off!"
+          : "GRABBED! Teammates must strike the Packmaster!";
+    }
     t.status!.setPosition(W / 2, H * 0.68).setText(status);
   }
 

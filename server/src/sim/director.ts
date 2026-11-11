@@ -4,7 +4,9 @@ import {
   enemiesForRaces,
   hasLineOfSight,
   isInZone,
+  maybeShielded,
   pickAmbientType,
+  SACK_RAT,
   type EnemyId,
   type Point,
   type SpawnBudgets,
@@ -20,7 +22,9 @@ const TRICKLE_INTERVAL = 0.3;
 const TRICKLE_BATCH = 2;
 const EVENT_DURATION = 50;
 const EVENT_WAVE_INTERVAL = 11;
-const SPECIAL_TYPES: EnemyId[] = ["gunner", "gas", "hooker"];
+const SPECIAL_TYPES: EnemyId[] = ["gunner", "gas", "hooker", "gutterRunner", "warpfire"];
+/** Default-mission elite mix (Wastes uses the race pools). */
+const DEFAULT_ELITES: EnemyId[] = ["stormvermin", "stormvermin", "shieldStormvermin", "plagueMonk"];
 
 interface PendingSpawn {
   type: EnemyId;
@@ -128,6 +132,7 @@ export class Director {
         w.spawnEnemy(type, p.x + (w.rng() - 0.5) * 60, p.y + (w.rng() - 0.5) * 60, false);
         ambient++;
       }
+      this.spawnSackRats();
       return;
     }
     for (const p of w.level.ambientRats) {
@@ -142,15 +147,27 @@ export class Director {
   }
 
   private pickHordeType(): EnemyId {
+    const rng = this.world.rng;
     const pool = this.racePools?.horde;
-    if (pool && pool.length > 0) return pool[Math.floor(this.world.rng() * pool.length)]!;
-    return this.world.rng() < 0.7 ? "slave" : "clanrat";
+    if (pool && pool.length > 0) return maybeShielded(pool[Math.floor(rng() * pool.length)]!, rng);
+    return rng() < 0.7 ? "slave" : maybeShielded("clanrat", rng);
   }
 
   private pickEliteType(): EnemyId {
-    const pool = this.racePools?.elite;
-    if (pool && pool.length > 0) return pool[Math.floor(this.world.rng() * pool.length)]!;
-    return "stormvermin";
+    const pool = this.racePools?.elite ?? DEFAULT_ELITES;
+    return pool[Math.floor(this.world.rng() * pool.length)]!;
+  }
+
+  /** Sack Rats loiter at a few ambient-rat spots on Wastes maps. */
+  private spawnSackRats(): void {
+    const w = this.world;
+    const spots = w.level.ambientRats;
+    if (spots.length === 0) return;
+    const count = Math.floor(w.rng() * (SACK_RAT.maxPerLevel + 1));
+    for (let i = 0; i < count; i++) {
+      const p = spots[Math.floor(w.rng() * spots.length)]!;
+      w.spawnEnemy("sackRat", p.x + (w.rng() - 0.5) * 30, p.y + (w.rng() - 0.5) * 30, false);
+    }
   }
 
   /** First entry into a hold event: a horde at twice the regular size, plus any extra stormvermin. */

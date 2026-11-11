@@ -461,11 +461,11 @@ export class GameScene extends Phaser.Scene {
       }
     }
     for (const e of state.enemies.values()) {
-      if (e.state !== "drag") continue;
+      if (e.state !== "drag" && e.state !== "pin") continue;
       const victim = [...state.players.values()].find((p) => p.grabbedBy === e.id);
       const a = this.enemyViews.get(e.id);
       const b = victim ? this.heroViews.get(victim.id) : undefined;
-      if (a && b) {
+      if (a && b && e.state === "drag") {
         this.top.lineStyle(2, 0x9aa3ad, 0.9);
         this.top.lineBetween(a.position.x, a.position.y, b.position.x, b.position.y);
       }
@@ -474,6 +474,7 @@ export class GameScene extends Phaser.Scene {
 
   private enemyPose(e: EnemyView): PoseInfo {
     const s = this.interp.get(e.id)?.sample(performance.now());
+    const stalking = e.type === "gutterRunner" && (e.state === "idle" || e.state === "stalk");
     return {
       x: s?.x ?? e.x,
       y: s?.y ?? e.y,
@@ -484,6 +485,7 @@ export class GameScene extends Phaser.Scene {
       actionSeq: e.actionSeq,
       hp: e.hp,
       maxHp: e.maxHp,
+      hidden: stalking,
     };
   }
 
@@ -509,6 +511,19 @@ export class GameScene extends Phaser.Scene {
         this.enemyViews.set(e.id, view);
       }
       view.update(this.enemyPose(e), delta, this.ground, this.top);
+      if (e.state === "leap") {
+        this.effects.sparks(view.position.x, view.position.y, 0x8a3fa0, 3, 40);
+        view.afterimage();
+      }
+      if (e.state === "spray") {
+        this.effects.sparks(
+          view.position.x + Math.cos(e.facing) * (def.radius + 14),
+          view.position.y + Math.sin(e.facing) * (def.radius + 14),
+          0xff5a1f,
+          4,
+          70,
+        );
+      }
     });
     for (const [id, v] of this.enemyViews) {
       if (!seen.has(id)) {

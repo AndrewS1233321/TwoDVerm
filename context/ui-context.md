@@ -57,6 +57,13 @@ Until web fonts are added, use `Georgia, serif` for titles and
 - Sprite size matches the creature's `radius` from `shared/` data.
 - Weapons are separate sprites that swing through their attack arc.
 - Animation uses tweens: swing arcs, flashes, squash-and-stretch.
+- Skaven looks (code-drawn in `client/src/render/textures.ts`):
+  slave / clanrat / stormvermin as before; shield variants carry a round
+  or tower shield; Plague Monk wears a ragged green robe; Gutter Runner
+  is lean and dark with claw tips; Warpfire Thrower has a tank and nozzle;
+  Sack Rat hauls a coin sack; Stormfiend is Rat Ogre–sized with arm cannons.
+- Gutter Runners render nearly invisible while stalking; warpfire spray
+  shows an orange cone telegraph; leaps leave a short afterimage trail.
 
 ## Feedback
 

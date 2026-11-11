@@ -22,7 +22,7 @@ export class SummonPadRenderer {
 
       const icon = scene.add
         .image(pad.x, pad.y - 4, enemyTextureKey(pad.type))
-        .setScale((1 / TEX_SCALE) * (pad.type === "ogre" ? 0.35 : 0.55))
+        .setScale((1 / TEX_SCALE) * (def.large ? 0.35 : 0.55))
         .setAlpha(0.95);
 
       const label = scene.add

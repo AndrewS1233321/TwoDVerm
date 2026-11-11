@@ -22,6 +22,13 @@ export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
   "5": "gas",
   "6": "hooker",
   "7": "ogre",
+  "8": "shieldClanrat",
+  "9": "shieldStormvermin",
+  "0": "plagueMonk",
+  q: "gutterRunner",
+  w: "warpfire",
+  x: "sackRat",
+  y: "stormfiend",
 };
 
 export { DUMMY_SPAWN_MARKERS };

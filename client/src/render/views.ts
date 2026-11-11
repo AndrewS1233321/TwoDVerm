@@ -1,5 +1,16 @@
 import Phaser from "phaser";
-import { clamp, DIRECTION, GUNNER, getAttack, lerp, RIPOSTE } from "@twodverm/shared";
+import {
+  clamp,
+  DIRECTION,
+  ENEMIES,
+  GUNNER,
+  getAttack,
+  lerp,
+  RIPOSTE,
+  STORMFIEND_FIRE,
+  WARPFIRE,
+  type EnemyId,
+} from "@twodverm/shared";
 import { colors } from "./palette";
 import { handOffset, TEX_SCALE, WEAPON_INFO, weaponTextureKey, type DrawnWeaponStyle } from "./textures";
 
@@ -350,6 +361,25 @@ export class CreatureView {
       if (info.state === "throw") {
         top.fillStyle(colors.warp, 0.5 + 0.3 * Math.sin(now * 0.03));
         top.fillCircle(info.x + Math.cos(info.facing) * r, info.y + Math.sin(info.facing) * r, 5);
+      }
+      if (info.state === "spray_windup" || info.state === "spray") {
+        const fire = ENEMIES[this.opts.typeId as EnemyId]?.warpfire ? STORMFIEND_FIRE : WARPFIRE;
+        const t = info.state === "spray_windup" ? 0.35 + 0.35 * Math.sin(now * 0.03) : 0.55;
+        const half = fire.arc / 2;
+        ground.fillStyle(0xff5a1f, info.state === "spray" ? 0.22 : 0.12);
+        ground.slice(info.x, info.y, r + fire.range, info.facing - half, info.facing + half, false);
+        ground.fillPath();
+        ground.lineStyle(2, 0xff5a1f, t);
+        ground.slice(info.x, info.y, r + fire.range, info.facing - half, info.facing + half, false);
+        ground.strokePath();
+        if (info.state === "spray") {
+          top.fillStyle(0xff8a3a, 0.55);
+          top.fillCircle(info.x + Math.cos(info.facing) * (r + 10), info.y + Math.sin(info.facing) * (r + 10), 6 + Math.sin(now * 0.04) * 2);
+        }
+      }
+      if (info.state === "crouch") {
+        top.fillStyle(0x8a3fa0, 0.45 + 0.25 * Math.sin(now * 0.04));
+        top.fillCircle(info.x, info.y, r * 0.55);
       }
       if (info.state === "staggered") {
         top.lineStyle(2, 0xffe27a, 0.8);

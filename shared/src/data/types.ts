@@ -25,6 +25,8 @@ export interface AttackDef {
   backstabMul?: number;
   /** Forward speed (px/s) during the active phase. */
   lunge?: number;
+  /** Enemy only: total swings in a flurry; extra swings follow with a short wind-up. */
+  chain?: number;
   /** Visual swing of the weapon, relative to facing. */
   swing: { from: number; to: number; thrust?: number };
 }
@@ -97,10 +99,24 @@ export interface HeroDef {
   description: string;
 }
 
-export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "boss" | "dummy";
+export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "runner" | "warpfire" | "loot" | "boss" | "dummy";
 
 /** Combat enemies that appear in missions and on testing-zone summon pads. */
-export type CombatEnemyId = "slave" | "clanrat" | "stormvermin" | "gunner" | "gas" | "hooker" | "ogre";
+export type CombatEnemyId =
+  | "slave"
+  | "clanrat"
+  | "shieldClanrat"
+  | "stormvermin"
+  | "shieldStormvermin"
+  | "plagueMonk"
+  | "gunner"
+  | "gas"
+  | "hooker"
+  | "gutterRunner"
+  | "warpfire"
+  | "sackRat"
+  | "ogre"
+  | "stormfiend";
 
 /** Training dummies in the Testing / Staging hall (one per armor tier). */
 export type DummyEnemyId = "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy";
@@ -127,4 +143,8 @@ export interface EnemyDef {
   elite: boolean;
   /** Creature race for procgen filters (`none` for dummies / merchant). */
   race: EnemyRace;
+  /** Blocks frontal hits until a heavy hit or push breaks its guard. */
+  shield?: boolean;
+  /** Boss only: sprays warpfire at targets beyond melee range. */
+  warpfire?: boolean;
 }

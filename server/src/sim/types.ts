@@ -153,7 +153,15 @@ export type EnemyAiState =
   | "reload"
   | "throw"
   | "flee"
-  | "drag";
+  | "drag"
+  /** Gutter Runner: unaware-of-aggro approach, crouched before a leap, mid-air, on top of a hero. */
+  | "stalk"
+  | "crouch"
+  | "leap"
+  | "pin"
+  /** Warpfire Thrower / Stormfiend: wind-up and spraying fire. */
+  | "spray_windup"
+  | "spray";
 
 export interface Enemy {
   id: string;
@@ -177,6 +185,14 @@ export interface Enemy {
   lastDamagerId: string;
   /** Seconds since any hero was near; used to despawn stragglers far behind. */
   lonelyT: number;
+  /** Swings left in the current melee flurry (AttackDef.chain). */
+  chainLeft: number;
+  /** Gutter Runner leap direction (radians). */
+  leapAngle: number;
+  /** Sack Rat: seconds spent out of sight and far from the party. */
+  escapeT: number;
+  /** Stormfiend: seconds until its warpfire can spray again. */
+  fireCd: number;
 }
 
 export interface Hazard {

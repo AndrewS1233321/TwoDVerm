@@ -50,9 +50,15 @@ export function enemyWeaponStyle(id: EnemyId): keyof typeof WEAPON_INFO | null {
   switch (id) {
     case "slave":
     case "clanrat":
+    case "shieldClanrat":
       return "ratblade";
     case "stormvermin":
+    case "shieldStormvermin":
       return "halberd";
+    case "plagueMonk":
+      return "claws";
+    case "gutterRunner":
+      return "claws";
     case "hooker":
       return "hookpole";
     default:
@@ -211,11 +217,103 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
       g.fillCircle(cx + R * 0.85, cy, R * 0.3);
     },
   },
+  shieldClanrat: {
+    fur: 0x5a4a3c,
+    width: 1.65,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x6b4a2a);
+      g.fillEllipse(cx + R * 0.05, cy - R * 0.55, R * 0.7, R * 0.45);
+      g.fillEllipse(cx + R * 0.05, cy + R * 0.55, R * 0.7, R * 0.45);
+      g.fillStyle(0x8a7a60);
+      g.fillCircle(cx + R * 0.95, cy + R * 0.55, R * 0.55);
+      g.lineStyle(TEX_SCALE, 0x3a3228, 1);
+      g.strokeCircle(cx + R * 0.95, cy + R * 0.55, R * 0.55);
+      g.fillStyle(0xc9a14a, 0.9);
+      g.fillCircle(cx + R * 0.95, cy + R * 0.55, R * 0.12);
+    },
+  },
+  shieldStormvermin: {
+    fur: 0x2b2a2a,
+    width: 1.8,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x4b4f58);
+      g.fillEllipse(cx - R * 0.05, cy, R * 1.5, R * 1.55);
+      g.fillStyle(0x8a1f1f);
+      g.fillRect(cx - R * 0.75, cy - R * 0.12, R * 1.1, R * 0.24);
+      g.fillStyle(0x5b6068);
+      g.fillRect(cx + R * 0.55, cy + R * 0.15, R * 0.75, R * 1.1);
+      g.lineStyle(TEX_SCALE, 0x9aa3ad, 0.9);
+      g.strokeRect(cx + R * 0.55, cy + R * 0.15, R * 0.75, R * 1.1);
+      g.fillStyle(0xd8d0c0);
+      g.fillTriangle(cx + R * 0.5, cy - R * 0.3, cx + R * 0.65, cy - R * 0.3, cx + R * 0.35, cy - R * 0.75);
+    },
+  },
+  plagueMonk: {
+    fur: 0x4a5a3a,
+    width: 1.55,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x3a6b2a);
+      g.fillEllipse(cx - R * 0.1, cy, R * 2.2, R * 1.8);
+      g.fillStyle(0x2a4a1a);
+      g.fillTriangle(cx - R * 0.9, cy - R * 0.9, cx + R * 0.2, cy - R * 1.1, cx - R * 0.2, cy - R * 0.35);
+      g.fillTriangle(cx - R * 0.9, cy + R * 0.9, cx + R * 0.2, cy + R * 1.1, cx - R * 0.2, cy + R * 0.35);
+      g.fillStyle(0x7cff4f, 0.75);
+      g.fillCircle(cx + R * 0.55, cy - R * 0.35, R * 0.12);
+      g.fillCircle(cx + R * 0.35, cy + R * 0.45, R * 0.1);
+    },
+  },
+  gutterRunner: {
+    fur: 0x3a3228,
+    width: 1.25,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x2a2218);
+      g.fillEllipse(cx - R * 0.2, cy, R * 2.4, R * 1.1);
+      g.fillStyle(0x8a3fa0, 0.7);
+      g.fillCircle(cx + R * 0.95, cy - R * 0.18, R * 0.08);
+      g.fillCircle(cx + R * 0.95, cy + R * 0.18, R * 0.08);
+      g.fillStyle(0xc4beb4);
+      g.fillTriangle(cx + R * 1.1, cy - R * 0.35, cx + R * 1.1, cy - R * 0.1, cx + R * 1.55, cy - R * 0.4);
+      g.fillTriangle(cx + R * 1.1, cy + R * 0.35, cx + R * 1.1, cy + R * 0.1, cx + R * 1.55, cy + R * 0.4);
+    },
+  },
+  warpfire: {
+    fur: 0x5a4a3c,
+    width: 1.7,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x3a3a35);
+      g.fillEllipse(cx - R * 0.85, cy, R * 1.1, R * 1.5);
+      g.fillStyle(0x7cff4f, 0.85);
+      g.fillCircle(cx - R * 0.85, cy, R * 0.28);
+      g.fillStyle(0x2b2b2e);
+      g.fillRect(cx + R * 0.35, cy - R * 0.2, R * 1.6, R * 0.4);
+      g.fillStyle(0xff5a1f);
+      g.fillCircle(cx + R * 1.85, cy, R * 0.18);
+      g.fillStyle(0x5b6068);
+      g.fillEllipse(cx + R * 0.2, cy, R * 0.9, R * 1.1);
+    },
+  },
+  sackRat: {
+    fur: 0x6b5a48,
+    width: 1.7,
+    extra: (g, cx, cy, R) => {
+      g.fillStyle(0x8a6848);
+      g.fillEllipse(cx - R * 0.95, cy, R * 1.35, R * 1.5);
+      g.fillStyle(0xc9a14a);
+      g.fillCircle(cx - R * 0.55, cy - R * 0.15, R * 0.18);
+      g.fillCircle(cx - R * 1.15, cy + R * 0.25, R * 0.14);
+      g.fillStyle(0x5a4028);
+      g.fillRect(cx - R * 1.55, cy - R * 0.12, R * 0.35, R * 0.24);
+    },
+  },
 };
 
 function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
   if (id === "ogre") {
     drawOgre(scene, g);
+    return;
+  }
+  if (id === "stormfiend") {
+    drawStormfiend(scene, g);
     return;
   }
   if (
@@ -266,7 +364,7 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
   g.fillStyle(0xff2a1a);
   g.fillCircle(cx + R * 0.98, cy - R * 0.18, R * 0.07);
   g.fillCircle(cx + R * 0.98, cy + R * 0.18, R * 0.07);
-  if (id === "stormvermin") {
+  if (id === "stormvermin" || id === "shieldStormvermin") {
     g.fillStyle(0x5b6068);
     g.fillEllipse(cx + R * 0.65, cy, R * 0.7, R * 0.72);
     g.fillStyle(0xd8d0c0);
@@ -410,6 +508,40 @@ function drawOgre(scene: Phaser.Scene, g: G): void {
   g.fillCircle(cx + R * 0.6, cy - R * 0.13, R * 0.06);
   g.fillCircle(cx + R * 0.6, cy + R * 0.13, R * 0.06);
   finish(scene, g, enemyTextureKey("ogre"), size, size);
+}
+
+/** Stormfiend: Rat Ogre bulk with warpfire tanks strapped to each arm. */
+function drawStormfiend(scene: Phaser.Scene, g: G): void {
+  const R = ENEMIES.stormfiend.radius * TEX_SCALE;
+  const size = R * 3.4;
+  const cx = size / 2;
+  const cy = size / 2;
+  const skin = 0x4a4540;
+  g.fillStyle(0x3a3530);
+  g.fillEllipse(cx - R * 0.15, cy, R * 1.35, R * 2.2);
+  g.fillStyle(skin);
+  g.fillCircle(cx - R * 0.15, cy, R * 0.82);
+  g.lineStyle(TEX_SCALE * 1.5, 0x000000, 0.5);
+  g.strokeCircle(cx - R * 0.15, cy, R * 0.82);
+  for (const side of [-1, 1]) {
+    g.fillStyle(0x2b2b2e);
+    g.fillEllipse(cx + R * 0.35, cy + side * R * 0.85, R * 1.05, R * 0.7);
+    g.fillStyle(0x5b6068);
+    g.fillRect(cx + R * 0.7, cy + side * R * 0.7, R * 0.95, R * 0.35);
+    g.fillStyle(0xff5a1f);
+    g.fillCircle(cx + R * 1.55, cy + side * R * 0.85, R * 0.2);
+    g.fillStyle(0x7cff4f, 0.85);
+    g.fillCircle(cx + R * 0.2, cy + side * R * 0.85, R * 0.18);
+  }
+  g.fillStyle(0x5b6068);
+  g.fillCircle(cx + R * 0.42, cy, R * 0.4);
+  g.fillStyle(0xe8e0d0);
+  g.fillTriangle(cx + R * 0.68, cy - R * 0.2, cx + R * 0.68, cy - R * 0.05, cx + R * 0.95, cy - R * 0.22);
+  g.fillTriangle(cx + R * 0.68, cy + R * 0.2, cx + R * 0.68, cy + R * 0.05, cx + R * 0.95, cy + R * 0.22);
+  g.fillStyle(0xff2a1a);
+  g.fillCircle(cx + R * 0.6, cy - R * 0.13, R * 0.06);
+  g.fillCircle(cx + R * 0.6, cy + R * 0.13, R * 0.06);
+  finish(scene, g, enemyTextureKey("stormfiend"), size, size);
 }
 
 function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {

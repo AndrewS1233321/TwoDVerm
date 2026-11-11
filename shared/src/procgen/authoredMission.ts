@@ -160,7 +160,8 @@ export function parseAuthoredMission(
     const zone = zoneTiles.get(s.zone) ?? [];
     const center = zoneCenter(level, zone);
     const objId = `obj_s${index}`;
-    const spawnType: EnemyId | null = s.kind === "boss" ? pools.boss : s.kind === "mini_boss" ? pools.elite[0]! : null;
+    const spawnType: EnemyId | null =
+      s.kind === "boss" ? pools.bosses[Math.floor(rng() * pools.bosses.length)]! : s.kind === "mini_boss" ? "stormvermin" : null;
     const obj: ProcObjective = { id: objId, kind: s.kind, sectionIndex: index, zone, center, spawnType };
     if (s.eliteMix) obj.eliteMix = true;
     if (s.kind === "cannon" && zone.length > 0) obj.interactPoint = at(zone[0]!);

@@ -11,6 +11,8 @@ import {
   RIPOSTE,
   rollGoldDrop,
   RUNE_WARD,
+  RUNNER,
+  SHIELD,
   shopDamageMul,
   splitGoldEvenly,
   type EnemyId,
@@ -83,6 +85,10 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     return;
   }
   const side = enemy.aggro ? hitSide(enemy.facing, enemy.x, enemy.y, hit.srcX, hit.srcY) : "back";
+  if (enemy.def.shield && side === "front" && enemy.state !== "staggered") {
+    blockWithShield(world, hero, enemy, hit);
+    return;
+  }
   const loc = hitLocation(side, hit.head);
   let mul = ENEMY_DAMAGE_TAKEN[loc];
   if (loc === "back") mul *= hit.backstabMul ?? 1;
@@ -118,9 +124,13 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
     killEnemy(world, enemy, hero);
     return;
   }
-  if (enemy.state === "drag" && dmg > 0) {
+  if (enemy.grabbedId && dmg > 0) {
     releaseGrab(world, enemy);
     staggerEnemy(enemy, 1.5);
+    return;
+  }
+  if (enemy.state === "leap" && dmg > 0) {
+    staggerEnemy(enemy, RUNNER.recoverTime, { force: true });
     return;
   }
   if (hit.noStagger) return;
@@ -128,6 +138,19 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   if (power >= enemy.def.staggerResist) {
     staggerEnemy(enemy, MELEE.staggerTime * (side === "back" ? MELEE.backStaggerMul : 1));
   }
+}
+
+/** Frontal hit on a raised shield: no damage; a heavy hit breaks the guard. */
+function blockWithShield(world: World, hero: Hero | null, enemy: Enemy, hit: EnemyHit): void {
+  const broke = (hit.heavy ?? false) || hit.stagger >= SHIELD.breakPower;
+  if (hero && hero.invisT <= 0) {
+    enemy.aggro = true;
+    enemy.lastDamagerId = hero.id;
+  }
+  const sx = enemy.x + Math.cos(enemy.facing) * enemy.radius;
+  const sy = enemy.y + Math.sin(enemy.facing) * enemy.radius;
+  world.emit({ t: "block", id: enemy.id, x: sx, y: sy, broke });
+  if (broke) staggerEnemy(enemy, SHIELD.breakStagger, { force: true });
 }
 
 export function staggerEnemy(enemy: Enemy, time: number, opts?: { force?: boolean }): void {
@@ -146,9 +169,13 @@ export function killEnemy(world: World, enemy: Enemy, hero: Hero | null): void {
   if (hero) hero.kills++;
   world.emit({ t: "death", id: enemy.id, x: enemy.x, y: enemy.y, kind: enemy.def.id, by: hero?.id ?? "" });
   awardGoldOnKill(world, enemy.def.id, enemy.x, enemy.y);
+  if (enemy.def.behavior === "loot") {
+    world.addPickup(world.rng() < 0.5 ? "ammo" : "med", enemy.x, enemy.y);
+    world.emit({ t: "announce", text: "The Sack Rat spills its loot!", kind: "info" });
+  }
   if (enemy.def.behavior === "boss") {
     world.bossActive = false;
-    world.emit({ t: "announce", text: "The Rat Ogre is slain!", kind: "boss" });
+    world.emit({ t: "announce", text: `The ${enemy.def.name} is slain!`, kind: "boss" });
   }
 }
 
@@ -166,9 +193,9 @@ function awardGoldOnKill(world: World, enemyId: EnemyId, x: number, y: number): 
 export function releaseGrab(world: World, enemy: Enemy): void {
   const hero = world.heroes.get(enemy.grabbedId);
   enemy.grabbedId = "";
-  if (enemy.state === "drag") {
+  if (enemy.state === "drag" || enemy.state === "pin") {
+    enemy.cooldown = enemy.state === "drag" ? 6 : RUNNER.cooldown;
     enemy.state = "chase";
-    enemy.cooldown = 6;
   }
   if (!hero || hero.grabbedBy !== enemy.id) return;
   hero.grabbedBy = "";

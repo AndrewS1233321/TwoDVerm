@@ -31,6 +31,7 @@ import {
   elvishWrathShot,
   RIPOSTE,
   bowDrawDamage,
+  SHIELD,
   SMOKE_BOMB,
   smokeCloudRadius,
   stepMovement,
@@ -701,11 +702,12 @@ function tryPush(world: World, hero: Hero): void {
   for (const e of world.enemies.values()) {
     if (!inAttackArc(hero.x, hero.y, hero.radius, hero.facing, PUSH.reach, PUSH.arc, e.x, e.y, e.radius)) continue;
     if (e.def.staggerResist > PUSH.power) continue;
-    if (e.state === "drag") {
+    if (e.grabbedId) {
       damageEnemy(world, hero, e, { damage: 1, stagger: PUSH.power, srcX: hero.x, srcY: hero.y });
       continue;
     }
-    staggerEnemy(e, MELEE.staggerTime);
+    if (e.def.shield) world.emit({ t: "block", id: e.id, x: e.x, y: e.y, broke: true });
+    staggerEnemy(e, e.def.shield ? SHIELD.breakStagger : MELEE.staggerTime);
     if (hero.invisT <= 0) e.aggro = true;
     const a = Math.atan2(e.y - hero.y, e.x - hero.x);
     e.kvx = Math.cos(a) * PUSH.knockback;

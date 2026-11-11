@@ -10,8 +10,13 @@ import {
   inAttackArc,
   moveCircle,
   raycastWalls,
+  RUNNER,
+  SACK_RAT,
+  STORMFIEND_FIRE,
   turnTowards,
+  WARPFIRE,
   collideCircle,
+  type AttackDef,
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, enemyMeleeHits, newAttack } from "./attacks";
 import { damageHero, downHero, releaseGrab, strikeHero } from "./damage";
@@ -21,9 +26,12 @@ import type { World } from "./World";
 const DIRECT_CHASE_DISTANCE = 220;
 const RETARGET_INTERVAL = 0.5;
 const KNOCKBACK_DECAY = 9;
+const CHAIN_WINDUP_MUL = 0.35;
+const CHAIN_RECOVERY_MUL = 0.35;
 
 export function updateEnemy(world: World, e: Enemy, dt: number): void {
   e.cooldown -= dt;
+  e.fireCd -= dt;
   applyKnockback(world, e, dt);
 
   // Test dummies never chase or attack; they only take hits.
@@ -31,6 +39,10 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
     e.state = "idle";
     e.attack = null;
     e.aggro = false;
+    return;
+  }
+  if (e.def.behavior === "loot") {
+    updateLoot(world, e, dt);
     return;
   }
 
@@ -53,8 +65,17 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
 
   switch (e.def.behavior) {
     case "melee":
-    case "boss":
       updateMelee(world, e, target, dt);
+      break;
+    case "boss":
+      if (e.def.warpfire) updateStormfiend(world, e, target, dt);
+      else updateMelee(world, e, target, dt);
+      break;
+    case "runner":
+      updateRunner(world, e, target, dt);
+      break;
+    case "warpfire":
+      updateWarpfire(world, e, target, dt);
       break;
     case "gunner":
       updateGunner(world, e, target, dt);
@@ -107,7 +128,7 @@ function validTarget(world: World, id: string): boolean {
 }
 
 function pickTarget(world: World, e: Enemy): string {
-  if (e.def.behavior === "hooker") return pickIsolatedHero(world, e);
+  if (e.def.behavior === "hooker" || e.def.behavior === "runner") return pickIsolatedHero(world, e);
   const current = world.heroes.get(e.targetId);
   if (current && current.def.ult === "impenetrable" && current.ultActiveT > 0) return current.id;
   if (e.def.behavior === "boss" && e.lastDamagerId && world.rng() < 0.3 && validTarget(world, e.lastDamagerId)) {
@@ -188,6 +209,12 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
     applyLunge(world, e, a, dt);
     if (done) {
+      if (e.chainLeft > 0 && target && target.state !== "dead") {
+        e.chainLeft--;
+        e.attack = newAttack(chainSwing(a.def, e.chainLeft, true), "enemy");
+        e.actionSeq++;
+        return;
+      }
       e.attack = null;
       e.state = "chase";
       e.stateT = 0;
@@ -203,13 +230,268 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
   if (gap <= attack.reach * 0.85 && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
     const off = faceToward(e, target.x, target.y, 1, dt);
     if (off < 0.5 && e.cooldown <= 0) {
-      e.attack = newAttack(attack, "enemy");
+      e.chainLeft = Math.max(0, (attack.chain ?? 1) - 1);
+      e.attack = newAttack(chainSwing(attack, e.chainLeft, false), "enemy");
       e.state = "attack";
       e.actionSeq++;
     }
     return;
   }
   moveToward(world, e, target.x, target.y, 1, dt);
+}
+
+/** Flurry swings: follow-ups wind up fast and every swing but the last recovers quickly. */
+function chainSwing(def: AttackDef, left: number, followUp: boolean): AttackDef {
+  if (!def.chain || def.chain <= 1) return def;
+  return {
+    ...def,
+    windup: followUp ? def.windup * CHAIN_WINDUP_MUL : def.windup,
+    recovery: left > 0 ? def.recovery * CHAIN_RECOVERY_MUL : def.recovery,
+  };
+}
+
+/** Damages every hero in a cone in front of `e` with line of sight; dodging heroes are skipped. */
+export function sprayCone(world: World, e: Enemy, range: number, arc: number, dps: number, dt: number): void {
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.iframesT > 0) continue;
+    if (!inAttackArc(e.x, e.y, e.radius, e.facing, range, arc, h.x, h.y, h.radius)) continue;
+    if (!hasLineOfSight(world.level, world.gateOpen, e.x, e.y, h.x, h.y)) continue;
+    damageHero(world, h, dps * dt);
+  }
+}
+
+interface SprayTuning {
+  windup: number;
+  sprayTime: number;
+  range: number;
+  arc: number;
+  dps: number;
+  sprayTurnRate: number;
+}
+
+/** Shared wind-up / spray step. Returns true while the spray sequence is still running. */
+function stepSpray(world: World, e: Enemy, target: Hero | undefined, t: SprayTuning, dt: number): boolean {
+  if (e.state === "spray_windup") {
+    if (target) faceToward(e, target.x, target.y, 1, dt);
+    e.shotT -= dt;
+    if (e.shotT <= 0) {
+      e.state = "spray";
+      e.shotT = t.sprayTime;
+      e.actionSeq++;
+    }
+    return true;
+  }
+  if (e.state === "spray") {
+    if (target) e.facing = turnTowards(e.facing, angleTo(e.x, e.y, target.x, target.y), t.sprayTurnRate * dt);
+    sprayCone(world, e, t.range, t.arc, t.dps, dt);
+    e.shotT -= dt;
+    return e.shotT > 0;
+  }
+  return false;
+}
+
+function startSpray(e: Enemy, windup: number): void {
+  e.state = "spray_windup";
+  e.shotT = windup;
+  e.attack = null;
+  e.actionSeq++;
+}
+
+function updateWarpfire(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  if (e.state === "spray_windup" || e.state === "spray") {
+    if (stepSpray(world, e, target, WARPFIRE, dt)) return;
+    e.state = "reload";
+    e.shotT = WARPFIRE.reloadTime;
+    e.actionSeq++;
+    return;
+  }
+  if (e.state === "reload") {
+    e.shotT -= dt;
+    if (e.shotT <= 0) e.state = "chase";
+    return;
+  }
+  e.state = "chase";
+  if (!target) return;
+  const d = dist(e.x, e.y, target.x, target.y);
+  if (d <= WARPFIRE.approachRange && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
+    startSpray(e, WARPFIRE.windup);
+    world.emit({ t: "announce", text: "Warpfire Thrower!", kind: "special" });
+    return;
+  }
+  moveToward(world, e, target.x, target.y, 1, dt);
+}
+
+/** Rat Ogre melee, plus warpfire bursts at heroes who keep their distance. */
+function updateStormfiend(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  if (e.state === "spray_windup" || e.state === "spray") {
+    if (stepSpray(world, e, target, STORMFIEND_FIRE, dt)) return;
+    e.state = "chase";
+    e.fireCd = STORMFIEND_FIRE.cooldown;
+    e.cooldown = 0.4;
+    e.actionSeq++;
+    return;
+  }
+  if (e.state !== "attack" && target && e.fireCd <= 0) {
+    const d = dist(e.x, e.y, target.x, target.y);
+    if (
+      d >= STORMFIEND_FIRE.minRange &&
+      d <= STORMFIEND_FIRE.maxRange &&
+      hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)
+    ) {
+      startSpray(e, STORMFIEND_FIRE.windup);
+      return;
+    }
+  }
+  updateMelee(world, e, target, dt);
+}
+
+/** Stalks towards an isolated hero, crouches, leaps, and pins whoever it lands on. */
+function updateRunner(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  switch (e.state) {
+    case "pin":
+      updatePin(world, e, dt);
+      return;
+    case "crouch":
+      if (target) faceToward(e, target.x, target.y, 2, dt);
+      e.shotT -= dt;
+      if (e.shotT <= 0) {
+        e.leapAngle = target ? angleTo(e.x, e.y, target.x, target.y) : e.facing;
+        e.facing = e.leapAngle;
+        e.state = "leap";
+        e.shotT = RUNNER.leapMaxTime;
+        e.actionSeq++;
+      }
+      return;
+    case "leap":
+      updateLeap(world, e, dt);
+      return;
+    default: {
+      e.state = "stalk";
+      if (!target) return;
+      const d = dist(e.x, e.y, target.x, target.y);
+      if (
+        e.cooldown <= 0 &&
+        d <= RUNNER.leapRange &&
+        target.state !== "grabbed" &&
+        target.state !== "downed" &&
+        hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)
+      ) {
+        e.state = "crouch";
+        e.shotT = RUNNER.leapWindup;
+        e.actionSeq++;
+        return;
+      }
+      moveToward(world, e, target.x, target.y, 1, dt);
+    }
+  }
+}
+
+function updateLeap(world: World, e: Enemy, dt: number): void {
+  const step = RUNNER.leapSpeed * dt;
+  const dx = Math.cos(e.leapAngle) * step;
+  const dy = Math.sin(e.leapAngle) * step;
+  const p = moveCircle(world.level, world.gateOpen, e.x, e.y, e.radius, dx, dy);
+  const moved = Math.hypot(p.x - e.x, p.y - e.y);
+  e.x = p.x;
+  e.y = p.y;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.state === "downed" || h.state === "grabbed" || h.invisT > 0) continue;
+    if (dist(e.x, e.y, h.x, h.y) > e.radius + h.radius + RUNNER.leapHitPad) continue;
+    if (h.iframesT > 0) {
+      world.emit({ t: "dodge", id: h.id });
+      continue;
+    }
+    pin(world, e, h);
+    return;
+  }
+  e.shotT -= dt;
+  if (e.shotT <= 0 || moved < step * 0.4) {
+    e.cooldown = RUNNER.cooldown;
+    e.state = "staggered";
+    e.stateT = RUNNER.recoverTime * 0.5;
+    e.actionSeq++;
+  }
+}
+
+function pin(world: World, e: Enemy, hero: Hero): void {
+  e.attack = null;
+  e.state = "pin";
+  e.grabbedId = hero.id;
+  e.actionSeq++;
+  hero.state = "grabbed";
+  hero.grabbedBy = e.id;
+  hero.attack = null;
+  hero.heavyQueued = false;
+  hero.actionSeq++;
+  world.emit({ t: "grab", id: hero.id, by: e.id });
+  world.emit({ t: "announce", text: `${hero.name} is pinned by a Gutter Runner!`, kind: "special" });
+}
+
+function updatePin(world: World, e: Enemy, dt: number): void {
+  const hero = world.heroes.get(e.grabbedId);
+  if (!hero || hero.state !== "grabbed") {
+    releaseGrab(world, e);
+    return;
+  }
+  e.x = hero.x + Math.cos(e.facing + Math.PI) * 4;
+  e.y = hero.y + Math.sin(e.facing + Math.PI) * 4;
+  damageHero(world, hero, RUNNER.pinDps * dt);
+}
+
+/** Sack Rat: idles until it sees the party, then runs away; escapes if it gets clear. */
+function updateLoot(world: World, e: Enemy, dt: number): void {
+  if (e.state === "staggered") {
+    e.stateT -= dt;
+    if (e.stateT <= 0) e.state = "flee";
+    return;
+  }
+  let nearest: Hero | null = null;
+  let nearestD = Infinity;
+  for (const h of world.standingHeroes()) {
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d < nearestD) {
+      nearestD = d;
+      nearest = h;
+    }
+  }
+  const visible = !!nearest && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, nearest.x, nearest.y);
+  if (e.state !== "flee") {
+    if (nearest && (e.aggro || (visible && nearestD < SACK_RAT.fleeSight))) {
+      e.state = "flee";
+      e.aggro = true;
+      e.actionSeq++;
+    }
+    return;
+  }
+  if (!nearest) return;
+  if (!visible && nearestD > SACK_RAT.escapeDistance) {
+    e.escapeT += dt;
+    if (e.escapeT > SACK_RAT.escapeTime) {
+      world.enemies.delete(e.id);
+      world.emit({ t: "announce", text: "The Sack Rat escaped with its loot!", kind: "info" });
+      return;
+    }
+  } else {
+    e.escapeT = 0;
+  }
+  fleeFrom(world, e, nearest.x, nearest.y, dt);
+}
+
+/** Steps in whichever of 8 directions opens the most distance from (hx, hy) without walking into a wall. */
+function fleeFrom(world: World, e: Enemy, hx: number, hy: number, dt: number): void {
+  const probe = e.def.speed * 0.4;
+  let bestA = angleTo(hx, hy, e.x, e.y);
+  let bestScore = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const p = moveCircle(world.level, world.gateOpen, e.x, e.y, e.radius, Math.cos(a) * probe, Math.sin(a) * probe);
+    const score = dist(p.x, p.y, hx, hy) + Math.hypot(p.x - e.x, p.y - e.y) * 0.5;
+    if (score > bestScore) {
+      bestScore = score;
+      bestA = a;
+    }
+  }
+  walkTo(world, e, e.x + Math.cos(bestA) * 64, e.y + Math.sin(bestA) * 64, 1, dt);
 }
 
 function chooseMeleeAttack(world: World, e: Enemy) {

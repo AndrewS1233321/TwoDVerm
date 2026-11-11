@@ -155,6 +155,60 @@ export const GUNNER = {
   maxShotDistance: 650,
 };
 
+/** Warpfire Thrower: closes in, winds up, then sprays a cone of fire. */
+export const WARPFIRE = {
+  approachRange: 200,
+  windup: 1.1,
+  sprayTime: 3,
+  reloadTime: 4,
+  range: 220,
+  arc: Math.PI * (40 / 180),
+  dps: 18,
+  /** Facing turn rate while spraying (rad/s); slow, so heroes can flank. */
+  sprayTurnRate: 0.9,
+};
+
+/** Stormfiend warpfire arms: shorter bursts than the Warpfire Thrower. */
+export const STORMFIEND_FIRE = {
+  minRange: 160,
+  maxRange: 300,
+  windup: 0.9,
+  sprayTime: 2.2,
+  cooldown: 7,
+  range: 240,
+  arc: Math.PI * (50 / 180),
+  dps: 22,
+  sprayTurnRate: 0.8,
+};
+
+/** Gutter Runner: stalks unseen, leaps at an isolated hero, pins them. */
+export const RUNNER = {
+  leapRange: 220,
+  leapWindup: 0.35,
+  leapSpeed: 620,
+  leapMaxTime: 0.5,
+  /** Distance from the hero at which a leap connects. */
+  leapHitPad: 8,
+  pinDps: 9,
+  recoverTime: 1.2,
+  cooldown: 4,
+};
+
+/** Shield-bearers: guard break duration after a heavy hit or push lands on the shield. */
+export const SHIELD = {
+  breakStagger: 1.5,
+  /** Stagger power that breaks the guard instead of being blocked. */
+  breakPower: 2,
+};
+
+/** Sack Rat: flees when it sees heroes, despawns if it escapes. */
+export const SACK_RAT = {
+  fleeSight: 420,
+  escapeDistance: 900,
+  escapeTime: 6,
+  maxPerLevel: 2,
+};
+
 export const ENEMY_AGGRO = {
   sightRange: 300,
   alwaysRange: 120,
