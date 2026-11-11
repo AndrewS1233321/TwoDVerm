@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Gutter Runner push-block**: while pushing, heroes cannot be pounced;
+  a push that hits the runner knocks it back, stuns for 1.25s, then it
+  flees until its 5s pounce cooldown ends.
 - **Plague Monk combo**: wind-up opener strike, then three no-wind-up
   dashes toward the target; each dash emits a brief white `slashflash`
   attack-arc FX.

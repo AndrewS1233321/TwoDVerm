@@ -53,7 +53,11 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
   }
   if (e.state === "staggered") {
     e.stateT -= dt;
-    if (e.stateT <= 0) e.state = e.aggro ? "chase" : "idle";
+    if (e.stateT <= 0) {
+      // After a push stun (or missed pounce), runners flee until their leap is ready again.
+      if (e.def.behavior === "runner" && e.cooldown > 0) e.state = "flee";
+      else e.state = e.aggro ? "chase" : "idle";
+    }
     return;
   }
 
@@ -432,6 +436,16 @@ function updateRunner(world: World, e: Enemy, target: Hero | undefined, dt: numb
     case "pin":
       updatePin(world, e, dt);
       return;
+    case "flee": {
+      if (e.cooldown <= 0) {
+        e.state = "stalk";
+        e.actionSeq++;
+        return;
+      }
+      const away = target ?? nearestStandingHero(world, e);
+      if (away) fleeFrom(world, e, away.x, away.y, dt);
+      return;
+    }
     case "crouch":
       if (target) faceToward(e, target.x, target.y, 2, dt);
       e.shotT -= dt;
@@ -455,6 +469,7 @@ function updateRunner(world: World, e: Enemy, target: Hero | undefined, dt: numb
         d <= RUNNER.leapRange &&
         target.state !== "grabbed" &&
         target.state !== "downed" &&
+        target.state !== "pushing" &&
         hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)
       ) {
         e.state = "crouch";
@@ -467,6 +482,19 @@ function updateRunner(world: World, e: Enemy, target: Hero | undefined, dt: numb
   }
 }
 
+function nearestStandingHero(world: World, e: Enemy): Hero | undefined {
+  let best: Hero | undefined;
+  let bestD = Infinity;
+  for (const h of world.standingHeroes()) {
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d < bestD) {
+      bestD = d;
+      best = h;
+    }
+  }
+  return best;
+}
+
 function updateLeap(world: World, e: Enemy, dt: number): void {
   const step = RUNNER.leapSpeed * dt;
   const dx = Math.cos(e.leapAngle) * step;
@@ -477,6 +505,8 @@ function updateLeap(world: World, e: Enemy, dt: number): void {
   e.y = p.y;
   for (const h of world.heroes.values()) {
     if (h.state === "dead" || h.state === "downed" || h.state === "grabbed" || h.invisT > 0) continue;
+    // Push-block: while the hero is pushing, the pounce cannot land.
+    if (h.state === "pushing") continue;
     if (dist(e.x, e.y, h.x, h.y) > e.radius + h.radius + RUNNER.leapHitPad) continue;
     if (h.iframesT > 0) {
       world.emit({ t: "dodge", id: h.id });
@@ -487,7 +517,7 @@ function updateLeap(world: World, e: Enemy, dt: number): void {
   }
   e.shotT -= dt;
   if (e.shotT <= 0 || moved < step * 0.4) {
-    e.cooldown = RUNNER.cooldown;
+    e.cooldown = Math.max(e.cooldown, RUNNER.cooldown);
     e.state = "staggered";
     e.stateT = RUNNER.recoverTime * 0.5;
     e.actionSeq++;

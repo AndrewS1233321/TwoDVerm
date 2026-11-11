@@ -31,6 +31,7 @@ import {
   elvishWrathShot,
   RIPOSTE,
   bowDrawDamage,
+  RUNNER,
   SHIELD,
   SMOKE_BOMB,
   smokeCloudRadius,
@@ -45,7 +46,7 @@ import {
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, heroMeleeHits, newAttack } from "./attacks";
 import { damageBarrel, dropBarrel, throwBarrel, tryPickupBarrel, pushBarrels } from "./barrels";
-import { damageEnemy, staggerEnemy } from "./damage";
+import { damageEnemy, releaseGrab, staggerEnemy } from "./damage";
 import type { Enemy, Hero } from "./types";
 import type { World } from "./World";
 
@@ -701,6 +702,10 @@ function tryPush(world: World, hero: Hero): void {
   pushBarrels(world, hero);
   for (const e of world.enemies.values()) {
     if (!inAttackArc(hero.x, hero.y, hero.radius, hero.facing, PUSH.reach, PUSH.arc, e.x, e.y, e.radius)) continue;
+    if (e.def.behavior === "runner") {
+      pushGutterRunner(world, hero, e);
+      continue;
+    }
     if (e.def.staggerResist > PUSH.power) continue;
     if (e.grabbedId) {
       damageEnemy(world, hero, e, { damage: 1, stagger: PUSH.power, srcX: hero.x, srcY: hero.y });
@@ -713,6 +718,19 @@ function tryPush(world: World, hero: Hero): void {
     e.kvx = Math.cos(a) * PUSH.knockback;
     e.kvy = Math.sin(a) * PUSH.knockback;
   }
+}
+
+/** Push-block a Gutter Runner mid-pounce: knock it back, full stun, then it flees until pounce CD. */
+function pushGutterRunner(world: World, hero: Hero, e: Enemy): void {
+  if (e.grabbedId) releaseGrab(world, e);
+  e.attack = null;
+  e.cooldown = Math.max(e.cooldown, RUNNER.cooldown);
+  staggerEnemy(e, RUNNER.pushStun, { force: true });
+  if (hero.invisT <= 0) e.aggro = true;
+  const a = Math.atan2(e.y - hero.y, e.x - hero.x);
+  e.kvx = Math.cos(a) * PUSH.knockback;
+  e.kvy = Math.sin(a) * PUSH.knockback;
+  world.emit({ t: "announce", text: "Gutter Runner staggered!", kind: "special" });
 }
 
 function shoot(world: World, hero: Hero, precision = false, damageOverride?: number): void {

@@ -12,6 +12,7 @@ import {
   enemiesForRaces,
   HEROES,
   rollLevelProperties,
+  RUNNER,
   SHIELD,
   TILE_SIZE,
   tileCenter,
@@ -298,6 +299,87 @@ function place(h: Hero, p: Point): void {
   damageEnemy(world, buddy, runner, { damage: 30, stagger: 1, srcX: buddy.x, srcY: buddy.y });
   check("Teammate hit releases a pin", h.state !== "grabbed" && runner.state !== "pin", `hero ${h.state} runner ${runner.state}`);
   if (world.enemies.has(runner.id)) killEnemy(world, runner, h);
+
+  // Push-block a mid-air pounce: immunity while pushing, then stun + flee.
+  place(h, origin);
+  h.state = "idle";
+  h.grabbedBy = "";
+  h.iframesT = 0;
+  h.facing = 0;
+  h.stamina = h.def.stamina;
+  h.pushCd = 0;
+  const pouncer = world.spawnEnemy("gutterRunner", origin.x + 20, origin.y, true)!;
+  pouncer.x = origin.x + 20;
+  pouncer.y = origin.y;
+  pouncer.state = "leap";
+  pouncer.leapAngle = Math.PI;
+  pouncer.shotT = 1;
+  pouncer.facing = Math.PI;
+  h.state = "pushing";
+  h.stateT = 1;
+  run(world, DT, () => {
+    immortal(world);
+    h.state = "pushing";
+    h.iframesT = 0;
+  });
+  check("Pushing hero cannot be pounced", h.state !== "grabbed" && pouncer.state === "leap", `hero ${h.state} runner ${pouncer.state}`);
+  // Raise block with the runner out of pounce range, then bring it in and push.
+  const pushTick = (input: Partial<InputMessage>): void => {
+    for (const hero of world.heroes.values()) {
+      hero.inputs.push({
+        seq: ++seq,
+        mx: 0,
+        my: 0,
+        aim: 0,
+        aimX: hero.x + 40,
+        aimY: hero.y,
+        attack: false,
+        block: false,
+        interact: false,
+        dodge: false,
+        fire: false,
+        ult: false,
+        ...input,
+      });
+    }
+    world.fx = [];
+    world.step(DT);
+    immortal(world);
+  };
+  h.facing = 0;
+  h.state = "idle";
+  h.stamina = h.def.stamina;
+  h.pushCd = 0;
+  h.grabbedBy = "";
+  pouncer.x = origin.x + 120;
+  pouncer.y = origin.y;
+  pouncer.state = "stalk";
+  pouncer.shotT = 0;
+  pouncer.cooldown = 0;
+  pouncer.grabbedId = "";
+  pushTick({ block: true });
+  check("Hero is blocking before the push", h.state === "blocking", h.state);
+  pouncer.x = origin.x + 28;
+  pouncer.y = origin.y;
+  pouncer.state = "leap";
+  pouncer.leapAngle = Math.PI;
+  pouncer.facing = Math.PI;
+  pouncer.shotT = 1;
+  pushTick({ block: true, attack: true });
+  check(
+    "Push-block stuns a Gutter Runner",
+    pouncer.state === "staggered" && Math.abs(pouncer.stateT - RUNNER.pushStun) < 0.08 && pouncer.cooldown >= RUNNER.cooldown - 0.15,
+    `state ${pouncer.state} stun ${pouncer.stateT.toFixed(2)} cd ${pouncer.cooldown.toFixed(2)} kb ${Math.hypot(pouncer.kvx, pouncer.kvy).toFixed(0)} hero ${h.state}`,
+  );
+  check("Push-block knocks the Gutter Runner back", Math.hypot(pouncer.kvx, pouncer.kvy) > 50);
+  // Finish the stun → flee until cooldown ends.
+  pouncer.stateT = 0.01;
+  run(world, DT * 2, () => immortal(world));
+  check("Stunned Gutter Runner flees after the stun", pouncer.state === "flee", pouncer.state);
+  pouncer.cooldown = 0;
+  run(world, DT * 2, () => immortal(world));
+  check("Gutter Runner stops fleeing when pounce is ready", pouncer.state === "stalk" || pouncer.state === "chase", pouncer.state);
+  if (world.enemies.has(pouncer.id)) killEnemy(world, pouncer, h);
 
   place(h, origin);
   h.hp = h.def.hp;

@@ -199,7 +199,10 @@ export const RUNNER = {
   leapHitPad: 8,
   pinDps: 9,
   recoverTime: 1.2,
-  cooldown: 4,
+  /** Minimum time between pounces; also how long it flees after a push stun. */
+  cooldown: 5,
+  /** Full stun when a hero push-blocks the pounce. */
+  pushStun: 1.25,
 };
 
 /** Shield-bearers: guard break duration after a heavy hit or push lands on the shield. */
