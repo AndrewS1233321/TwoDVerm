@@ -28,11 +28,11 @@ Rat Ogre.
 - Flag: `EnemyDef.ultraElite`. Keep `special` / `elite` false so existing
   Director filters ignore the unit. `enemiesForRaces` also strips
   `ultraElite` from horde / elite / special / boss pools.
-- **Warplock Jezzail** (`behavior: "jezzail"`, tuning `JEZZAIL`): chase until
-  range + LoS, aim 2.2s with a red laser along facing, one hitscan shot
-  (100 dmg / 1 AP / sniper tracer), reload 2s (no laser), then chase and
-  always re-aim. Frontal shield like other shield rats. No Director spawn
-  yet — Testing summon marker `j` only.
+- **Warplock Jezzail** (`behavior: "jezzail"`, tuning `JEZZAIL`): aims at any
+  LoS target (effectively infinite range), aim 2.2s with a red laser along
+  facing, one hitscan shot (100 dmg / 1 AP / sniper tracer), reload 2s (no
+  laser), then chase and always re-aim. Frontal shield like other shield
+  rats. No Director spawn yet — Testing summon marker `j` only.
 
 ## Shared mechanics
 
