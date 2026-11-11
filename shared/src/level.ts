@@ -29,6 +29,8 @@ export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
   w: "warpfire",
   x: "sackRat",
   y: "stormfiend",
+  /** Ultra Elite: Warplock Jezzail (Testing summon pad). */
+  j: "warplockJezzail",
 };
 
 export { DUMMY_SPAWN_MARKERS };

@@ -47,6 +47,19 @@ export class Effects {
 
   tracer(x1: number, y1: number, x2: number, y2: number, kind: string): void {
     const g = this.scene.add.graphics().setDepth(27);
+    if (kind === "jezzail") {
+      g.lineStyle(4, 0xffe8a0, 1);
+      g.lineBetween(x1, y1, x2, y2);
+      g.lineStyle(1.5, 0xffffff, 0.95);
+      g.lineBetween(x1, y1, x2, y2);
+      g.fillStyle(0xfff6d0, 1);
+      g.fillCircle(x1, y1, 5);
+      g.fillStyle(0xff5a3a, 0.9);
+      g.fillCircle(x2, y2, 4);
+      this.sparks(x2, y2, 0xffd27a, 12, 180);
+      this.scene.tweens.add({ targets: g, alpha: 0, duration: 70, onComplete: () => g.destroy() });
+      return;
+    }
     const color = kind === "bullet" ? 0xffd27a : kind === "arrow" ? 0xe8e0d0 : 0xfff0b0;
     g.lineStyle(kind === "gun" ? 3 : 2, color, 0.9);
     g.lineBetween(x1, y1, x2, y2);

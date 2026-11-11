@@ -99,7 +99,17 @@ export interface HeroDef {
   description: string;
 }
 
-export type EnemyBehavior = "melee" | "gunner" | "gas" | "hooker" | "runner" | "warpfire" | "loot" | "boss" | "dummy";
+export type EnemyBehavior =
+  | "melee"
+  | "gunner"
+  | "gas"
+  | "hooker"
+  | "runner"
+  | "warpfire"
+  | "loot"
+  | "boss"
+  | "dummy"
+  | "jezzail";
 
 /** Combat enemies that appear in missions and on testing-zone summon pads. */
 export type CombatEnemyId =
@@ -116,7 +126,8 @@ export type CombatEnemyId =
   | "warpfire"
   | "sackRat"
   | "ogre"
-  | "stormfiend";
+  | "stormfiend"
+  | "warplockJezzail";
 
 /** Training dummies in the Testing / Staging hall (one per armor tier). */
 export type DummyEnemyId = "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy";
@@ -141,6 +152,11 @@ export interface EnemyDef {
   large: boolean;
   special: boolean;
   elite: boolean;
+  /**
+   * Scripted / unfair challenge units. Excluded from Director horde/elite/special
+   * pools until explicitly placed.
+   */
+  ultraElite?: boolean;
   /** Creature race for procgen filters (`none` for dummies / merchant). */
   race: EnemyRace;
   /** Blocks frontal hits until a heavy hit or push breaks its guard. */

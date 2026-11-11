@@ -157,6 +157,19 @@ export const GUNNER = {
   maxShotDistance: 650,
 };
 
+/** Warplock Jezzail: Ultra Elite pavise + sniper team (single entity). */
+export const JEZZAIL = {
+  range: 780,
+  aimTime: 2.2,
+  reloadTime: 2,
+  damage: 100,
+  armorPierce: 1,
+  stagger: 1,
+  blockCost: 2,
+  turnRate: 2.2,
+  maxShotDistance: 900,
+};
+
 /** Warpfire Thrower: closes in, winds up, then sprays a cone of fire. */
 export const WARPFIRE = {
   approachRange: 200,

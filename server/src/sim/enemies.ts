@@ -8,6 +8,7 @@ import {
   hasLineOfSight,
   HOOK,
   inAttackArc,
+  JEZZAIL,
   moveCircle,
   raycastWalls,
   MONK,
@@ -85,6 +86,9 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
       break;
     case "gunner":
       updateGunner(world, e, target, dt);
+      break;
+    case "jezzail":
+      updateJezzail(world, e, target, dt);
       break;
     case "gas":
       updateGas(world, e, target, dt);
@@ -696,6 +700,98 @@ function gunnerShot(world: World, e: Enemy): void {
   world.emit({ t: "tracer", x1: sx, y1: sy, x2: sx + cos * hitT, y2: sy + sin * hitT, kind: "bullet" });
   if (hitHero) {
     strikeHero(world, hitHero, { damage: GUNNER.damage, stagger: 0, blockCost: GUNNER.blockCost, srcX: e.x, srcY: e.y, srcId: e.id });
+  }
+}
+
+/**
+ * Ultra Elite sniper: chase until range+LoS, lock aim 2.2s with laser, one hitscan
+ * shot, reload 2s, then chase again (must fully re-aim — never fire right after reload).
+ */
+function updateJezzail(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  switch (e.state) {
+    case "aim": {
+      if (!target || !hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
+        e.state = "chase";
+        e.actionSeq++;
+        return;
+      }
+      faceToward(e, target.x, target.y, JEZZAIL.turnRate / Math.max(e.def.turnRate, 0.01), dt);
+      e.shotT -= dt;
+      if (e.shotT <= 0) {
+        e.state = "fire";
+        e.actionSeq++;
+      }
+      return;
+    }
+    case "fire": {
+      jezzailShot(world, e);
+      e.state = "reload";
+      e.shotT = JEZZAIL.reloadTime;
+      e.actionSeq++;
+      return;
+    }
+    case "reload":
+      e.shotT -= dt;
+      if (e.shotT <= 0) e.state = "chase";
+      return;
+    default:
+      e.state = "chase";
+      if (!target) return;
+      if (
+        dist(e.x, e.y, target.x, target.y) <= JEZZAIL.range &&
+        hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)
+      ) {
+        e.state = "aim";
+        e.shotT = JEZZAIL.aimTime;
+        e.actionSeq++;
+        if (e.escapeT <= 0) {
+          e.escapeT = 1;
+          world.emit({ t: "announce", text: "Warplock Jezzail!", kind: "special" });
+        }
+        return;
+      }
+      moveToward(world, e, target.x, target.y, 1, dt);
+  }
+}
+
+function jezzailShot(world: World, e: Enemy): void {
+  const angle = e.facing;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const sx = e.x + cos * (e.radius + 8);
+  const sy = e.y + sin * (e.radius + 8);
+  const wall = raycastWalls(world.level, world.gateOpen, sx, sy, angle, JEZZAIL.maxShotDistance);
+  let hitHero: Hero | null = null;
+  let hitT = wall;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.invisT > 0) continue;
+    const dx = h.x - sx;
+    const dy = h.y - sy;
+    const t = dx * cos + dy * sin;
+    if (t < 0 || t > hitT) continue;
+    if (Math.abs(dx * sin - dy * cos) <= h.radius) {
+      hitHero = h;
+      hitT = t;
+    }
+  }
+  world.emit({
+    t: "tracer",
+    x1: sx,
+    y1: sy,
+    x2: sx + cos * hitT,
+    y2: sy + sin * hitT,
+    kind: "jezzail",
+  });
+  if (hitHero) {
+    strikeHero(world, hitHero, {
+      damage: JEZZAIL.damage,
+      stagger: JEZZAIL.stagger,
+      blockCost: JEZZAIL.blockCost,
+      armorPierce: JEZZAIL.armorPierce,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
   }
 }
 

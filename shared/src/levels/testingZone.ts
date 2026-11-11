@@ -11,6 +11,7 @@
  *   1–7  first summon row (slave, clanrat, stormvermin, gunner, gas, hooker, ogre)
  *   8 9 0 q w x y  second row (shield clanrat, shield stormvermin, plague monk,
  *     gutter runner, warpfire, sack rat, stormfiend)
+ *   j  Ultra Elite Warplock Jezzail (third summon mark, below second row)
  *   P  summon portal — far-right spawn point for pad summons
  *
  * Dummy markers are spaced 5 tiles apart (~5 hero diameters at radius 14).
@@ -34,7 +35,7 @@ export const TESTING_ZONE: readonly string[] = [
   "##############...........................................P#",
   "##############.............8...9...0...q...w...x...y......#",
   "##############............................................#",
-  "##############............................................#",
+  "##############.............j..............................#",
   "##############............................................#",
   "##############............................................#",
   "##############............................................#",

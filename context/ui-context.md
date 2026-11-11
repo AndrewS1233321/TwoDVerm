@@ -61,9 +61,13 @@ Until web fonts are added, use `Georgia, serif` for titles and
   slave / clanrat / stormvermin as before; shield variants carry a round
   or tower shield; Plague Monk wears a ragged green robe; Gutter Runner
   is lean and dark with claw tips; Warpfire Thrower has a tank and nozzle;
-  Sack Rat hauls a coin sack; Stormfiend is Rat Ogre–sized with arm cannons.
+  Sack Rat hauls a coin sack; Stormfiend is Rat Ogre–sized with arm cannons;
+  Warplock Jezzail reads as a pavise rat in front with a gunner behind and
+  a long rifle resting on the shield top.
 - Gutter Runners render nearly invisible while stalking; warpfire spray
   shows an orange cone telegraph; leaps leave a short afterimage trail.
+- Jezzail aim draws a red laser along facing to wall/range; the shot uses a
+  bright, short-lived sniper tracer (`kind: "jezzail"`).
 
 ## Feedback
 

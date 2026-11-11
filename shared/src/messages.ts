@@ -73,7 +73,7 @@ export type FxEvent =
   | { t: "block"; id: string; x: number; y: number; broke: boolean }
   | { t: "dodge"; id: string }
   | { t: "death"; id: string; x: number; y: number; kind: string; by: string }
-  | { t: "tracer"; x1: number; y1: number; x2: number; y2: number; kind: "bullet" | "arrow" | "gun" }
+  | { t: "tracer"; x1: number; y1: number; x2: number; y2: number; kind: "bullet" | "arrow" | "gun" | "jezzail" }
   /** Precision shot impact at the aim point (no travel path). */
   | { t: "impact"; x: number; y: number; kind: "arrow" | "gun" }
   | { t: "push"; id: string; x: number; y: number; facing: number }

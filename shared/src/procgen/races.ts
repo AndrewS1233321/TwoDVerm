@@ -31,7 +31,7 @@ export function enemiesForRaces(props: LevelProperties): {
       pools.push(...list);
     }
   }
-  const uniq = [...new Set(pools)];
+  const uniq = [...new Set(pools)].filter((id) => !ENEMIES[id].ultraElite);
   const shieldVariants = new Set(Object.values(SHIELD_VARIANTS));
   const horde = uniq.filter(
     (id) => !ENEMIES[id].elite && !ENEMIES[id].special && ENEMIES[id].behavior === "melee" && !shieldVariants.has(id),

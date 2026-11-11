@@ -12,6 +12,7 @@ import {
   enemiesForRaces,
   GAS,
   HEROES,
+  JEZZAIL,
   rollLevelProperties,
   MONK,
   RUNNER,
@@ -151,6 +152,63 @@ function place(h: Hero, p: Point): void {
   const bullets = fx.filter((e) => e.t === "tracer" && e.kind === "bullet").length;
   const hits = fx.filter((e) => e.t === "hit" && e.id === h.id).length;
   check("Ratling Gunner aims, then fires a stream of bullets", bullets > 5 && hits > 0, `${bullets} bullets, ${hits} hits`);
+}
+{
+  const skaven = enemiesForRaces(rollLevelProperties(1, "grim_causeway", 1));
+  check(
+    "Ultra Elite Jezzail is excluded from Director pools",
+    !skaven.horde.includes("warplockJezzail") &&
+      !skaven.elite.includes("warplockJezzail") &&
+      !skaven.special.includes("warplockJezzail") &&
+      !skaven.bosses.includes("warplockJezzail"),
+  );
+  check("Warplock Jezzail def is ultraElite", !!ENEMIES.warplockJezzail.ultraElite);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const jez = world.spawnEnemy("warplockJezzail", h.x + 160, h.y, true)!;
+  jez.x = h.x + 160;
+  jez.y = h.y;
+  jez.targetId = h.id;
+  jez.aggro = true;
+  jez.state = "chase";
+  jez.escapeT = 0;
+  const duration = JEZZAIL.aimTime + JEZZAIL.reloadTime + JEZZAIL.aimTime + 1;
+  const shotTimes: number[] = [];
+  let elapsed = 0;
+  let announced = false;
+  let aimStartedAt = -1;
+  for (let t = 0; t < duration; t += DT) {
+    for (const hero of world.heroes.values()) hero.inputs.push(idle());
+    immortal(world);
+    const wasAim = jez.state === "aim";
+    world.fx = [];
+    world.step(DT);
+    elapsed += DT;
+    if (!wasAim && jez.state === "aim" && aimStartedAt < 0) aimStartedAt = elapsed;
+    for (const e of world.fx) {
+      if (e.t === "announce" && e.text.includes("Jezzail")) announced = true;
+      if (e.t === "tracer" && e.kind === "jezzail") shotTimes.push(elapsed);
+    }
+  }
+  const aimDelay =
+    aimStartedAt >= 0 && shotTimes[0] !== undefined ? shotTimes[0]! - aimStartedAt : -1;
+  const firstOk = aimDelay >= JEZZAIL.aimTime - DT * 2;
+  const minGap = JEZZAIL.reloadTime + JEZZAIL.aimTime - DT * 3;
+  const gapOk = shotTimes.length >= 2 && shotTimes[1]! - shotTimes[0]! >= minGap;
+  check("Warplock Jezzail announces on first aim", announced);
+  check(
+    "Jezzail first shot waits full aim time",
+    firstOk,
+    `aimDelay=${aimDelay.toFixed(2)} aim=${JEZZAIL.aimTime}`,
+  );
+  check(
+    "Jezzail reloads then re-aims before next shot",
+    gapOk,
+    `shots=${shotTimes.length} gap=${shotTimes.length >= 2 ? (shotTimes[1]! - shotTimes[0]!).toFixed(2) : "n/a"}`,
+  );
 }
 {
   const { world, heroes } = setup(["soldier"]);

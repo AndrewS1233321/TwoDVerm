@@ -10,9 +10,11 @@ import {
   ENEMIES,
   HEROES,
   isHeroId,
+  JEZZAIL,
   MSG,
   parseLevelById,
   parseLevelProps,
+  raycastWalls,
   TILE_FLOOR,
   TILE_GATE,
   TICK_MS,
@@ -504,13 +506,24 @@ export class GameScene extends Phaser.Scene {
           radius: def.radius,
           texture: enemyTextureKey(e.type),
           weaponStyle: enemyWeaponStyle(def.id),
-          showHpAlways: def.special || def.elite,
+          showHpAlways: def.special || def.elite || !!def.ultraElite,
           onSwing: (heavy) => this.sfxAt(heavy ? "heavySwing" : "swing", created.position, 0.35),
         });
         view = created;
         this.enemyViews.set(e.id, view);
       }
       view.update(this.enemyPose(e), delta, this.ground, this.top);
+      if (e.state === "aim" && e.type === "warplockJezzail") {
+        const cos = Math.cos(e.facing);
+        const sin = Math.sin(e.facing);
+        const sx = view.position.x + cos * (def.radius + 8);
+        const sy = view.position.y + sin * (def.radius + 8);
+        const hitT = raycastWalls(this.level, this.room!.state.gateOpen, sx, sy, e.facing, JEZZAIL.range);
+        this.top.lineStyle(2, 0xff2a2a, 0.85);
+        this.top.lineBetween(sx, sy, sx + cos * hitT, sy + sin * hitT);
+        this.top.fillStyle(0xff5a3a, 0.9);
+        this.top.fillCircle(sx, sy, 2.5);
+      }
       if (e.state === "leap") {
         this.effects.sparks(view.position.x, view.position.y, 0x8a3fa0, 3, 40);
         view.afterimage();
@@ -722,7 +735,11 @@ export class GameScene extends Phaser.Scene {
         }
         case "tracer":
           this.effects.tracer(e.x1, e.y1, e.x2, e.y2, e.kind);
-          this.sfxAt(e.kind === "bullet" ? "bullet" : e.kind === "arrow" ? "arrow" : "gun", { x: e.x1, y: e.y1 }, e.kind === "bullet" ? 0.4 : 0.8);
+          this.sfxAt(
+            e.kind === "bullet" ? "bullet" : e.kind === "arrow" ? "arrow" : "gun",
+            { x: e.x1, y: e.y1 },
+            e.kind === "jezzail" ? 1 : e.kind === "bullet" ? 0.4 : 0.8,
+          );
           break;
         case "impact":
           this.effects.impact(e.x, e.y, e.kind);

@@ -21,6 +21,18 @@ Rat Ogre.
 | `warpfire` | Warpfire Thrower | Special (fire cone) |
 | `sackRat` | Sack Rat | Loot runner (ambient, not a Director special) |
 | `stormfiend` | Stormfiend | Monster / Wastes boss pool (400px / 50° green warpflame cone; ground burns for 5s) |
+| `warplockJezzail` | Warplock Jezzail | Ultra Elite (pavise + sniper team as one entity; Testing pad only) |
+
+## Ultra Elite
+
+- Flag: `EnemyDef.ultraElite`. Keep `special` / `elite` false so existing
+  Director filters ignore the unit. `enemiesForRaces` also strips
+  `ultraElite` from horde / elite / special / boss pools.
+- **Warplock Jezzail** (`behavior: "jezzail"`, tuning `JEZZAIL`): chase until
+  range + LoS, aim 2.2s with a red laser along facing, one hitscan shot
+  (100 dmg / 1 AP / sniper tracer), reload 2s (no laser), then chase and
+  always re-aim. Frontal shield like other shield rats. No Director spawn
+  yet — Testing summon marker `j` only.
 
 ## Shared mechanics
 
@@ -52,9 +64,10 @@ Rat Ogre.
 ## Testing zone
 
 Second summon-pad row: `8 9 0 q w x y` for the seven new enemies.
+Ultra Elite pad: `j` → Warplock Jezzail (below the second row).
 
 ## Tuning
 
 Numbers live in each enemy def and in `shared/src/tuning.ts`
-(`WARPFIRE`, `STORMFIEND_FIRE`, `RUNNER`, `SHIELD`, `SACK_RAT`). Tweaks
-are one-prompt changes after playtest.
+(`WARPFIRE`, `STORMFIEND_FIRE`, `RUNNER`, `SHIELD`, `SACK_RAT`, `JEZZAIL`).
+Tweaks are one-prompt changes after playtest.

@@ -305,6 +305,46 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
       g.fillRect(cx - R * 1.55, cy - R * 0.12, R * 0.35, R * 0.24);
     },
   },
+  /** Fantasy Warplock Jezzail: pavise rat in front, gunner behind, long rifle on shield top. */
+  warplockJezzail: {
+    fur: 0x5a4a3c,
+    width: 2.15,
+    extra: (g, cx, cy, R) => {
+      // Gunner body (behind / slightly left).
+      g.fillStyle(0x6b5a48);
+      g.fillEllipse(cx - R * 0.85, cy - R * 0.15, R * 1.15, R * 1.05);
+      g.fillStyle(0x5a3b22);
+      g.fillRect(cx - R * 1.55, cy - R * 0.55, R * 0.55, R * 0.95);
+      // Pavise shield (front-right).
+      g.fillStyle(0x8a7a60);
+      g.fillRoundedRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3, R * 0.12);
+      g.lineStyle(TEX_SCALE, 0x3a3228, 1);
+      g.strokeRoundedRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3, R * 0.12);
+      g.fillStyle(0xc9a14a, 0.85);
+      g.fillCircle(cx + R * 0.55, cy, R * 0.14);
+      g.lineStyle(TEX_SCALE * 0.8, 0x5a4028, 0.9);
+      g.lineBetween(cx + R * 0.55, cy - R * 0.7, cx + R * 0.55, cy + R * 0.7);
+      // Shield bearer peeking at the rim.
+      g.fillStyle(0x5a4a3c);
+      g.fillCircle(cx + R * 0.05, cy + R * 0.55, R * 0.42);
+      g.fillStyle(0x2a2218);
+      g.fillTriangle(
+        cx + R * 0.25,
+        cy + R * 0.35,
+        cx + R * 0.55,
+        cy + R * 0.15,
+        cx + R * 0.45,
+        cy + R * 0.55,
+      );
+      // Long jezzail resting on the pavise top, barrel pointing forward.
+      g.fillStyle(0x2b2b2e);
+      g.fillRect(cx - R * 0.55, cy - R * 1.28, R * 2.85, R * 0.22);
+      g.fillStyle(0xb08d3a);
+      g.fillCircle(cx - R * 0.35, cy - R * 1.17, R * 0.16);
+      g.fillStyle(0x7cff4f, 0.95);
+      g.fillCircle(cx + R * 2.2, cy - R * 1.17, R * 0.1);
+    },
+  },
 };
 
 function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
