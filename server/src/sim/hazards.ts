@@ -1,5 +1,5 @@
 import { dist, GAS, STORMFIEND_FIRE } from "@twodverm/shared";
-import { damageEnemy, damageHero } from "./damage";
+import { damageEnemy, damageHero, killEnemy } from "./damage";
 import type { World } from "./World";
 
 export function updateHazards(world: World, dt: number): void {
@@ -30,11 +30,12 @@ export function updateHazards(world: World, dt: number): void {
       if (h.state === "dead") continue;
       if (dist(h.x, h.y, hz.x, hz.y) <= hz.radius + h.radius * 0.5) damageHero(world, h, GAS.heroDps * dt);
     }
+    // Poison cooks any rat in the cloud (including other Globadiers); bosses only immune.
     for (const e of [...world.enemies.values()]) {
-      if (e.def.behavior === "gas" || e.def.behavior === "boss") continue;
-      if (dist(e.x, e.y, hz.x, hz.y) > hz.radius) continue;
+      if (e.def.behavior === "boss") continue;
+      if (dist(e.x, e.y, hz.x, hz.y) > hz.radius + e.radius * 0.5) continue;
       e.hp -= GAS.enemyDps * dt;
-      if (e.hp <= 0) damageEnemy(world, null, e, { damage: 1, stagger: 0, srcX: hz.x, srcY: hz.y });
+      if (e.hp <= 0) killEnemy(world, e, null);
     }
   }
 }

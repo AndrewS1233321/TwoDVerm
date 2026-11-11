@@ -131,8 +131,8 @@ export const HOOK = {
 };
 
 export const GAS = {
-  throwRangeMin: 180,
-  throwRangeMax: 340,
+  throwRangeMin: 360,
+  throwRangeMax: 680,
   fleeDistance: 130,
   cooldown: 6,
   windup: 0.8,
@@ -140,7 +140,8 @@ export const GAS = {
   cloudRadius: 72,
   cloudTime: 6,
   heroDps: 10,
-  enemyDps: 5,
+  /** Poison cloud also cooks other rats (bosses immune). */
+  enemyDps: 10,
 };
 
 export const GUNNER = {

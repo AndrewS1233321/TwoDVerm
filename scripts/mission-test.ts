@@ -10,6 +10,7 @@ import {
   DT,
   ENEMIES,
   enemiesForRaces,
+  GAS,
   HEROES,
   rollLevelProperties,
   MONK,
@@ -161,6 +162,47 @@ function place(h: Hero, p: Point): void {
     for (const z of world.hazards.values()) if (z.kind === "gas") sawGas = true;
   });
   check("Globadier throws a gas cloud that hurts", sawGas && h.hp < hp0, `hp ${hp0} -> ${h.hp.toFixed(0)}`);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const gas = world.spawnEnemy("gas", h.x + 500, h.y, true)!;
+  gas.x = h.x + 500;
+  gas.y = h.y;
+  gas.cooldown = 0;
+  gas.targetId = h.id;
+  gas.aggro = true;
+  let threw = false;
+  run(world, 4, () => {
+    immortal(world);
+    for (const z of world.hazards.values()) if (z.kind === "globe" || z.kind === "gas") threw = true;
+  });
+  check("Globadier can throw at long range through open space", threw, `range ${GAS.throwRangeMax}`);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  const origin = world.level.playerStarts[0]!;
+  place(h, origin);
+  // Spawn a cloud on top of a clanrat and confirm poison damages rats.
+  const rat = world.spawnEnemy("clanrat", origin.x + 40, origin.y, true)!;
+  rat.x = origin.x + 40;
+  rat.y = origin.y;
+  const hp0 = rat.hp;
+  world.hazards.set("test-gas", {
+    id: "test-gas",
+    kind: "gas",
+    x: rat.x,
+    y: rat.y,
+    fromX: rat.x,
+    fromY: rat.y,
+    radius: GAS.cloudRadius,
+    timeLeft: 2,
+    duration: 2,
+  });
+  run(world, 1.2, () => immortal(world));
+  check("Poison gas damages enemies", rat.hp < hp0 || !world.enemies.has(rat.id), `hp ${rat.hp}/${hp0}`);
 }
 
 // The director sends hordes and specials over time.

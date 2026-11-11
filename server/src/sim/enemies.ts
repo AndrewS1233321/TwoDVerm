@@ -725,19 +725,19 @@ function updateGas(world: World, e: Enemy, target: Hero | undefined, dt: number)
   e.state = "chase";
   if (!target) return;
   const d = dist(e.x, e.y, target.x, target.y);
-  const visible = hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y);
   if (d < GAS.fleeDistance) {
     const away = angleTo(target.x, target.y, e.x, e.y);
     walkTo(world, e, e.x + Math.cos(away) * 64, e.y + Math.sin(away) * 64, 1, dt);
     return;
   }
-  if (visible && d <= GAS.throwRangeMax && e.cooldown <= 0) {
+  // Globes fly through walls — only distance matters, not line of sight.
+  if (d <= GAS.throwRangeMax && e.cooldown <= 0) {
     e.state = "throw";
     e.shotT = GAS.windup;
     e.actionSeq++;
     return;
   }
-  if (!visible || d > GAS.throwRangeMin + 60) moveToward(world, e, target.x, target.y, 1, dt);
+  if (d > GAS.throwRangeMin + 60) moveToward(world, e, target.x, target.y, 1, dt);
   else faceToward(e, target.x, target.y, 1, dt);
 }
 

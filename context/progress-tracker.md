@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Globadier gas**: throw range doubled (max 680); globes no longer need
+  line of sight (fly through walls); poison cloud damages other enemies
+  at `enemyDps` 10 (bosses still immune).
 - **Gutter Runner leap speed**: pounce travel reduced 25% (`leapSpeed`
   465, was 620).
 - **Plague Monk flurry**: no more dash strikes. In melee it chases the
