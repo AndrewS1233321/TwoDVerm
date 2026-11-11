@@ -9,12 +9,16 @@ Update this file after every meaningful implementation change.
 ## Current Goal
 
 - Playtest Default, Testing zone, and The Gingey Wastes expedition
-  loop; playtest the five authored Wastes missions and the new Skaven
-  roster (shields, Plague Monk, Gutter Runner, Warpfire, Sack Rat,
-  Stormfiend) and tune numbers from feedback.
+  loop; playtest Skaven and Chaos Rotblood rosters from the Testing
+  summon pads and tune numbers from feedback.
 
 ## Completed
 
+- **Chaos Rotblood roster** (spec `16-chaos-roster.md`): Fanatic, Raider,
+  Bulwark, Savage (flurry), Mauler, Chaos Warrior, Lifeleech (teleport +
+  dodgeable drain), Blightstormer (chasing storm), Chaos Spawn, Bile Troll
+  (bile spit + regen). Humanoid sprites; Testing Chaos summon row; Chaos
+  race kits live in `enemiesForRaces` (Default mission still Skaven).
 - **Warplock Jezzail (Ultra Elite)**: `ultraElite` flag + `behavior:
   "jezzail"`; HP 110 / speed 5 / shield / infinite range (LoS only); aim
   2.2s with red laser, hitscan 100 dmg / 1 AP, reload 2s then full

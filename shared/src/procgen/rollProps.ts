@@ -19,7 +19,7 @@ const LOCATION_TYPE_BIAS: Record<ExpeditionLocationId, LevelType[]> = {
 
 /**
  * Rolls level properties for a wastes stop.
- * Primary race stays skaven until other race kits exist; allowable may list stubs.
+ * Primary race stays skaven; allowable may include Chaos (live kit) and other stubs.
  */
 export function rollLevelProperties(
   stop: number,

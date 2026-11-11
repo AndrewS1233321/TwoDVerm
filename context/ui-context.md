@@ -68,6 +68,11 @@ Until web fonts are added, use `Georgia, serif` for titles and
   shows an orange cone telegraph; leaps leave a short afterimage trail.
 - Jezzail aim draws a red laser along facing to wall/range; the shot uses a
   bright, short-lived sniper tracer (`kind: "jezzail"`).
+- Chaos Rotblood looks are biped humanoids (not rats): Fanatic/Raider/Bulwark
+  (shield), Savage (tattooed dual-axe), Mauler (helmet), Chaos Warrior (plate),
+  Lifeleech (hood + staff), Blightstormer (mask + book), Chaos Spawn (tentacles),
+  Bile Troll (green bulk + belly maw). Blightstormer cast shows green tendrils;
+  storms are pulsing green vortices; bile is a green ground puddle.
 
 ## Feedback
 

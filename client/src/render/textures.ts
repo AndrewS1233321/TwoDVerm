@@ -24,7 +24,16 @@ export function handOffset(radius: number): { x: number; y: number } {
   return { x: radius * 0.45, y: radius * 0.6 };
 }
 
-export type DrawnWeaponStyle = WeaponStyle | "ratblade" | "hookpole" | "repeater" | "longbow" | "handgun" | "pistols";
+export type DrawnWeaponStyle =
+  | WeaponStyle
+  | "ratblade"
+  | "hookpole"
+  | "repeater"
+  | "longbow"
+  | "handgun"
+  | "pistols"
+  | "chaosAxe"
+  | "chaosSword";
 
 export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: number }> = {
   greatsword: { length: 46, handle: 4 },
@@ -40,6 +49,8 @@ export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: num
   longbow: { length: 36, handle: 4 },
   handgun: { length: 34, handle: 4 },
   pistols: { length: 18, handle: 3 },
+  chaosAxe: { length: 34, handle: 4 },
+  chaosSword: { length: 30, handle: 4 },
 };
 
 export function rangedWeaponStyle(heroId: HeroId): DrawnWeaponStyle {
@@ -61,10 +72,30 @@ export function enemyWeaponStyle(id: EnemyId): keyof typeof WEAPON_INFO | null {
       return "claws";
     case "hooker":
       return "hookpole";
+    case "fanatic":
+    case "raider":
+    case "bulwark":
+      return "chaosSword";
+    case "savage":
+    case "mauler":
+    case "chaosWarrior":
+    case "bileTroll":
+      return "chaosAxe";
     default:
       return null;
   }
 }
+
+const CHAOS_HUMANOIDS: EnemyId[] = [
+  "fanatic",
+  "raider",
+  "bulwark",
+  "savage",
+  "mauler",
+  "chaosWarrior",
+  "lifeleech",
+  "blightstormer",
+];
 
 export function generateTextures(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -315,11 +346,11 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
       g.fillEllipse(cx - R * 0.85, cy - R * 0.15, R * 1.15, R * 1.05);
       g.fillStyle(0x5a3b22);
       g.fillRect(cx - R * 1.55, cy - R * 0.55, R * 0.55, R * 0.95);
-      // Pavise shield (front-right).
+      // Pavise shield (front-right). Use fillRect — rounded helpers have failed to rasterize.
       g.fillStyle(0x8a7a60);
-      g.fillRoundedRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3, R * 0.12);
+      g.fillRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3);
       g.lineStyle(TEX_SCALE, 0x3a3228, 1);
-      g.strokeRoundedRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3, R * 0.12);
+      g.strokeRect(cx + R * 0.15, cy - R * 1.15, R * 0.85, R * 2.3);
       g.fillStyle(0xc9a14a, 0.85);
       g.fillCircle(cx + R * 0.55, cy, R * 0.14);
       g.lineStyle(TEX_SCALE * 0.8, 0x5a4028, 0.9);
@@ -356,6 +387,14 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
     drawStormfiend(scene, g);
     return;
   }
+  if (id === "chaosSpawn") {
+    drawChaosSpawn(scene, g);
+    return;
+  }
+  if (id === "bileTroll") {
+    drawBileTroll(scene, g);
+    return;
+  }
   if (
     id === "dummy" ||
     id === "dummyLight" ||
@@ -368,6 +407,10 @@ function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
   }
   if (id === "merchant") {
     drawMerchant(scene, g);
+    return;
+  }
+  if (CHAOS_HUMANOIDS.includes(id)) {
+    drawChaosHumanoid(scene, g, id);
     return;
   }
   const def = ENEMIES[id];
@@ -584,6 +627,122 @@ function drawStormfiend(scene: Phaser.Scene, g: G): void {
   finish(scene, g, enemyTextureKey("stormfiend"), size, size);
 }
 
+/** Rotblood humanoids — biped Nurgle greens/browns, not rat silhouettes. */
+function drawChaosHumanoid(scene: Phaser.Scene, g: G, id: EnemyId): void {
+  const def = ENEMIES[id];
+  const R = def.radius * TEX_SCALE;
+  const w = R * 4.6;
+  const h = R * 4.4;
+  const cx = w / 2;
+  const cy = h / 2;
+  const skin =
+    id === "savage" ? 0x6a5040 : id === "chaosWarrior" ? 0x4a4548 : id === "lifeleech" || id === "blightstormer" ? 0x5a6a48 : 0x6b5a4a;
+  const cloth = id === "fanatic" ? 0x3a4a28 : id === "chaosWarrior" ? 0x3a3e45 : 0x4a3a28;
+
+  g.fillStyle(cloth);
+  g.fillEllipse(cx - R * 0.05, cy + R * 0.35, R * 1.7, R * 2.1);
+  g.fillStyle(skin);
+  g.fillCircle(cx + R * 0.35, cy - R * 0.55, R * 0.62);
+  g.fillStyle(0x2a2218);
+  if (id === "lifeleech") {
+    g.fillEllipse(cx + R * 0.35, cy - R * 0.95, R * 1.1, R * 0.55);
+    g.fillStyle(0x7cff4f, 0.9);
+    g.fillCircle(cx + R * 0.55, cy - R * 0.55, R * 0.12);
+    g.fillCircle(cx + R * 0.2, cy - R * 0.55, R * 0.12);
+    g.fillStyle(0x5a4028);
+    g.fillRect(cx + R * 0.85, cy - R * 0.2, R * 0.22, R * 1.6);
+    g.fillStyle(0x8a7a60);
+    g.fillCircle(cx + R * 0.96, cy - R * 0.35, R * 0.28);
+  } else if (id === "blightstormer") {
+    g.fillStyle(0x5b6068);
+    g.fillRect(cx + R * 0.05, cy - R * 1.05, R * 0.7, R * 0.45);
+    g.fillStyle(0x7cff4f, 0.85);
+    g.fillCircle(cx + R * 0.55, cy - R * 0.55, R * 0.1);
+    g.fillCircle(cx + R * 0.25, cy - R * 0.55, R * 0.1);
+    g.fillStyle(0x3a2a18);
+    g.fillRect(cx + R * 0.9, cy - R * 0.1, R * 0.55, R * 0.7);
+    g.fillStyle(0xc9a14a);
+    g.fillRect(cx + R * 0.95, cy - R * 0.05, R * 0.45, R * 0.12);
+  } else if (id === "chaosWarrior") {
+    g.fillStyle(0x6a7078);
+    g.fillEllipse(cx - R * 0.05, cy + R * 0.2, R * 1.85, R * 2.0);
+    g.fillStyle(0x8a929c);
+    g.fillCircle(cx + R * 0.35, cy - R * 0.55, R * 0.7);
+    g.fillStyle(0xc23b22);
+    g.fillRect(cx - R * 0.35, cy - R * 0.15, R * 0.9, R * 0.2);
+  } else if (id === "mauler") {
+    g.fillStyle(0x5b6068);
+    g.fillEllipse(cx + R * 0.35, cy - R * 0.7, R * 0.95, R * 0.75);
+  } else if (id === "bulwark") {
+    g.fillStyle(0x8a7a60);
+    g.fillRect(cx + R * 0.7, cy - R * 0.9, R * 0.7, R * 1.9);
+    g.lineStyle(TEX_SCALE, 0x3a3228, 1);
+    g.strokeRect(cx + R * 0.7, cy - R * 0.9, R * 0.7, R * 1.9);
+  } else if (id === "savage") {
+    g.fillStyle(0x3a2a18);
+    g.fillEllipse(cx - R * 0.1, cy + R * 0.1, R * 1.5, R * 1.7);
+    g.fillStyle(0x7a3a2a, 0.7);
+    g.fillCircle(cx + R * 0.1, cy + R * 0.2, R * 0.2);
+  } else if (id === "fanatic") {
+    g.fillStyle(0x2a3a18);
+    g.fillEllipse(cx - R * 0.1, cy - R * 0.9, R * 0.9, R * 0.45);
+  }
+  g.fillStyle(0xff2a1a);
+  g.fillCircle(cx + R * 0.55, cy - R * 0.65, R * 0.08);
+  g.fillCircle(cx + R * 0.55, cy - R * 0.4, R * 0.08);
+  g.lineStyle(TEX_SCALE, 0x000000, 0.45);
+  g.strokeEllipse(cx - R * 0.05, cy + R * 0.35, R * 1.7, R * 2.1);
+  finish(scene, g, enemyTextureKey(id), w, h);
+}
+
+function drawChaosSpawn(scene: Phaser.Scene, g: G): void {
+  const R = ENEMIES.chaosSpawn.radius * TEX_SCALE;
+  const size = R * 3.4;
+  const cx = size / 2;
+  const cy = size / 2;
+  g.fillStyle(0x4a3a48);
+  g.fillEllipse(cx - R * 0.1, cy, R * 1.5, R * 2.0);
+  g.fillStyle(0x6a4a5a);
+  g.fillCircle(cx - R * 0.1, cy, R * 0.9);
+  for (const [dx, dy] of [
+    [0.9, -0.7],
+    [1.1, 0],
+    [0.9, 0.7],
+    [0.4, -1.1],
+    [0.4, 1.1],
+  ] as const) {
+    g.fillStyle(0x5a3a4a);
+    g.fillEllipse(cx + R * dx, cy + R * dy, R * 0.85, R * 0.45);
+    g.fillStyle(0x8a3fa0, 0.7);
+    g.fillCircle(cx + R * (dx + 0.35), cy + R * dy, R * 0.14);
+  }
+  g.fillStyle(0xff2a1a);
+  g.fillCircle(cx + R * 0.45, cy - R * 0.2, R * 0.1);
+  g.fillCircle(cx + R * 0.45, cy + R * 0.25, R * 0.1);
+  finish(scene, g, enemyTextureKey("chaosSpawn"), size, size);
+}
+
+function drawBileTroll(scene: Phaser.Scene, g: G): void {
+  const R = ENEMIES.bileTroll.radius * TEX_SCALE;
+  const size = R * 3.4;
+  const cx = size / 2;
+  const cy = size / 2;
+  g.fillStyle(0x3a5a3a);
+  g.fillEllipse(cx - R * 0.15, cy, R * 1.4, R * 2.25);
+  g.fillStyle(0x5a7a4a);
+  g.fillCircle(cx - R * 0.15, cy, R * 0.85);
+  g.fillStyle(0x2a4a2a);
+  g.fillCircle(cx + R * 0.15, cy + R * 0.55, R * 0.45);
+  g.fillStyle(0x7cff4f, 0.85);
+  g.fillCircle(cx + R * 0.25, cy + R * 0.55, R * 0.18);
+  g.fillStyle(0x5b6068);
+  g.fillEllipse(cx + R * 0.55, cy - R * 0.55, R * 0.9, R * 0.7);
+  g.fillStyle(0xff2a1a);
+  g.fillCircle(cx + R * 0.45, cy - R * 0.25, R * 0.08);
+  g.fillCircle(cx + R * 0.45, cy + R * 0.05, R * 0.08);
+  finish(scene, g, enemyTextureKey("bileTroll"), size, size);
+}
+
 function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
   const S = TEX_SCALE;
   const { length } = WEAPON_INFO[style];
@@ -654,6 +813,20 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
       g.beginPath();
       g.arc(42 * S, cy - 3 * S, 4 * S, Math.PI * 0.5, Math.PI * 1.9, false);
       g.strokePath();
+      break;
+    case "chaosSword":
+      g.fillStyle(0x3d3128);
+      g.fillRect(0, cy - 1.2 * S, 6 * S, 2.4 * S);
+      g.fillStyle(0x6a7078);
+      g.fillRect(6 * S, cy - 2 * S, 22 * S, 4 * S);
+      g.fillTriangle(28 * S, cy - 2 * S, 28 * S, cy + 2 * S, 32 * S, cy);
+      break;
+    case "chaosAxe":
+      g.fillStyle(0x3d3128);
+      g.fillRect(0, cy - 1.3 * S, 22 * S, 2.6 * S);
+      g.fillStyle(0x8a929c);
+      g.fillTriangle(18 * S, cy - 1 * S, 28 * S, cy - 8 * S, 30 * S, cy + 1 * S);
+      g.fillTriangle(18 * S, cy + 1 * S, 28 * S, cy + 8 * S, 30 * S, cy - 1 * S);
       break;
     case "claws":
     case "fists":

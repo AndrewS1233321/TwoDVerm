@@ -161,7 +161,13 @@ export type EnemyAiState =
   | "pin"
   /** Warpfire Thrower / Stormfiend: wind-up and spraying fire. */
   | "spray_windup"
-  | "spray";
+  | "spray"
+  /** Lifeleech / Blightstormer cast wind-up. */
+  | "cast"
+  /** Lifeleech draining a grabbed hero. */
+  | "drain"
+  /** Bile Troll kneel-regen interruptible phase. */
+  | "kneel";
 
 export interface Enemy {
   id: string;
@@ -199,8 +205,12 @@ export interface Enemy {
 
 export interface Hazard {
   id: string;
-  /** globe/gas = Globadier; smoke = hero bomb; warpflame = Stormfiend ground burn. */
-  kind: "globe" | "gas" | "smoke" | "warpflame";
+  /**
+   * globe/gas = Globadier; smoke = hero bomb; warpflame = Stormfiend ground burn;
+   * leechbolt = Lifeleech grab projectile; blightstorm = Blightstormer vortex;
+   * bileglobe/bile = Bile Troll spit and ground patch.
+   */
+  kind: "globe" | "gas" | "smoke" | "warpflame" | "leechbolt" | "blightstorm" | "bileglobe" | "bile";
   x: number;
   y: number;
   fromX: number;
@@ -208,6 +218,10 @@ export interface Hazard {
   radius: number;
   timeLeft: number;
   duration: number;
+  /** Owner enemy id for leechbolt / blightstorm (despawn when owner dies). */
+  ownerId?: string;
+  /** Target hero id for leechbolt / blightstorm chase. */
+  targetId?: string;
 }
 
 export interface Pickup {

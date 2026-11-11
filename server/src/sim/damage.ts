@@ -100,6 +100,13 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   const dmg = hit.damage * mul;
 
   enemy.hp -= dmg;
+  enemy.escapeT = 0;
+  if (enemy.def.bile && enemy.state === "kneel") {
+    // Damaging the kneel-regen cancels it (yellow-bar spirit).
+    enemy.state = "chase";
+    enemy.monkOpened = true;
+    enemy.shotT = 0;
+  }
   const hidden = !!hero && hero.invisT > 0;
   if (!hidden) enemy.aggro = true;
   if (hero) {
@@ -122,6 +129,14 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
 
   if (enemy.hp <= 0) {
     killEnemy(world, enemy, hero);
+    return;
+  }
+  if (enemy.def.behavior === "lifeleech" && dmg > 0) {
+    if (enemy.grabbedId) releaseGrab(world, enemy);
+    enemy.attack = null;
+    enemy.state = "chase";
+    enemy.cooldown = 3;
+    enemy.actionSeq++;
     return;
   }
   if (enemy.grabbedId && dmg > 0) {
@@ -164,6 +179,9 @@ export function staggerEnemy(enemy: Enemy, time: number, opts?: { force?: boolea
 
 export function killEnemy(world: World, enemy: Enemy, hero: Hero | null): void {
   if (enemy.grabbedId) releaseGrab(world, enemy);
+  for (const hz of [...world.hazards.values()]) {
+    if (hz.ownerId === enemy.id) world.hazards.delete(hz.id);
+  }
   world.enemies.delete(enemy.id);
   world.totalKills++;
   if (hero) hero.kills++;

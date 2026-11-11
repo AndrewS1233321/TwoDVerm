@@ -109,7 +109,9 @@ export type EnemyBehavior =
   | "loot"
   | "boss"
   | "dummy"
-  | "jezzail";
+  | "jezzail"
+  | "lifeleech"
+  | "blightstormer";
 
 /** Combat enemies that appear in missions and on testing-zone summon pads. */
 export type CombatEnemyId =
@@ -127,7 +129,17 @@ export type CombatEnemyId =
   | "sackRat"
   | "ogre"
   | "stormfiend"
-  | "warplockJezzail";
+  | "warplockJezzail"
+  | "fanatic"
+  | "raider"
+  | "bulwark"
+  | "savage"
+  | "mauler"
+  | "chaosWarrior"
+  | "lifeleech"
+  | "blightstormer"
+  | "chaosSpawn"
+  | "bileTroll";
 
 /** Training dummies in the Testing / Staging hall (one per armor tier). */
 export type DummyEnemyId = "dummy" | "dummyLight" | "dummyMedium" | "dummyHeavy" | "dummySuperHeavy";
@@ -163,4 +175,6 @@ export interface EnemyDef {
   shield?: boolean;
   /** Boss only: sprays warpfire at targets beyond melee range. */
   warpfire?: boolean;
+  /** Boss only: Bile Troll spit + ground bile. */
+  bile?: boolean;
 }

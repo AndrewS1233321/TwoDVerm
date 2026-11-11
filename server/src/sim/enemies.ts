@@ -3,17 +3,22 @@ import {
   angleTo,
   dist,
   ENEMY_AGGRO,
+  BILE_TROLL,
+  BLIGHTSTORM,
   GAS,
   GUNNER,
   hasLineOfSight,
   HOOK,
   inAttackArc,
   JEZZAIL,
+  LIFEECH,
   moveCircle,
   raycastWalls,
   MONK,
   RUNNER,
   SACK_RAT,
+  SAVAGE,
+  SPAWN,
   STORMFIEND_FIRE,
   TILE_SIZE,
   turnTowards,
@@ -76,6 +81,8 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
       break;
     case "boss":
       if (e.def.warpfire) updateStormfiend(world, e, target, dt);
+      else if (e.def.bile) updateBileTroll(world, e, target, dt);
+      else if (e.def.id === "chaosSpawn") updateChaosSpawn(world, e, target, dt);
       else updateMelee(world, e, target, dt);
       break;
     case "runner":
@@ -89,6 +96,12 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
       break;
     case "jezzail":
       updateJezzail(world, e, target, dt);
+      break;
+    case "lifeleech":
+      updateLifeleech(world, e, target, dt);
+      break;
+    case "blightstormer":
+      updateBlightstormer(world, e, target, dt);
       break;
     case "gas":
       updateGas(world, e, target, dt);
@@ -212,34 +225,39 @@ function edgeDistance(e: Enemy, h: Hero): number {
   return dist(e.x, e.y, h.x, h.y) - e.radius - h.radius;
 }
 
+function flurryTuning(e: Enemy): { windup: number; openerHits: number; followHits: number; pause: number; chaseSpeedMul: number } | null {
+  if (e.def.id === "plagueMonk") return MONK;
+  if (e.def.id === "savage") return SAVAGE;
+  return null;
+}
+
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
   if (e.state === "attack" && e.attack) {
     const a = e.attack;
-    const monk = e.def.id === "plagueMonk";
+    const flurry = flurryTuning(e);
     if (target) {
-      if (monk) {
-        // Chase while flurrying so each slash's arc follows the new position.
+      if (flurry) {
         faceToward(e, target.x, target.y, 1.6, dt);
-        moveToward(world, e, target.x, target.y, MONK.chaseSpeedMul, dt);
+        moveToward(world, e, target.x, target.y, flurry.chaseSpeedMul, dt);
       } else if (a.phase === "windup") {
         faceToward(e, target.x, target.y, 0.5, dt);
       }
     }
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
-    if (!monk) applyLunge(world, e, a, dt);
+    if (!flurry) applyLunge(world, e, a, dt);
     if (done) {
       if (e.chainLeft > 0 && target && target.state !== "dead" && target.state !== "downed") {
         e.chainLeft--;
-        e.attack = newAttack(monk ? monkSwing(a.def, e.chainLeft) : chainSwing(a.def, e.chainLeft, true), "enemy");
+        e.attack = newAttack(flurry ? flurrySwing(a.def, e.chainLeft, flurry.windup) : chainSwing(a.def, e.chainLeft, true), "enemy");
         e.actionSeq++;
         return;
       }
       e.attack = null;
       e.state = "chase";
       e.stateT = 0;
-      if (monk) {
+      if (flurry) {
         e.monkOpened = true;
-        e.cooldown = MONK.pause;
+        e.cooldown = flurry.pause;
       } else {
         e.cooldown = 0.25 + world.rng() * 0.6;
       }
@@ -254,10 +272,11 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
   if (gap <= attack.reach * 0.85 && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
     const off = faceToward(e, target.x, target.y, 1, dt);
     if (off < 0.5 && e.cooldown <= 0) {
-      if (e.def.id === "plagueMonk") {
-        const hits = e.monkOpened ? MONK.followHits : MONK.openerHits;
+      const flurry = flurryTuning(e);
+      if (flurry) {
+        const hits = e.monkOpened ? flurry.followHits : flurry.openerHits;
         e.chainLeft = hits - 1;
-        e.attack = newAttack(monkSwing({ ...attack, chain: hits, windup: MONK.windup }, e.chainLeft), "enemy");
+        e.attack = newAttack(flurrySwing({ ...attack, chain: hits, windup: flurry.windup }, e.chainLeft, flurry.windup), "enemy");
       } else {
         e.chainLeft = Math.max(0, (attack.chain ?? 1) - 1);
         e.attack = newAttack(chainSwing(attack, e.chainLeft, false), "enemy");
@@ -280,11 +299,11 @@ function chainSwing(def: AttackDef, left: number, followUp: boolean): AttackDef 
   };
 }
 
-/** Plague Monk: every slash keeps the short wind-up; only the last hit of a flurry recovers longer. */
-function monkSwing(def: AttackDef, left: number): AttackDef {
+/** Plague Monk / Savage: every slash keeps the short wind-up; last hit recovers longer. */
+function flurrySwing(def: AttackDef, left: number, windup: number): AttackDef {
   return {
     ...def,
-    windup: MONK.windup,
+    windup,
     recovery: left > 0 ? def.recovery : Math.max(def.recovery, 0.2),
   };
 }
@@ -618,7 +637,7 @@ function fleeFrom(world: World, e: Enemy, hx: number, hy: number, dt: number): v
 function chooseMeleeAttack(world: World, e: Enemy) {
   const list = e.def.attacks;
   if (list.length <= 1) return list[0];
-  if (e.def.id === "plagueMonk") return list[0];
+  if (e.def.id === "plagueMonk" || e.def.id === "savage") return list[0];
   if (e.def.behavior === "boss") {
     let near = 0;
     for (const h of world.heroes.values()) {
@@ -922,4 +941,277 @@ function updateDrag(world: World, e: Enemy, dt: number): void {
   if (hero.state === "grabbed" && e.stateT >= HOOK.maxDragTime) {
     downHero(world, hero);
   }
+}
+
+/** Try to blink near a hero; prefer behind them. Returns true if moved. */
+function tryTeleportNear(world: World, e: Enemy, hero: Hero, range: number): boolean {
+  const behind = hero.facing + Math.PI;
+  for (let i = 0; i < 8; i++) {
+    const a = behind + (world.rng() - 0.5) * 1.4 + (i % 2 === 0 ? 0 : Math.PI);
+    const d = LIFEECH.teleportMinDist + world.rng() * (range - LIFEECH.teleportMinDist);
+    const nx = hero.x + Math.cos(a) * d;
+    const ny = hero.y + Math.sin(a) * d;
+    const p = collideCircle(world.level, world.gateOpen, nx, ny, e.radius);
+    if (dist(p.x, p.y, nx, ny) > 8) continue;
+    e.x = p.x;
+    e.y = p.y;
+    e.facing = angleTo(e.x, e.y, hero.x, hero.y);
+    return true;
+  }
+  return false;
+}
+
+function updateLifeleech(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  if (e.state === "drain") {
+    updateLifeleechDrain(world, e, dt);
+    return;
+  }
+  if (e.state === "cast") {
+    if (!target || target.state === "dead" || target.state === "downed" || target.state === "grabbed") {
+      e.state = "chase";
+      return;
+    }
+    faceToward(e, target.x, target.y, 1.2, dt);
+    e.shotT -= dt;
+    if (e.shotT > 0) return;
+    // Fire bolt toward target.
+    const id = world.newId("h");
+    world.hazards.set(id, {
+      id,
+      kind: "leechbolt",
+      x: e.x,
+      y: e.y,
+      fromX: e.x,
+      fromY: e.y,
+      radius: LIFEECH.boltRadius,
+      timeLeft: LIFEECH.boltMaxTime,
+      duration: LIFEECH.boltMaxTime,
+      ownerId: e.id,
+      targetId: target.id,
+    });
+    e.state = "chase";
+    e.cooldown = LIFEECH.cooldown;
+    e.actionSeq++;
+    return;
+  }
+  e.state = "chase";
+  if (!target) return;
+  if (e.cooldown > 0) {
+    // Keep some distance while reloading.
+    const d = dist(e.x, e.y, target.x, target.y);
+    if (d < 140) fleeFrom(world, e, target.x, target.y, dt);
+    else if (d > 260) moveToward(world, e, target.x, target.y, 0.6, dt);
+    return;
+  }
+  if (tryTeleportNear(world, e, target, LIFEECH.teleportRange)) {
+    e.state = "cast";
+    e.shotT = LIFEECH.windup;
+    e.actionSeq++;
+    if (e.escapeT <= 0) {
+      e.escapeT = 1;
+      world.emit({ t: "announce", text: "Lifeleech!", kind: "special" });
+    }
+    return;
+  }
+  moveToward(world, e, target.x, target.y, 0.8, dt);
+}
+
+function updateLifeleechDrain(world: World, e: Enemy, dt: number): void {
+  const hero = world.heroes.get(e.grabbedId);
+  if (!hero || hero.state !== "grabbed") {
+    releaseGrab(world, e);
+    e.state = "chase";
+    e.cooldown = LIFEECH.cooldown;
+    return;
+  }
+  e.stateT += dt;
+  faceToward(e, hero.x, hero.y, 2, dt);
+  const hold = LIFEECH.holdDistance + e.radius + hero.radius;
+  const d = dist(e.x, e.y, hero.x, hero.y);
+  if (d > hold) {
+    const a = angleTo(hero.x, hero.y, e.x, e.y);
+    const step = Math.min(LIFEECH.pullSpeed * dt, d - hold);
+    const hp = collideCircle(
+      world.level,
+      world.gateOpen,
+      hero.x + Math.cos(a) * step,
+      hero.y + Math.sin(a) * step,
+      hero.radius,
+    );
+    hero.x = hp.x;
+    hero.y = hp.y;
+  } else {
+    damageHero(world, hero, LIFEECH.drainDps * dt);
+  }
+  if (e.stateT >= LIFEECH.maxDrainTime) {
+    releaseGrab(world, e);
+    e.state = "chase";
+    e.cooldown = LIFEECH.cooldown;
+    tryTeleportNear(world, e, hero, LIFEECH.escapeTeleport);
+  }
+}
+
+function updateBlightstormer(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  // Keep own storm linked; if we die hazards clean up via owner.
+  if (e.state === "cast") {
+    if (!target || target.state === "dead") {
+      e.state = "chase";
+      return;
+    }
+    e.shotT -= dt;
+    if (e.shotT > 0) return;
+    const id = world.newId("h");
+    world.hazards.set(id, {
+      id,
+      kind: "blightstorm",
+      x: target.x,
+      y: target.y,
+      fromX: e.x,
+      fromY: e.y,
+      radius: BLIGHTSTORM.stormRadius,
+      timeLeft: BLIGHTSTORM.stormDuration,
+      duration: BLIGHTSTORM.stormDuration,
+      ownerId: e.id,
+      targetId: target.id,
+    });
+    world.emit({ t: "announce", text: "Blightstorm!", kind: "special" });
+    e.state = "reload";
+    e.shotT = BLIGHTSTORM.reloadTime;
+    e.actionSeq++;
+    // Teleport away after cast.
+    if (target) tryTeleportNear(world, e, target, BLIGHTSTORM.teleportRange);
+    return;
+  }
+  if (e.state === "reload") {
+    e.shotT -= dt;
+    if (e.shotT <= 0) e.state = "chase";
+    return;
+  }
+  e.state = "chase";
+  if (!target) return;
+  const d = dist(e.x, e.y, target.x, target.y);
+  if (
+    d <= BLIGHTSTORM.castRange &&
+    d >= BLIGHTSTORM.castMinRange &&
+    hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)
+  ) {
+    e.state = "cast";
+    e.shotT = BLIGHTSTORM.windup;
+    e.actionSeq++;
+    if (e.escapeT <= 0) {
+      e.escapeT = 1;
+      world.emit({ t: "announce", text: "Blightstormer!", kind: "special" });
+    }
+    return;
+  }
+  if (d < BLIGHTSTORM.castMinRange) fleeFrom(world, e, target.x, target.y, dt);
+  else moveToward(world, e, target.x, target.y, 0.85, dt);
+}
+
+function updateChaosSpawn(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  if (e.state === "drag" || e.grabbedId) {
+    updateSpawnGrab(world, e, dt);
+    return;
+  }
+  e.fireCd -= dt;
+  if (target && e.fireCd <= 0 && e.state !== "attack") {
+    const gap = edgeDistance(e, target);
+    if (gap <= SPAWN.grabRange && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
+      if (target.state !== "grabbed" && target.state !== "dead" && target.state !== "downed") {
+        grab(world, e, target);
+        e.state = "drag";
+        e.stateT = 0;
+        e.fireCd = SPAWN.grabCooldown;
+        return;
+      }
+    }
+  }
+  updateMelee(world, e, target, dt);
+}
+
+function updateSpawnGrab(world: World, e: Enemy, dt: number): void {
+  const hero = world.heroes.get(e.grabbedId);
+  if (!hero || hero.state !== "grabbed") {
+    releaseGrab(world, e);
+    e.state = "chase";
+    return;
+  }
+  e.stateT += dt;
+  faceToward(e, hero.x, hero.y, 1.5, dt);
+  const hold = SPAWN.holdDistance + e.radius;
+  const a = angleTo(e.x, e.y, hero.x, hero.y);
+  const hp = collideCircle(world.level, world.gateOpen, e.x + Math.cos(a) * hold, e.y + Math.sin(a) * hold, hero.radius);
+  hero.x = hp.x;
+  hero.y = hp.y;
+  damageHero(world, hero, SPAWN.chewDps * dt);
+  e.hp = Math.min(e.def.hp, e.hp + SPAWN.chewHeal * dt);
+  if (e.stateT >= SPAWN.maxGrabTime) {
+    releaseGrab(world, e);
+    e.state = "chase";
+  }
+}
+
+function updateBileTroll(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  // escapeT = seconds since last damage (reset in damageEnemy).
+  e.escapeT += dt;
+  e.fireCd -= dt;
+
+  if (e.state === "kneel") {
+    e.shotT -= dt;
+    e.hp = Math.min(e.def.hp, e.hp + (BILE_TROLL.kneelHeal / BILE_TROLL.kneelDuration) * dt);
+    if (e.shotT <= 0) {
+      e.state = "chase";
+      e.monkOpened = true; // kneel used
+    }
+    return;
+  }
+
+  if (!e.monkOpened && e.hp <= e.def.hp * 0.5) {
+    e.state = "kneel";
+    e.shotT = BILE_TROLL.kneelDuration;
+    e.attack = null;
+    e.actionSeq++;
+    world.emit({ t: "announce", text: "The Bile Troll regenerates!", kind: "boss" });
+    return;
+  }
+
+  if (e.escapeT >= BILE_TROLL.regenIdle) {
+    e.hp = Math.min(e.def.hp, e.hp + BILE_TROLL.regenRate * dt);
+  }
+
+  if (e.state === "cast") {
+    if (target) faceToward(e, target.x, target.y, 1, dt);
+    e.shotT -= dt;
+    if (e.shotT <= 0 && target) {
+      const id = world.newId("h");
+      world.hazards.set(id, {
+        id,
+        kind: "bileglobe",
+        x: target.x,
+        y: target.y,
+        fromX: e.x,
+        fromY: e.y,
+        radius: BILE_TROLL.bileRadius,
+        timeLeft: BILE_TROLL.flightTime,
+        duration: BILE_TROLL.flightTime,
+        ownerId: e.id,
+      });
+      e.fireCd = BILE_TROLL.spitCooldown;
+      e.state = "chase";
+      e.actionSeq++;
+    }
+    return;
+  }
+
+  if (target && e.fireCd <= 0 && e.state !== "attack") {
+    const d = dist(e.x, e.y, target.x, target.y);
+    if (d >= 120 && d <= BILE_TROLL.spitRange && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
+      e.state = "cast";
+      e.shotT = BILE_TROLL.spitWindup;
+      e.attack = null;
+      e.actionSeq++;
+      return;
+    }
+  }
+  updateMelee(world, e, target, dt);
 }

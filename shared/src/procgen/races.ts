@@ -9,7 +9,7 @@ export function combatEnemiesOfRace(race: CreatureRace): CombatEnemyId[] {
 
 /**
  * Resolves which combat enemies may spawn for these props.
- * Non-skaven races have no kits yet — fall back to the skaven pool.
+ * Races with no combat kits yet fall back to the skaven pool (Chaos is live).
  */
 export function enemiesForRaces(props: LevelProperties): {
   horde: CombatEnemyId[];
@@ -50,7 +50,10 @@ export function enemiesForRaces(props: LevelProperties): {
 }
 
 /** Horde types that sometimes spawn carrying a shield. */
-export const SHIELD_VARIANTS: Partial<Record<CombatEnemyId, CombatEnemyId>> = { clanrat: "shieldClanrat" };
+export const SHIELD_VARIANTS: Partial<Record<CombatEnemyId, CombatEnemyId>> = {
+  clanrat: "shieldClanrat",
+  raider: "bulwark",
+};
 /** Share of shield-capable horde picks that come with a shield. */
 export const SHIELD_VARIANT_CHANCE = 0.2;
 

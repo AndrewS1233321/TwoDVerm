@@ -513,6 +513,15 @@ export class GameScene extends Phaser.Scene {
         this.enemyViews.set(e.id, view);
       }
       view.update(this.enemyPose(e), delta, this.ground, this.top);
+      if (e.state === "cast" && e.type === "blightstormer") {
+        const focus = [...state.players.values()].find((p) => p.state !== "dead");
+        if (focus) {
+          this.top.lineStyle(2, colors.warp, 0.7);
+          this.top.lineBetween(view.position.x, view.position.y, focus.x, focus.y);
+          this.top.fillStyle(colors.warp, 0.35);
+          this.top.fillCircle(focus.x, focus.y, 28);
+        }
+      }
       if (e.state === "aim" && e.type === "warplockJezzail") {
         const cos = Math.cos(e.facing);
         const sin = Math.sin(e.facing);
@@ -607,14 +616,39 @@ export class GameScene extends Phaser.Scene {
         }
         return;
       }
-      if (h.kind === "globe") {
+      if (h.kind === "globe" || h.kind === "bileglobe" || h.kind === "leechbolt") {
         const t = 1 - h.timeLeft / Math.max(0.01, h.duration);
-        g.lineStyle(2, colors.warp, 0.4 + 0.4 * Math.sin(now * 0.03));
+        const col = h.kind === "leechbolt" ? 0x7cff4f : h.kind === "bileglobe" ? 0x6aff3a : colors.warp;
+        g.lineStyle(2, col, 0.4 + 0.4 * Math.sin(now * 0.03));
         g.strokeCircle(h.x, h.y, h.radius);
         const gx = h.fromX + (h.x - h.fromX) * t;
-        const gy = h.fromY + (h.y - h.fromY) * t - Math.sin(t * Math.PI) * 50;
-        this.top.fillStyle(colors.warp, 1);
-        this.top.fillCircle(gx, gy, 5);
+        const gy = h.fromY + (h.y - h.fromY) * t - Math.sin(t * Math.PI) * (h.kind === "leechbolt" ? 10 : 50);
+        this.top.fillStyle(col, 1);
+        this.top.fillCircle(gx, gy, h.kind === "leechbolt" ? 7 : 5);
+        return;
+      }
+      if (h.kind === "blightstorm") {
+        const pulse = 0.75 + 0.25 * Math.sin(now * 0.01);
+        g.fillStyle(0x2a5a1a, 0.28);
+        g.fillCircle(h.x, h.y, h.radius * pulse);
+        g.lineStyle(3, colors.warp, 0.85);
+        g.strokeCircle(h.x, h.y, h.radius * pulse);
+        // Tendril back to caster origin.
+        this.top.lineStyle(2, colors.warp, 0.55);
+        this.top.lineBetween(h.fromX, h.fromY, h.x, h.y);
+        for (let i = 0; i < 6; i++) {
+          const a = now * 0.004 + i * 1.05;
+          this.top.fillStyle(colors.warp, 0.4);
+          this.top.fillCircle(h.x + Math.cos(a) * h.radius * 0.55, h.y + Math.sin(a) * h.radius * 0.55, 5);
+        }
+        return;
+      }
+      if (h.kind === "bile") {
+        const fade = Math.max(0.2, h.timeLeft / Math.max(0.05, h.duration));
+        g.fillStyle(0x3a6a1a, 0.4 * fade);
+        g.fillCircle(h.x, h.y, h.radius);
+        g.fillStyle(0x7cff4f, 0.2 * fade);
+        g.fillCircle(h.x, h.y, h.radius * 0.65);
         return;
       }
       if (h.kind === "warpflame") {

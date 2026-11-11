@@ -10,12 +10,15 @@ import {
   DT,
   ENEMIES,
   enemiesForRaces,
+  BILE_TROLL,
+  BLIGHTSTORM,
   GAS,
   HEROES,
   JEZZAIL,
   rollLevelProperties,
   MONK,
   RUNNER,
+  SAVAGE,
   SHIELD,
   TILE_SIZE,
   tileCenter,
@@ -608,6 +611,134 @@ function place(h: Hero, p: Point): void {
   const pools = enemiesForRaces(rollLevelProperties(1, "grim_causeway", 1));
   check("Wastes boss pool includes Rat Ogre and Stormfiend", pools.bosses.includes("ogre") && pools.bosses.includes("stormfiend"), pools.bosses.join(","));
   check("Wastes seeded boss pick covers both bosses", seen.has("ogre") && seen.has("stormfiend"), [...seen].join(","));
+}
+
+// Chaos Rotblood roster smoke.
+{
+  const chaos = enemiesForRaces({
+    levelType: "castle",
+    difficulty: 1,
+    primaryRace: "chaos",
+    allowableRaces: ["chaos"],
+  });
+  check("Chaos race pool has Fanatic and Raider horde", chaos.horde.includes("fanatic") && chaos.horde.includes("raider"), chaos.horde.join(","));
+  check("Chaos race pool has Savage/Mauler/CW elites", chaos.elite.includes("savage") && chaos.elite.includes("mauler") && chaos.elite.includes("chaosWarrior"));
+  check("Chaos race pool has Lifeleech and Blightstormer", chaos.special.includes("lifeleech") && chaos.special.includes("blightstormer"));
+  check("Chaos race pool has Spawn and Bile Troll bosses", chaos.bosses.includes("chaosSpawn") && chaos.bosses.includes("bileTroll"), chaos.bosses.join(","));
+  check("Chaos kits do not fall back to Skaven", !chaos.usedFallback);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const b = world.spawnEnemy("bulwark", h.x + 40, h.y, true)!;
+  b.x = h.x + 40;
+  b.y = h.y;
+  b.facing = Math.PI;
+  b.aggro = true;
+  const hp0 = b.hp;
+  damageEnemy(world, h, b, { damage: 8, stagger: 0, srcX: h.x, srcY: h.y });
+  check("Bulwark blocks a frontal light hit", b.hp === hp0 && b.state !== "staggered", `hp ${b.hp}/${hp0}`);
+  damageEnemy(world, h, b, { damage: 8, stagger: SHIELD.breakPower, heavy: true, srcX: h.x, srcY: h.y });
+  check("Heavy hit breaks a Bulwark shield", b.state === "staggered");
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const s = world.spawnEnemy("savage", h.x + 30, h.y, true)!;
+  s.x = h.x + 30;
+  s.y = h.y;
+  s.targetId = h.id;
+  s.aggro = true;
+  let saw = false;
+  let maxChain = 0;
+  run(world, 4, () => {
+    immortal(world);
+    if (s.state === "attack") {
+      saw = true;
+      maxChain = Math.max(maxChain, s.chainLeft);
+    }
+  });
+  check("Savage opens with a chasing flurry", saw && maxChain >= SAVAGE.openerHits - 2, `saw ${saw} maxChain ${maxChain}`);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const leech = world.spawnEnemy("lifeleech", h.x + 80, h.y, true)!;
+  leech.x = h.x + 80;
+  leech.y = h.y;
+  leech.targetId = h.id;
+  leech.aggro = true;
+  leech.cooldown = 0;
+  let grabbed = false;
+  run(world, 6, () => {
+    immortal(world);
+    if (h.state === "grabbed" || leech.state === "drain") grabbed = true;
+  });
+  check("Lifeleech teleports and drains a hero", grabbed, `hero ${h.state} leech ${leech.state}`);
+  if (world.enemies.has(leech.id)) {
+    damageEnemy(world, h, leech, { damage: 5, stagger: 1, srcX: h.x, srcY: h.y });
+    check("Damaging Lifeleech interrupts the drain", h.state !== "grabbed" && leech.state !== "drain", `hero ${h.state} leech ${leech.state}`);
+  }
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const bs = world.spawnEnemy("blightstormer", h.x + 200, h.y, true)!;
+  bs.x = h.x + 200;
+  bs.y = h.y;
+  bs.targetId = h.id;
+  bs.aggro = true;
+  bs.state = "cast";
+  bs.shotT = 0.05;
+  let storm = false;
+  run(world, 1, () => {
+    immortal(world);
+    for (const z of world.hazards.values()) if (z.kind === "blightstorm") storm = true;
+  });
+  check("Blightstormer spawns a storm after cast", storm);
+  killEnemy(world, bs, h);
+  const left = [...world.hazards.values()].some((z) => z.kind === "blightstorm" && z.ownerId === bs.id);
+  check("Killing Blightstormer dissolves its storm", !left);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const spawn = world.spawnEnemy("chaosSpawn", h.x + 80, h.y, true)!;
+  spawn.x = h.x + 80;
+  spawn.y = h.y;
+  spawn.targetId = h.id;
+  spawn.aggro = true;
+  spawn.fireCd = 0;
+  let grabbed = false;
+  run(world, 5, () => {
+    immortal(world);
+    if (h.state === "grabbed") grabbed = true;
+  });
+  check("Chaos Spawn can tentacle-grab a hero", grabbed || spawn.state === "drag" || spawn.state === "attack", `hero ${h.state} spawn ${spawn.state}`);
+}
+{
+  const { world, heroes } = setup(["soldier"]);
+  const h = heroes[0]!;
+  place(h, world.level.playerStarts[0]!);
+  const troll = world.spawnEnemy("bileTroll", h.x + 220, h.y, true)!;
+  troll.x = h.x + 220;
+  troll.y = h.y;
+  troll.targetId = h.id;
+  troll.aggro = true;
+  troll.fireCd = 0;
+  troll.state = "cast";
+  troll.shotT = 0.05;
+  let bile = false;
+  run(world, BILE_TROLL.flightTime + 0.5, () => {
+    immortal(world);
+    for (const z of world.hazards.values()) if (z.kind === "bile" || z.kind === "bileglobe") bile = true;
+  });
+  check("Bile Troll can spit bile", bile, `state ${troll.state}`);
 }
 
 console.log(failures === 0 ? "\nAll mission checks passed" : `\n${failures} mission check(s) failed`);

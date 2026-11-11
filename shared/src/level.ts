@@ -31,6 +31,20 @@ export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
   y: "stormfiend",
   /** Ultra Elite: Warplock Jezzail (Testing summon pad). */
   j: "warplockJezzail",
+  /**
+   * Chaos Rotblood summon row.
+   * Avoid letters already used as level markers (h/p/r/s, E/H/S/…).
+   */
+  a: "fanatic",
+  b: "raider",
+  c: "bulwark",
+  d: "savage",
+  f: "mauler",
+  g: "chaosWarrior",
+  i: "lifeleech",
+  n: "blightstormer",
+  t: "chaosSpawn",
+  v: "bileTroll",
 };
 
 export { DUMMY_SPAWN_MARKERS };

@@ -255,3 +255,69 @@ export const ENEMY_AGGRO = {
   alwaysRange: 120,
   alertRadius: 220,
 };
+
+/** Chaos Savage: dual-axe berserker flurry (same cadence shape as Plague Monk). */
+export const SAVAGE = {
+  windup: 0.18,
+  openerHits: 6,
+  followHits: 3,
+  pause: 0.9,
+  chaseSpeedMul: 1.05,
+};
+
+/** Chaos Lifeleech: teleport, dodgeable grab bolt, drain. */
+export const LIFEECH = {
+  teleportRange: 280,
+  teleportMinDist: 60,
+  windup: 1,
+  boltSpeed: 420,
+  boltRadius: 14,
+  boltMaxTime: 0.55,
+  pullSpeed: 160,
+  holdDistance: 28,
+  drainDps: 12,
+  maxDrainTime: 8,
+  cooldown: 5,
+  escapeTeleport: 180,
+};
+
+/** Chaos Blightstormer: cast a chasing incapacitating storm. */
+export const BLIGHTSTORM = {
+  castRange: 320,
+  castMinRange: 120,
+  windup: 2.2,
+  stormRadius: 46,
+  stormSpeed: 95,
+  stormDuration: 12,
+  grabDps: 8,
+  tossSpeed: 280,
+  tossTime: 0.45,
+  reloadTime: 7,
+  teleportRange: 260,
+};
+
+/** Chaos Spawn tentacle grab while boss-meleeing. */
+export const SPAWN = {
+  grabRange: 52,
+  grabCooldown: 8,
+  chewDps: 10,
+  chewHeal: 8,
+  maxGrabTime: 6,
+  holdDistance: 30,
+};
+
+/** Bile Troll spit, ground bile, and simplified regen. */
+export const BILE_TROLL = {
+  spitRange: 340,
+  spitWindup: 0.9,
+  spitCooldown: 6,
+  flightTime: 0.55,
+  bileRadius: 40,
+  bileDuration: 5,
+  bileDps: 12,
+  bileSlowMul: 0.55,
+  regenIdle: 4,
+  regenRate: 40,
+  kneelDuration: 3.5,
+  kneelHeal: 280,
+};
