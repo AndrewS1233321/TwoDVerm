@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import {
   DECOR_COBBLE,
   DECOR_FOREST,
+  DECOR_MINE,
   DECOR_SEWER,
   TILE_FLOOR,
   TILE_GATE,
@@ -13,6 +14,8 @@ import { colors, shade } from "./palette";
 
 const CHUNK = 1024;
 const TORCH_SPACING = 7;
+const LANTERN_SPACING = 6;
+const ROCK_WALL = 0x3d3832;
 
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) | 0;
@@ -31,6 +34,7 @@ export class LevelRenderer {
   private exitLabel: Phaser.GameObjects.Text | null = null;
   exitUnlocked = false;
   private readonly forest: boolean;
+  private readonly mine: boolean;
   private readonly disposables: Phaser.GameObjects.GameObject[] = [];
 
   constructor(
@@ -40,6 +44,7 @@ export class LevelRenderer {
   ) {
     this.exitUnlocked = !options.exitLocked;
     this.forest = level.decor.includes(DECOR_FOREST);
+    this.mine = level.decor.includes(DECOR_MINE);
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
     const worldW = level.width * TILE_SIZE;
     const worldH = level.height * TILE_SIZE;
@@ -60,7 +65,8 @@ export class LevelRenderer {
     this.gateGfx = scene.add.graphics().setDepth(4);
     this.disposables.push(this.gateGfx);
     this.drawGate();
-    this.placeTorches();
+    if (this.mine) this.placeLanterns();
+    else this.placeTorches();
   }
 
   destroy(): void {
@@ -126,6 +132,10 @@ export class LevelRenderer {
             g.fillRect(x, y, T, T);
             continue;
           }
+          if (this.mine) {
+            this.drawMineWall(g, x, y, T, tx, ty, r);
+            continue;
+          }
           const wall = this.forest ? 0x1e3a1c : colors.wall;
           g.fillStyle(shade(wall, 0.85 + r * 0.25));
           g.fillRect(x, y, T, T);
@@ -175,6 +185,8 @@ export class LevelRenderer {
             g.fillStyle(0x1e331c, 0.35);
             g.fillRect(x + 4, y + T - 6, T - 8, 3);
           }
+        } else if (decor === DECOR_MINE) {
+          this.drawMineFloor(g, x, y, T, tx, ty, r);
         } else {
           g.fillStyle(shade(colors.floor, 0.9 + r * 0.22));
           g.fillRect(x, y, T, T);
@@ -271,6 +283,222 @@ export class LevelRenderer {
           alpha: { from: 0.28, to: 0.42 },
           scale: { from: 1.7, to: 1.95 },
           duration: 180 + (n % 5) * 60,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
+    }
+  }
+
+  /** Crumbling quarry rock: uneven faces, cracks, rubble chips on the floor edge. */
+  private drawMineWall(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    T: number,
+    tx: number,
+    ty: number,
+    r: number,
+  ): void {
+    g.fillStyle(shade(ROCK_WALL, 0.75 + r * 0.35));
+    g.fillRect(x, y, T, T);
+    // Layered rock faces.
+    g.fillStyle(shade(ROCK_WALL, 0.95 + hash(tx + 2, ty) * 0.2), 0.7);
+    g.fillCircle(x + T * (0.25 + r * 0.2), y + T * (0.3 + hash(tx, ty + 3) * 0.25), 5 + r * 4);
+    g.fillStyle(shade(0x2a2622, 0.9), 0.55);
+    g.fillCircle(x + T * (0.65 + hash(tx + 5, ty) * 0.15), y + T * (0.55 + r * 0.2), 4 + hash(tx, ty) * 5);
+    // Cracks.
+    g.lineStyle(1, shade(0x1a1714, 1.1), 0.55 + r * 0.25);
+    g.lineBetween(x + 4, y + 6 + r * 8, x + T * 0.55, y + T * 0.7);
+    if (r > 0.45) g.lineBetween(x + T * 0.4, y + 4, x + T - 5, y + T * 0.45);
+    // Broken edge notches where the wall meets open floor.
+    g.fillStyle(shade(ROCK_WALL, 0.55), 0.9);
+    if (this.tile(tx, ty + 1) !== TILE_WALL) {
+      g.fillTriangle(x + r * 8, y + T, x + 10 + r * 10, y + T - 5 - r * 4, x + 18 + r * 6, y + T);
+    }
+    if (this.tile(tx + 1, ty) !== TILE_WALL) {
+      g.fillTriangle(x + T, y + r * 6, x + T - 5 - r * 3, y + 12 + r * 8, x + T, y + 22);
+    }
+    if (r > 0.78) {
+      g.fillStyle(0x5a5348, 0.35);
+      g.fillCircle(x + T * hash(tx + 1, ty + 7), y + T * 0.2, 2.5);
+    }
+  }
+
+  private drawMineFloor(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    T: number,
+    tx: number,
+    ty: number,
+    r: number,
+  ): void {
+    g.fillStyle(shade(0x2c2824, 0.92 + r * 0.2));
+    g.fillRect(x, y, T, T);
+    // Packed dirt / gravel flecks.
+    g.fillStyle(shade(0x3a342e, 0.9 + hash(tx + 4, ty) * 0.25), 0.55);
+    g.fillCircle(x + T * (0.2 + r * 0.5), y + T * (0.25 + hash(ty, tx) * 0.45), 2 + r * 3);
+    if (r > 0.55) {
+      g.fillStyle(0x4a433c, 0.28);
+      g.fillCircle(x + T * hash(tx + 8, ty + 2), y + T * hash(ty + 6, tx), 2);
+    }
+    const axis = this.corridorAxis(tx, ty);
+    if (axis) this.drawMineTracks(g, x, y, T, axis, tx, ty);
+    if (this.shouldDrawMineProp(tx, ty, r)) this.drawMineProp(g, x, y, T, tx, ty, r);
+  }
+
+  /** Corridor-shaped floor: open farther along one axis than the other. */
+  private corridorAxis(tx: number, ty: number): "h" | "v" | null {
+    if (this.tile(tx, ty) === TILE_WALL || this.tile(tx, ty) === TILE_GATE) return null;
+    const run = (dx: number, dy: number): number => {
+      let n = 0;
+      let x = tx + dx;
+      let y = ty + dy;
+      while (n < 12) {
+        const t = this.tile(x, y);
+        if (t === TILE_WALL || t === TILE_GATE) break;
+        n++;
+        x += dx;
+        y += dy;
+      }
+      return n;
+    };
+    const openH = 1 + run(-1, 0) + run(1, 0);
+    const openV = 1 + run(0, -1) + run(0, 1);
+    if (openH >= 5 && openV <= 4) return "h";
+    if (openV >= 5 && openH <= 4) return "v";
+    return null;
+  }
+
+  private drawMineTracks(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    T: number,
+    axis: "h" | "v",
+    tx: number,
+    ty: number,
+  ): void {
+    const rust = 0x4a3a2e;
+    const rail = 0x2a2420;
+    g.fillStyle(rust, 0.55);
+    if (axis === "h") {
+      // Sleepers.
+      if ((tx + ty) % 2 === 0) g.fillRect(x + 4, y + T * 0.35, T - 8, 4);
+      g.fillStyle(rail, 0.9);
+      g.fillRect(x, y + T * 0.28, T, 2.5);
+      g.fillRect(x, y + T * 0.62, T, 2.5);
+    } else {
+      if ((tx + ty) % 2 === 0) g.fillRect(x + T * 0.35, y + 4, 4, T - 8);
+      g.fillStyle(rail, 0.9);
+      g.fillRect(x + T * 0.28, y, 2.5, T);
+      g.fillRect(x + T * 0.62, y, 2.5, T);
+    }
+  }
+
+  private inBusyZone(tx: number, ty: number): boolean {
+    const i = ty * this.level.width + tx;
+    return (
+      this.level.holdZone.has(i) ||
+      this.level.bossRoom.has(i) ||
+      this.level.bossTrigger.has(i) ||
+      this.level.endZone.has(i)
+    );
+  }
+
+  private nearWall(tx: number, ty: number): boolean {
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const) {
+      if (this.tile(tx + dx, ty + dy) === TILE_WALL) return true;
+    }
+    return false;
+  }
+
+  private shouldDrawMineProp(tx: number, ty: number, r: number): boolean {
+    if (this.inBusyZone(tx, ty)) return false;
+    if (this.corridorAxis(tx, ty)) return false;
+    if (!this.nearWall(tx, ty)) return r > 0.93;
+    return r > 0.72 && (tx * 5 + ty * 11) % 3 === 0;
+  }
+
+  private drawMineProp(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    T: number,
+    tx: number,
+    ty: number,
+    r: number,
+  ): void {
+    const kind = Math.floor(hash(tx + 13, ty + 17) * 3);
+    const cx = x + T * (0.3 + hash(tx, ty + 9) * 0.4);
+    const cy = y + T * (0.3 + hash(ty, tx + 4) * 0.4);
+    if (kind === 0) {
+      // Broken rock pile.
+      g.fillStyle(shade(ROCK_WALL, 0.7 + r * 0.2), 0.85);
+      g.fillCircle(cx, cy, 4 + r * 3);
+      g.fillCircle(cx + 5, cy + 2, 3);
+      g.fillStyle(0x1a1714, 0.35);
+      g.fillCircle(cx - 2, cy + 3, 2.5);
+    } else if (kind === 1) {
+      // Pickaxe (handle + head), decorative only.
+      g.lineStyle(2.5, 0x5a4028, 1);
+      g.lineBetween(cx - 6, cy + 7, cx + 5, cy - 6);
+      g.lineStyle(3, 0x6a6f78, 1);
+      g.lineBetween(cx + 2, cy - 8, cx + 9, cy - 3);
+      g.lineBetween(cx + 2, cy - 8, cx - 1, cy - 2);
+    } else {
+      // Bones.
+      g.fillStyle(0xc9b896, 0.85);
+      g.fillRect(cx - 5, cy - 1, 10, 2.5);
+      g.fillCircle(cx - 6, cy, 2.2);
+      g.fillCircle(cx + 6, cy + 1, 1.8);
+      g.fillStyle(0xa89878, 0.7);
+      g.fillRect(cx - 1, cy + 3, 2, 5);
+    }
+  }
+
+  /** Iron lanterns hung on walls overlooking the floor. */
+  private placeLanterns(): void {
+    let n = 0;
+    for (let ty = 1; ty < this.level.height - 1; ty++) {
+      for (let tx = 1; tx < this.level.width - 1; tx++) {
+        if (this.tile(tx, ty) !== TILE_WALL) continue;
+        if (this.tile(tx, ty + 1) !== TILE_FLOOR && this.tile(tx, ty + 1) !== TILE_GATE) continue;
+        if ((tx * 2 + ty * 5) % LANTERN_SPACING !== 0) continue;
+        n++;
+        const x = (tx + 0.5) * TILE_SIZE;
+        const y = (ty + 0.85) * TILE_SIZE;
+        const body = this.scene.add.graphics().setDepth(3);
+        body.fillStyle(0x2a2622, 1);
+        body.fillRect(x - 3, y - 10, 6, 3);
+        body.lineStyle(1.5, 0x4a453c, 1);
+        body.lineBetween(x, y - 14, x, y - 10);
+        body.fillStyle(0xc9a14a, 0.85);
+        body.fillRect(x - 4, y - 8, 8, 7);
+        body.lineStyle(1.5, 0x2a2622, 1);
+        body.strokeRect(x - 4, y - 8, 8, 7);
+        body.fillStyle(0x1a1714, 1);
+        body.fillRect(x - 5, y - 1, 10, 2);
+        const glow = this.scene.add
+          .image(x, y + 4, "glow")
+          .setDepth(2)
+          .setTint(0xffb45a)
+          .setAlpha(0.32)
+          .setScale(1.55)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.disposables.push(body, glow);
+        this.scene.tweens.add({
+          targets: glow,
+          alpha: { from: 0.24, to: 0.4 },
+          scale: { from: 1.4, to: 1.7 },
+          duration: 220 + (n % 4) * 70,
           yoyo: true,
           repeat: -1,
           ease: "Sine.easeInOut",

@@ -16,7 +16,7 @@ the exit, merchant hall, next vote.
 | Location       | Level type | Inspiration (pacing only) | Beats |
 | -------------- | ---------- | ------------------------- | ----- |
 | Grim Causeway  | castle     | Fort Brachsenbrucke       | Gatehouse, outer bailey, causeway platform hold, keep courtyard mini-boss, tower boss arena |
-| Weeping Quarry | caverns    | Hunger in the Dark        | Scaffold walkways, flooded upper pit, pump-room hold, collapsed gallery mini-boss, deep pit boss arena |
+| Weeping Quarry | caverns (mine theme) | Hunger in the Dark | Winding mine galleries, flooded upper pit, pump-room hold, collapsed gallery mini-boss, deep pit boss arena; `theme: "mine"` (crumbling rock, lanterns, cart tracks, debris props) |
 | Salt Hollow    | caverns    | Mountain-pass missions    | Open salt flats, narrowing canyon, choke-point hold, side-canyon camp mini-boss, basin boss arena |
 | Cinder Watch   | castle     | Empire in Flames          | Ash streets and burned houses, watchtower hold, market square mini-boss, gutted keep boss arena |
 

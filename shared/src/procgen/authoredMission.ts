@@ -3,6 +3,7 @@ import type { EnemyId } from "../data/types";
 import {
   computeBossRoom,
   DECOR_COBBLE,
+  DECOR_MINE,
   DECOR_PLAIN,
   DECOR_SEWER,
   parseLevel,
@@ -27,6 +28,8 @@ export interface AuthoredMission {
   floor: AuthoredFloor;
   /** Room names, in tile coordinates. */
   labels: readonly { name: string; tx: number; ty: number }[];
+  /** Visual theme; `mine` paints plain floor as DECOR_MINE (rock walls, tracks, props). */
+  theme?: "mine";
 }
 
 /** Section objectives in play order; each opens its gate when complete. */
@@ -94,7 +97,14 @@ export function parseAuthoredMission(
   });
 
   const level = parseLevel(cleaned);
-  const floorDecor = FLOOR_DECOR[mission.floor];
+  const floorDecor =
+    mission.theme === "mine" && mission.floor === "." ? DECOR_MINE : FLOOR_DECOR[mission.floor];
+  if (mission.theme === "mine") {
+    for (let i = 0; i < level.tiles.length; i++) {
+      if (level.tiles[i] === TILE_WALL) continue;
+      if (level.decor[i] === DECOR_PLAIN) level.decor[i] = DECOR_MINE;
+    }
+  }
   for (const i of markerTiles) {
     if (level.tiles[i] !== TILE_WALL) level.decor[i] = floorDecor;
   }

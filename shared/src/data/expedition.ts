@@ -41,7 +41,7 @@ export const EXPEDITION_LOCATIONS: Record<ExpeditionLocationId, ExpeditionLocati
     id: "weeping_quarry",
     name: "Weeping Quarry",
     description:
-      "Descend a flooded quarry: cross the scaffolds, hold the pump room, break through the collapsed gallery, and fight in the deep pit.",
+      "Descend a flooded mine: wind through crumbling galleries and cart tracks, hold the pump room, break the collapsed gallery, and fight in the deep pit.",
     factions: "Skaven, Beastmen",
     curse: "Nurgle",
     modifiers: ["+ Elites", "Extra health items"],

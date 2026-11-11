@@ -14,6 +14,12 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Weeping Quarry mine pass**: layout rebuilt with winding 3-wide
+  corridors between rooms; `theme: "mine"` paints `DECOR_MINE` floors
+  (packed dirt, cart tracks in corridor stretches), crumbling rock
+  walls, iron wall lanterns (instead of torches), and decorative
+  non-interactable debris (broken rock, pickaxes, bones). Overview
+  render: `npx tsx scripts/render-wastes-maps.ts`.
 - **Level corner label**: while playing or in a merchant hall, the HUD
   shows the level name in small text at the top-left, with rolled
   difficulty (`Difficulty 1.0` … `4.0`) on the line under it when the

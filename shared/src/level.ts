@@ -10,6 +10,8 @@ export const DECOR_PLAIN = 0;
 export const DECOR_COBBLE = 1;
 export const DECOR_SEWER = 2;
 export const DECOR_FOREST = 3;
+/** Mine / quarry dirt: crumbling rock walls, tracks, lanterns, debris props. */
+export const DECOR_MINE = 4;
 
 /** ASCII digit → combat enemy for testing-zone summon pads. */
 export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
