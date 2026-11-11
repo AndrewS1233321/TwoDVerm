@@ -515,6 +515,38 @@
       }
       #shop {
         z-index: 15;
+        padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
+        overflow: hidden;
+      }
+      #shop .shop-panel {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        border-radius: 0;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        box-shadow: none;
+      }
+      .shop-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 28px 32px 20px;
+      }
+      .shop-footer {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        padding: 14px 32px 20px;
+        border-top: 1px solid var(--border);
+        background: rgba(20, 17, 15, 0.96);
+      }
+      .shop-footer button {
+        min-width: 160px;
       }
       .shop-gold {
         text-align: center;
@@ -578,6 +610,40 @@
         font-size: 16px;
       }
       .shop-perks {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
+        gap: 12px;
+      }
+      .shop-perk-card {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        align-items: stretch;
+        gap: 10px;
+        min-height: 0;
+      }
+      .shop-perk-card .shop-item-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto;
+      }
+      .shop-perk-card .shop-item-icon svg {
+        width: 40px;
+        height: 40px;
+      }
+      .shop-perk-card .shop-item-name {
+        font-size: 16px;
+        text-align: center;
+      }
+      .shop-perk-card .shop-item-desc {
+        font-size: 12px;
+        text-align: center;
+        margin: 0;
+      }
+      .shop-perk-card .shop-item-buy {
+        min-width: 0;
+      }
+      #shop-armor.shop-perks {
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -609,6 +675,7 @@
         color: var(--text-muted);
         font-size: 13px;
         text-align: center;
+        grid-column: 1 / -1;
       }
     </style>
   </head>
@@ -763,43 +830,45 @@
     </div>
 
     <div id="shop" class="screen">
-      <div class="panel narrow">
-        <h2 style="text-align: center">Merchant</h2>
-        <p class="subtitle">Spend your gold. Upgrades last for this run.</p>
-        <div id="shop-gold" class="shop-gold">0 GP</div>
-        <div class="shop-item">
-          <div class="shop-item-icon" aria-hidden="true">
-            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="32" cy="32" r="10" fill="#f2c14e" />
-              <circle cx="32" cy="32" r="6" fill="#fff3c4" />
-              <path d="M32 6 L36 22 L32 18 L28 22 Z" fill="#e85d04" />
-              <path d="M32 58 L28 42 L32 46 L36 42 Z" fill="#e85d04" />
-              <path d="M6 32 L22 28 L18 32 L22 36 Z" fill="#f48c06" />
-              <path d="M58 32 L42 36 L46 32 L42 28 Z" fill="#f48c06" />
-              <path d="M14 14 L26 24 L22 22 L24 26 Z" fill="#dc2f02" />
-              <path d="M50 14 L40 26 L42 22 L38 24 Z" fill="#dc2f02" />
-              <path d="M14 50 L26 40 L22 42 L24 38 Z" fill="#dc2f02" />
-              <path d="M50 50 L38 40 L42 42 L40 38 Z" fill="#dc2f02" />
-              <path d="M24 8 L30 20 L28 18" fill="none" stroke="#ffba08" stroke-width="3" stroke-linecap="round" />
-              <path d="M44 10 L38 22" fill="none" stroke="#faa307" stroke-width="3" stroke-linecap="round" />
-              <path d="M52 24 L40 30" fill="none" stroke="#f48c06" stroke-width="3" stroke-linecap="round" />
-            </svg>
+      <div class="panel shop-panel">
+        <div class="shop-body">
+          <h2 style="text-align: center">Merchant</h2>
+          <p class="subtitle">Spend your gold. Upgrades last for this run.</p>
+          <div id="shop-gold" class="shop-gold">0 GP</div>
+          <div class="shop-item">
+            <div class="shop-item-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="32" cy="32" r="10" fill="#f2c14e" />
+                <circle cx="32" cy="32" r="6" fill="#fff3c4" />
+                <path d="M32 6 L36 22 L32 18 L28 22 Z" fill="#e85d04" />
+                <path d="M32 58 L28 42 L32 46 L36 42 Z" fill="#e85d04" />
+                <path d="M6 32 L22 28 L18 32 L22 36 Z" fill="#f48c06" />
+                <path d="M58 32 L42 36 L46 32 L42 28 Z" fill="#f48c06" />
+                <path d="M14 14 L26 24 L22 22 L24 26 Z" fill="#dc2f02" />
+                <path d="M50 14 L40 26 L42 22 L38 24 Z" fill="#dc2f02" />
+                <path d="M14 50 L26 40 L22 42 L24 38 Z" fill="#dc2f02" />
+                <path d="M50 50 L38 40 L42 42 L40 38 Z" fill="#dc2f02" />
+                <path d="M24 8 L30 20 L28 18" fill="none" stroke="#ffba08" stroke-width="3" stroke-linecap="round" />
+                <path d="M44 10 L38 22" fill="none" stroke="#faa307" stroke-width="3" stroke-linecap="round" />
+                <path d="M52 24 L40 30" fill="none" stroke="#f48c06" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div>
+              <div class="shop-item-name">dmg up +10%</div>
+              <p class="shop-item-desc">+10% melee, ranged, and ultimate damage. Stackable.</p>
+              <div id="shop-dmg-stacks" class="shop-item-stacks">Stacks: 0</div>
+            </div>
+            <div class="shop-item-buy">
+              <div class="shop-item-cost">50 GP</div>
+              <button id="shop-buy-dmg" class="primary">Buy</button>
+            </div>
           </div>
-          <div>
-            <div class="shop-item-name">dmg up +10%</div>
-            <p class="shop-item-desc">+10% melee, ranged, and ultimate damage. Stackable.</p>
-            <div id="shop-dmg-stacks" class="shop-item-stacks">Stacks: 0</div>
-          </div>
-          <div class="shop-item-buy">
-            <div class="shop-item-cost">50 GP</div>
-            <button id="shop-buy-dmg" class="primary">Buy</button>
-          </div>
+          <h3 class="shop-section">Perks</h3>
+          <div id="shop-perks" class="shop-perks"></div>
+          <h3 class="shop-section">Armour</h3>
+          <div id="shop-armor" class="shop-perks"></div>
         </div>
-        <h3 class="shop-section">Perks</h3>
-        <div id="shop-perks" class="shop-perks"></div>
-        <h3 class="shop-section">Armour</h3>
-        <div id="shop-armor" class="shop-perks"></div>
-        <div class="stack" style="margin-top: 18px">
+        <div class="shop-footer">
           <button id="shop-close-btn">Close</button>
         </div>
       </div>

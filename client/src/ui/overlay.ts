@@ -320,7 +320,7 @@ export class Overlay {
         const action = isOwned
           ? `<div class="shop-item-owned">Owned</div>`
           : `<div class="shop-item-cost">${p.cost} GP</div><button class="primary" data-perk="${p.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>`;
-        return `<div class="shop-item${isOwned ? " owned" : ""}">
+        return `<div class="shop-item shop-perk-card${isOwned ? " owned" : ""}">
           <div class="shop-item-icon" aria-hidden="true">${PERK_ICON}</div>
           <div>
             <div class="shop-item-name">${escapeHtml(p.name)}</div>

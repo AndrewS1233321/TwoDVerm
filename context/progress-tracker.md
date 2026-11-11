@@ -127,6 +127,9 @@ Update this file after every meaningful implementation change.
   special 50% → 1–5 GP; Rat Ogre 100% → 100–200 GP). Drop is split
   evenly across every hero’s personal purse (remainder distributed);
   gold persists across wastes stops for merchant spending.
+- **Merchant shop UI**: full-screen panel; scrollable body with Close
+  pinned at the bottom; perks in a 4-column grid (row-major, left to
+  right). Armour stays a vertical list below.
 - **Merchant shop**: E near the merchant opens a buy menu. Item
   `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
   damage per stack via `shopDamageMul`); stacks shown under the
