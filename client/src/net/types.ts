@@ -14,6 +14,8 @@ export interface PlayerView {
   name: string;
   heroId: string;
   connected: boolean;
+  /** Host-spawned AI teammate. */
+  isAi: boolean;
   x: number;
   y: number;
   facing: number;

@@ -5,6 +5,10 @@ import { clamp, isFiniteNumber } from "./math";
 export const MSG = {
   input: "input",
   selectHero: "selectHero",
+  /** Host only (lobby): seat an AI teammate as this hero. */
+  addAiHero: "addAiHero",
+  /** Host only (lobby): remove an AI teammate seat. */
+  removeAiHero: "removeAiHero",
   start: "start",
   returnToLobby: "returnToLobby",
   /** Gingey Wastes: vote for a Holseher's Map location. */

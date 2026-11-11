@@ -37,6 +37,8 @@ export interface OverlayHandlers {
   onCreate(name: string, gameMode: GameMode, devTest: boolean): void;
   onJoin(code: string, name: string): void;
   onPickHero(heroId: HeroId): void;
+  onAddAiHero(heroId: HeroId): void;
+  onRemoveAiHero(heroId: HeroId): void;
   onStart(): void;
   onVoteLocation(locationId: ExpeditionLocationId): void;
   onTravel(): void;
@@ -383,21 +385,27 @@ export class Overlay {
         .map((p) => {
           const hero = isHeroId(p.heroId) ? HEROES[p.heroId].name : "choosing...";
           const host = p.id === state.hostId ? " (host)" : "";
-          const off = p.connected ? "" : " - reconnecting";
-          return `<span class="player-chip${p.id === localId ? " me" : ""}">${escapeHtml(p.name)}${host}: ${hero}${off}</span>`;
+          const ai = p.isAi ? " (AI)" : "";
+          const off = p.connected || p.isAi ? "" : " - reconnecting";
+          return `<span class="player-chip${p.id === localId ? " me" : ""}${p.isAi ? " ai" : ""}">${escapeHtml(p.name)}${host}${ai}: ${hero}${off}</span>`;
         })
         .join("") + `<span class="muted" style="align-self:center">${players.length}/${MAX_PLAYERS}</span>`;
 
+    const isHost = state.hostId === localId;
+    const roomFull = players.length >= MAX_PLAYERS;
     const heroes = el("lobby-heroes");
     heroes.innerHTML = "";
     for (const id of HERO_IDS) {
       const def = HEROES[id];
       const owner = players.find((p) => p.heroId === id);
       const mine = owner?.id === localId;
+      const aiOwned = !!owner?.isAi;
       const btn = document.createElement("button");
-      btn.className = `hero-card${mine ? " selected" : ""}`;
+      btn.type = "button";
+      btn.className = `hero-card${mine ? " selected" : ""}${aiOwned ? " ai-seat" : ""}`;
       btn.style.borderLeftColor = def.color;
-      btn.disabled = !!owner && !mine;
+      const takenByOtherHuman = !!owner && !mine && !aiOwned;
+      btn.disabled = takenByOtherHuman;
       btn.innerHTML = `<span class="name">${def.name}</span><span class="title">${def.title}</span>
         <span class="desc">${def.description}</span>
         <div class="stats">
@@ -413,12 +421,40 @@ export class Overlay {
           <span>Ult CD <b>${def.ultCooldown}s</b></span>
         </div>
         <span class="desc"><b>Ultimate:</b> ${escapeHtml(def.ultName)}</span>
-        ${owner && !mine ? `<span class="taken">Taken by ${escapeHtml(owner.name)}</span>` : ""}`;
-      btn.onclick = () => this.h.onPickHero(id);
+        ${
+          aiOwned
+            ? `<span class="taken ai-label">AI teammate${isHost ? " — click to remove" : ""}</span>`
+            : owner && !mine
+              ? `<span class="taken">Taken by ${escapeHtml(owner.name)}</span>`
+              : isHost && !owner && !roomFull
+                ? `<span class="ai-hint">Click to play · Host: right-click or “Add AI”</span>`
+                : ""
+        }`;
+      if (isHost && aiOwned) {
+        btn.onclick = () => this.h.onRemoveAiHero(id);
+      } else if (!owner || mine) {
+        btn.onclick = () => this.h.onPickHero(id);
+      }
+      if (isHost && !owner && !roomFull) {
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "ai-add-btn";
+        add.textContent = "Add AI";
+        add.onclick = (ev) => {
+          ev.stopPropagation();
+          this.h.onAddAiHero(id);
+        };
+        btn.appendChild(add);
+      }
+      if (isHost && !owner && !roomFull) {
+        btn.oncontextmenu = (ev) => {
+          ev.preventDefault();
+          this.h.onAddAiHero(id);
+        };
+      }
       heroes.appendChild(btn);
     }
 
-    const isHost = state.hostId === localId;
     const allPicked = players.every((p) => isHeroId(p.heroId));
     const start = el<HTMLButtonElement>("start-btn");
     start.style.display = isHost ? "" : "none";
@@ -433,7 +469,7 @@ export class Overlay {
               ? "Start in the testing hall with bonus gold when ready"
               : "Start in the testing hall when ready"
             : "Everyone is ready"
-          : "Waiting for everyone to pick a hero"
+          : "Waiting for everyone to pick a hero — host can Add AI on free cards"
         : mode === "wastes"
           ? "Waiting for the host to open the staging hall"
           : "Waiting for the host to start";

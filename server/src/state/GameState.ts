@@ -5,6 +5,8 @@ export class PlayerState extends Schema {
   @type("string") name = "";
   @type("string") heroId = "";
   @type("boolean") connected = true;
+  /** Host-spawned AI teammate (not a Colyseus client). */
+  @type("boolean") isAi = false;
 
   @type("float32") x = 0;
   @type("float32") y = 0;

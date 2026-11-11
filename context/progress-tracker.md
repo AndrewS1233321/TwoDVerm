@@ -14,6 +14,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Lobby AI teammates**: host can Add AI (or right-click) on free hero
+  cards in Choose Your Hero; remove by clicking an AI seat. Synthetic
+  seats count toward the 4-player cap, auto-fight/revive/follow in
+  missions, and auto-vote on Wastes forks.
 - **Chaos Rotblood roster** (spec `16-chaos-roster.md`): Fanatic, Raider,
   Bulwark, Savage (flurry), Mauler, Chaos Warrior, Lifeleech (teleport +
   dodgeable drain), Blightstormer (chasing storm), Chaos Spawn, Bile Troll

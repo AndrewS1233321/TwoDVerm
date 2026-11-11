@@ -25,6 +25,8 @@ const overlay = new Overlay({
   onCreate: (name, gameMode, devTest) => connect(() => createGame({ name, gameMode, devTest: devTest || undefined })),
   onJoin: (code, name) => connect(() => joinGame(code, { name })),
   onPickHero: (heroId: HeroId) => room?.send(MSG.selectHero, { heroId }),
+  onAddAiHero: (heroId: HeroId) => room?.send(MSG.addAiHero, { heroId }),
+  onRemoveAiHero: (heroId: HeroId) => room?.send(MSG.removeAiHero, { heroId }),
   onStart: () => room?.send(MSG.start),
   onVoteLocation: (locationId: ExpeditionLocationId) => room?.send(MSG.voteLocation, { locationId }),
   onTravel: () => room?.send(MSG.travel),

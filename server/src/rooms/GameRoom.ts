@@ -21,6 +21,7 @@ import {
   type ExpeditionLocationId,
   type HeroId,
 } from "@twodverm/shared";
+import { thinkAiHero, type AiHeroBrain } from "../sim/aiHero";
 import { GameState, PlayerState } from "../state/GameState";
 import { queueInput } from "../sim/heroes";
 import { syncHero, syncWorld } from "../sim/sync";
@@ -37,6 +38,8 @@ export class GameRoom extends Room<GameState> {
   /** Locations already cleared this expedition (preferred excluded from the next fork). */
   private playedLocations: ExpeditionLocationId[] = [];
   private lastPhase = "lobby";
+  /** Combat brains for host-spawned AI teammates. */
+  private readonly aiBrains = new Map<string, AiHeroBrain>();
 
   onCreate(options: unknown): void {
     const opts = options as { gameMode?: unknown; devTest?: unknown } | null;
@@ -65,12 +68,45 @@ export class GameRoom extends Room<GameState> {
       const heroId = (raw as { heroId?: unknown } | null)?.heroId;
       if (!isHeroId(heroId)) return;
       const player = this.state.players.get(client.sessionId);
-      if (!player) return;
+      if (!player || player.isAi) return;
       const taken = [...this.state.players.values()].some((p) => p.id !== client.sessionId && p.heroId === heroId);
       if (taken) return;
       player.heroId = heroId;
       this.world.heroes.delete(client.sessionId);
       this.world.addHero(client.sessionId, player.name, HEROES[heroId]);
+    });
+
+    this.onMessage(MSG.addAiHero, (client, raw: unknown) => {
+      if (client.sessionId !== this.state.hostId || this.state.phase !== "lobby") return;
+      const heroId = (raw as { heroId?: unknown } | null)?.heroId;
+      if (!isHeroId(heroId)) return;
+      if (this.state.players.size >= MAX_PLAYERS) return;
+      if ([...this.state.players.values()].some((p) => p.heroId === heroId)) return;
+      const id = `ai-${heroId}`;
+      if (this.state.players.has(id)) return;
+      const player = new PlayerState();
+      player.id = id;
+      player.name = `AI ${HEROES[heroId].name}`;
+      player.heroId = heroId;
+      player.isAi = true;
+      player.connected = true;
+      this.state.players.set(id, player);
+      this.world.addHero(id, player.name, HEROES[heroId]);
+      this.aiBrains.set(id, { seq: 0, ranged: false });
+      this.refreshMaxClients();
+      console.log(`AI ${HEROES[heroId].name} seated in room ${this.code}`);
+    });
+
+    this.onMessage(MSG.removeAiHero, (client, raw: unknown) => {
+      if (client.sessionId !== this.state.hostId || this.state.phase !== "lobby") return;
+      const heroId = (raw as { heroId?: unknown } | null)?.heroId;
+      if (!isHeroId(heroId)) return;
+      const id = `ai-${heroId}`;
+      const player = this.state.players.get(id);
+      if (!player?.isAi) return;
+      this.removePlayer(id);
+      this.aiBrains.delete(id);
+      this.refreshMaxClients();
     });
 
     this.onMessage(MSG.start, (client) => {
@@ -165,12 +201,17 @@ export class GameRoom extends Room<GameState> {
   }
 
   onJoin(client: Client, options: unknown): void {
+    if (this.state.players.size >= MAX_PLAYERS) {
+      throw new Error("Room is full");
+    }
     const name = sanitizeName((options as { name?: unknown } | null)?.name);
     const player = new PlayerState();
     player.id = client.sessionId;
     player.name = name;
+    player.isAi = false;
     this.state.players.set(client.sessionId, player);
     if (!this.state.hostId) this.state.hostId = client.sessionId;
+    this.refreshMaxClients();
 
     if (this.state.phase !== "lobby" && this.state.phase !== "expedition") {
       const heroId = this.freeHeroId();
@@ -239,8 +280,38 @@ export class GameRoom extends Room<GameState> {
   }
 
   private allConnectedVoted(): boolean {
-    const connected = [...this.state.players.values()].filter((p) => p.connected);
-    return connected.length > 0 && connected.every((p) => !!p.vote);
+    // Humans must vote; AI auto-vote separately and don't block the tally.
+    const humans = [...this.state.players.values()].filter((p) => p.connected && !p.isAi);
+    return humans.length > 0 && humans.every((p) => !!p.vote);
+  }
+
+  /** Cap Colyseus seats so AI + humans never exceed MAX_PLAYERS. */
+  private refreshMaxClients(): void {
+    const aiCount = [...this.state.players.values()].filter((p) => p.isAi).length;
+    this.maxClients = Math.max(1, MAX_PLAYERS - aiCount);
+  }
+
+  private driveAiTeammates(): void {
+    if (this.state.phase === "expedition") {
+      for (const p of this.state.players.values()) {
+        if (!p.isAi || p.vote) continue;
+        p.vote = this.state.expeditionOptionA || this.state.expeditionOptionB;
+      }
+      if (this.allConnectedVoted()) this.resolveExpeditionAndStart();
+      return;
+    }
+    if (this.state.phase !== "playing" && this.state.phase !== "merchant") return;
+    for (const p of this.state.players.values()) {
+      if (!p.isAi) continue;
+      const hero = this.world.heroes.get(p.id);
+      if (!hero) continue;
+      let brain = this.aiBrains.get(p.id);
+      if (!brain) {
+        brain = { seq: 0, ranged: false };
+        this.aiBrains.set(p.id, brain);
+      }
+      queueInput(hero, thinkAiHero(this.world, hero, brain));
+    }
   }
 
   /** Majority vote wins; ties broken at random (Chaos Wastes style). */
@@ -333,8 +404,10 @@ export class GameRoom extends Room<GameState> {
   }
 
   private removePlayer(sessionId: string): void {
-    const name = this.state.players.get(sessionId)?.name;
+    const leaving = this.state.players.get(sessionId);
+    const name = leaving?.name;
     this.state.players.delete(sessionId);
+    this.aiBrains.delete(sessionId);
     const hero = this.world.heroes.get(sessionId);
     if (hero?.grabbedBy) {
       const e = this.world.enemies.get(hero.grabbedBy);
@@ -345,8 +418,10 @@ export class GameRoom extends Room<GameState> {
     }
     this.world.heroes.delete(sessionId);
     if (this.state.hostId === sessionId) {
-      this.state.hostId = this.state.players.keys().next().value ?? "";
+      const nextHuman = [...this.state.players.values()].find((p) => !p.isAi);
+      this.state.hostId = nextHuman?.id ?? this.state.players.keys().next().value ?? "";
     }
+    this.refreshMaxClients();
     console.log(`${name} left room ${this.code}`);
   }
 
@@ -356,6 +431,7 @@ export class GameRoom extends Room<GameState> {
   }
 
   private tick(): void {
+    this.driveAiTeammates();
     this.world.step(DT);
     this.maybeContinueWastesExpedition();
     this.maybeLeaveMerchant();
