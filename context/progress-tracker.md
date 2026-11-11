@@ -15,8 +15,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-- **Hallowed bell wave 3**: third sealed-room wave also queues
-  `2 + 2×difficulty` Plague Monks (4 at d1 … 10 at d4).
+- **Hallowed bell retune**: kill goal `players×(45+15d)`; each wave
+  compounds horde + stormvermin +30% (rounded per type); every wave
+  adds 1 special; wave 3 still adds fixed `2+2d` Plague Monks (not
+  compounded).
 - **Wastes `devTest` map grid**: on Gingey's Map, a 3×3 name grid of
   every location sits to the right of the fork UI; host click jumps
   straight into that map at the usual stop difficulty.

@@ -20,16 +20,35 @@ export function budgetsFromDifficulty(difficulty: number): SpawnBudgets {
     holdDuration: Math.round(18 + d * 4),
     holdEliteCount: HOLD_ELITES_BY_DIFFICULTY[Math.round(d) - 1]!,
     cannonChannel: 2.5,
-    bellKillTarget: Math.round(25 + d * 15),
+    /** Placeholder for 1 player; runtime uses `bellKillTargetFor(players, d)`. */
+    bellKillTarget: bellKillTargetFor(1, d),
     bellWaveInterval: Math.max(6, 11 - d),
+    /** Wave-1 stormvermin count; later waves scale with `bellWaveCompound`. */
     bellWaveElites: Math.floor(d / 2),
-    /** 2 base + 2 per difficulty (incl. current): d1→4 … d4→10. */
+    /** Fixed on wave 3 only — not compounded. */
     bellWave3Monks: 2 + 2 * d,
   };
 }
 
 export function difficultyForStop(stop: number): number {
   return Math.max(1, Math.min(4, stop));
+}
+
+/** Bell kill goal: `players × (45 + 15 × difficulty)`. */
+export function bellKillTargetFor(players: number, difficulty: number): number {
+  const p = Math.max(1, Math.round(players));
+  const d = Math.max(1, Math.min(4, difficulty));
+  return p * (45 + 15 * d);
+}
+
+/** Per-wave size multiplier: wave 1 = 1, wave 2 = 1.3, wave 3 = 1.69, … */
+export function bellWaveCompound(waveIndex: number): number {
+  return Math.pow(1.3, Math.max(0, waveIndex - 1));
+}
+
+/** Round a base creature count through the wave compound (specials/monks excluded). */
+export function bellWaveCount(base: number, waveIndex: number): number {
+  return Math.max(0, Math.round(base * bellWaveCompound(waveIndex)));
 }
 
 /** Compact serialisable props for Colyseus string fields / vote UI. */

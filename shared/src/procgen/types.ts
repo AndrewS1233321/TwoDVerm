@@ -103,13 +103,16 @@ export interface SpawnBudgets {
   holdEliteCount: number;
   /** Seconds of held E at the cannon before it fires. */
   cannonChannel: number;
-  /** Kills during the bell event before the clearing blast. */
+  /**
+   * Placeholder kill target for 1 player. Live games use
+   * `bellKillTargetFor(players, difficulty)` when the bell rings.
+   */
   bellKillTarget: number;
   /** Seconds between bell waves. */
   bellWaveInterval: number;
-  /** Stormvermin per bell wave. */
+  /** Wave-1 stormvermin count (later waves compound +30%). */
   bellWaveElites: number;
-  /** Plague Monks added on the bell's 3rd wave (`2 + 2 * difficulty`). */
+  /** Plague Monks on wave 3 only (not compounded). */
   bellWave3Monks: number;
 }
 

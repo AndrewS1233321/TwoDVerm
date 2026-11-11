@@ -2,6 +2,8 @@ import {
   allLivingInBossRoom,
   allLivingInZone,
   ARMOR_SETS,
+  bellKillTargetFor,
+  bellWaveCount,
   collideCircle,
   confineToBossRoom,
   confineToZone,
@@ -680,9 +682,11 @@ export class World {
     const at = obj.interactPoint ?? obj.center;
     this.eventActive = true;
     this.setDoorsSealed(true);
+    const difficulty = this.levelProps?.difficulty ?? 1;
+    const players = Math.max(1, this.standingHeroes().length);
     this.bellKillsAtStart = this.totalKills;
     this.objectiveCount = 0;
-    this.objectiveTarget = this.procMeta!.budgets.bellKillTarget;
+    this.objectiveTarget = bellKillTargetFor(players, difficulty);
     this.bellWaveT = 1.5;
     this.bellWaveIndex = 0;
     this.emit({ t: "setpiece", kind: "bell", x: at.x, y: at.y });
@@ -711,10 +715,15 @@ export class World {
     this.bellWaveT = budgets.bellWaveInterval;
     this.bellWaveIndex += 1;
     const difficulty = this.levelProps?.difficulty ?? 1;
+    const players = Math.max(1, this.heroes.size);
     const points = obj.spawnPoints?.length ? obj.spawnPoints : [obj.center];
-    const size = Math.round(4 + 2 * difficulty) + 3 * Math.max(1, this.heroes.size);
-    this.director.spawnWaveAt(points, size, budgets.bellWaveElites);
-    // Third wave: Plague Monks (2 + 2×difficulty → 4 / 6 / 8 / 10).
+    // Wave 1 base; each later wave compounds horde + stormvermin by +30% (rounded per type).
+    const hordeBase = Math.round(4 + 2 * difficulty) + 3 * players;
+    const horde = bellWaveCount(hordeBase, this.bellWaveIndex);
+    const elites = bellWaveCount(budgets.bellWaveElites, this.bellWaveIndex);
+    this.director.spawnWaveAt(points, horde, elites);
+    this.director.queueBellSpecialAt(points);
+    // Third wave: fixed Plague Monk count (not compounded).
     if (this.bellWaveIndex === 3) {
       this.director.queueTypedAt(points, "plagueMonk", budgets.bellWave3Monks);
       this.emit({ t: "announce", text: "Plague Monks join the assault!", kind: "special" });

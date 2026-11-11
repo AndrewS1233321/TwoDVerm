@@ -211,6 +211,14 @@ export class Director {
     }
   }
 
+  /** One random special on a bell wave (ignores living `maxSpecials` cap). */
+  queueBellSpecialAt(points: Point[]): void {
+    if (points.length === 0) return;
+    const pool = this.racePools?.special ?? SPECIAL_TYPES;
+    const type = pool[Math.floor(this.world.rng() * pool.length)]!;
+    this.queueTypedAt(points, type, 1);
+  }
+
   /** Drop spawns that have not trickled in yet (e.g. after the bell's clearing blast). */
   clearQueue(): void {
     this.queue = [];
