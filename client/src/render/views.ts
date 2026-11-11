@@ -363,17 +363,31 @@ export class CreatureView {
         top.fillCircle(info.x + Math.cos(info.facing) * r, info.y + Math.sin(info.facing) * r, 5);
       }
       if (info.state === "spray_windup" || info.state === "spray") {
-        const fire = ENEMIES[this.opts.typeId as EnemyId]?.warpfire ? STORMFIEND_FIRE : WARPFIRE;
+        const fiend = !!ENEMIES[this.opts.typeId as EnemyId]?.warpfire;
+        const fire = fiend ? STORMFIEND_FIRE : WARPFIRE;
+        const cone = fiend ? 0x7cff4f : 0xff5a1f;
+        const tip = fiend ? 0xb8ff7a : 0xff8a3a;
         const t = info.state === "spray_windup" ? 0.35 + 0.35 * Math.sin(now * 0.03) : 0.55;
         const half = fire.arc / 2;
-        ground.fillStyle(0xff5a1f, info.state === "spray" ? 0.22 : 0.12);
+        ground.fillStyle(cone, info.state === "spray" ? 0.18 : 0.1);
         ground.slice(info.x, info.y, r + fire.range, info.facing - half, info.facing + half, false);
         ground.fillPath();
-        ground.lineStyle(2, 0xff5a1f, t);
+        ground.lineStyle(2, cone, t);
         ground.slice(info.x, info.y, r + fire.range, info.facing - half, info.facing + half, false);
         ground.strokePath();
         if (info.state === "spray") {
-          top.fillStyle(0xff8a3a, 0.55);
+          // Animated flame tongues streaming out of the muzzle.
+          const tongues = fiend ? 14 : 4;
+          for (let i = 0; i < tongues; i++) {
+            const along = ((now * 0.0045 + i * 0.17) % 1);
+            const wobble = Math.sin(now * 0.02 + i * 1.7) * half * 0.55;
+            const a = info.facing + wobble;
+            const d = r + 8 + along * fire.range;
+            const size = (fiend ? 7 : 5) * (1 - along * 0.55) + Math.sin(now * 0.05 + i) * 1.5;
+            top.fillStyle(along < 0.35 ? tip : cone, 0.75 - along * 0.45);
+            top.fillCircle(info.x + Math.cos(a) * d, info.y + Math.sin(a) * d, size);
+          }
+          top.fillStyle(tip, 0.7);
           top.fillCircle(info.x + Math.cos(info.facing) * (r + 10), info.y + Math.sin(info.facing) * (r + 10), 6 + Math.sin(now * 0.04) * 2);
         }
       }

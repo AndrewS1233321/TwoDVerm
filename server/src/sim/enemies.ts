@@ -13,6 +13,7 @@ import {
   RUNNER,
   SACK_RAT,
   STORMFIEND_FIRE,
+  TILE_SIZE,
   turnTowards,
   WARPFIRE,
   collideCircle,
@@ -284,10 +285,52 @@ function stepSpray(world: World, e: Enemy, target: Hero | undefined, t: SprayTun
   if (e.state === "spray") {
     if (target) e.facing = turnTowards(e.facing, angleTo(e.x, e.y, target.x, target.y), t.sprayTurnRate * dt);
     sprayCone(world, e, t.range, t.arc, t.dps, dt);
+    if (e.def.warpfire) paintStormfiendBurn(world, e);
     e.shotT -= dt;
     return e.shotT > 0;
   }
   return false;
+}
+
+/**
+ * Leaves green warpflame patches on every floor tile the Stormfiend cone currently covers.
+ * Re-hitting a tile refreshes its 5s burn timer.
+ */
+function paintStormfiendBurn(world: World, e: Enemy): void {
+  const t = STORMFIEND_FIRE;
+  const half = t.arc / 2;
+  const steps = t.groundBurnSteps;
+  const rays = t.groundBurnRays;
+  for (let s = 1; s <= steps; s++) {
+    const reach = e.radius + (s / steps) * t.range;
+    for (let r = 0; r < rays; r++) {
+      const a = rays === 1 ? e.facing : e.facing - half + (half * 2 * r) / (rays - 1);
+      const x = e.x + Math.cos(a) * reach;
+      const y = e.y + Math.sin(a) * reach;
+      if (!hasLineOfSight(world.level, world.gateOpen, e.x, e.y, x, y)) continue;
+      const tx = Math.floor(x / TILE_SIZE);
+      const ty = Math.floor(y / TILE_SIZE);
+      const id = `wf_${tx}_${ty}`;
+      const existing = world.hazards.get(id);
+      if (existing && existing.kind === "warpflame") {
+        existing.timeLeft = t.groundBurnDuration;
+        existing.x = (tx + 0.5) * TILE_SIZE;
+        existing.y = (ty + 0.5) * TILE_SIZE;
+        continue;
+      }
+      world.hazards.set(id, {
+        id,
+        kind: "warpflame",
+        x: (tx + 0.5) * TILE_SIZE,
+        y: (ty + 0.5) * TILE_SIZE,
+        fromX: e.x,
+        fromY: e.y,
+        radius: t.groundBurnRadius,
+        timeLeft: t.groundBurnDuration,
+        duration: t.groundBurnDuration,
+      });
+    }
+  }
 }
 
 function startSpray(e: Enemy, windup: number): void {

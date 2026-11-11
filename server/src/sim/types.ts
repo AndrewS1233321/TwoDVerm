@@ -197,7 +197,8 @@ export interface Enemy {
 
 export interface Hazard {
   id: string;
-  kind: "globe" | "gas" | "smoke";
+  /** globe/gas = Globadier; smoke = hero bomb; warpflame = Stormfiend ground burn. */
+  kind: "globe" | "gas" | "smoke" | "warpflame";
   x: number;
   y: number;
   fromX: number;

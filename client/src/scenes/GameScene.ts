@@ -516,12 +516,13 @@ export class GameScene extends Phaser.Scene {
         view.afterimage();
       }
       if (e.state === "spray") {
+        const green = def.warpfire === true;
         this.effects.sparks(
           view.position.x + Math.cos(e.facing) * (def.radius + 14),
           view.position.y + Math.sin(e.facing) * (def.radius + 14),
-          0xff5a1f,
-          4,
-          70,
+          green ? colors.warp : 0xff5a1f,
+          green ? 8 : 4,
+          green ? 110 : 70,
         );
       }
     });
@@ -601,15 +602,33 @@ export class GameScene extends Phaser.Scene {
         const gy = h.fromY + (h.y - h.fromY) * t - Math.sin(t * Math.PI) * 50;
         this.top.fillStyle(colors.warp, 1);
         this.top.fillCircle(gx, gy, 5);
-      } else {
-        const fade = Math.min(1, h.timeLeft / 1.5);
-        g.fillStyle(colors.warp, 0.18 * fade);
+        return;
+      }
+      if (h.kind === "warpflame") {
+        const fade = Math.max(0.15, h.timeLeft / Math.max(0.05, h.duration));
+        g.fillStyle(0x2a5a1a, 0.35 * fade);
         g.fillCircle(h.x, h.y, h.radius);
-        for (let i = 0; i < 5; i++) {
-          const a = now * 0.0006 * (i % 2 ? 1 : -1) + i * 1.3;
-          g.fillStyle(colors.warp, 0.1 * fade);
-          g.fillCircle(h.x + Math.cos(a) * h.radius * 0.45, h.y + Math.sin(a) * h.radius * 0.45, h.radius * 0.45);
+        g.fillStyle(colors.warp, 0.22 * fade);
+        g.fillCircle(h.x, h.y, h.radius * 0.7);
+        for (let i = 0; i < 4; i++) {
+          const a = now * 0.003 * (i % 2 ? 1 : -1) + i * 1.6;
+          const lift = 4 + Math.sin(now * 0.012 + i) * 3;
+          this.top.fillStyle(i % 2 ? 0xb8ff7a : colors.warp, (0.35 + (i % 2) * 0.2) * fade);
+          this.top.fillCircle(
+            h.x + Math.cos(a) * h.radius * 0.35,
+            h.y + Math.sin(a * 1.2) * h.radius * 0.35 - lift,
+            4 + (i % 3),
+          );
         }
+        return;
+      }
+      const fade = Math.min(1, h.timeLeft / 1.5);
+      g.fillStyle(colors.warp, 0.18 * fade);
+      g.fillCircle(h.x, h.y, h.radius);
+      for (let i = 0; i < 5; i++) {
+        const a = now * 0.0006 * (i % 2 ? 1 : -1) + i * 1.3;
+        g.fillStyle(colors.warp, 0.1 * fade);
+        g.fillCircle(h.x + Math.cos(a) * h.radius * 0.45, h.y + Math.sin(a) * h.radius * 0.45, h.radius * 0.45);
       }
     });
   }

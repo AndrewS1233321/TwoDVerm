@@ -339,6 +339,29 @@ function place(h: Hero, p: Point): void {
     h.iframesT = 0;
   });
   check("Stormfiend sprays warpfire at range", fiend.state === "spray_windup" || fiend.state === "spray", `${fiend.state} d=${Math.round(dist(fiend.x, fiend.y, h.x, h.y))}`);
+  // Finish wind-up and spray long enough to paint the ground.
+  fiend.state = "spray";
+  fiend.shotT = 0.5;
+  run(world, 0.4, () => {
+    immortal(world);
+    place(h, open);
+  });
+  const burns = [...world.hazards.values()].filter((hz) => hz.kind === "warpflame");
+  check("Stormfiend leaves warpflame on the ground", burns.length > 0, `${burns.length} patches`);
+  if (burns[0]) {
+    const patch = burns[0]!;
+    place(h, { x: patch.x, y: patch.y });
+    const hpBurn = h.hp;
+    run(world, 0.5, () => immortal(world));
+    // immortal restores hp each tick before step — force damage check without heal:
+    h.hp = hpBurn;
+    for (let t = 0; t < 0.5; t += DT) {
+      for (const hero of world.heroes.values()) hero.inputs.push(idle());
+      world.fx = [];
+      world.step(DT);
+    }
+    check("Warpflame ground burn deals DoT", h.hp < hpBurn, `hp ${h.hp}/${hpBurn}`);
+  }
   killEnemy(world, fiend, h);
 }
 

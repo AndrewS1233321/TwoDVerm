@@ -20,7 +20,7 @@ Rat Ogre.
 | `gutterRunner` | Gutter Runner | Special (leap + pin) |
 | `warpfire` | Warpfire Thrower | Special (fire cone) |
 | `sackRat` | Sack Rat | Loot runner (ambient, not a Director special) |
-| `stormfiend` | Stormfiend | Monster / Wastes boss pool |
+| `stormfiend` | Stormfiend | Monster / Wastes boss pool (400px / 50° green warpflame cone; ground burns for 5s) |
 
 ## Shared mechanics
 

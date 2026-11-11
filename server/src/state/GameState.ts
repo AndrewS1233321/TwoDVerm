@@ -116,7 +116,7 @@ export class BarrelState extends Schema {
 
 export class HazardState extends Schema {
   @type("string") id = "";
-  /** "globe" (flying gas globe) or "gas" (poison cloud). */
+  /** "globe" | "gas" | "smoke" | "warpflame". */
   @type("string") kind = "";
   @type("float32") x = 0;
   @type("float32") y = 0;

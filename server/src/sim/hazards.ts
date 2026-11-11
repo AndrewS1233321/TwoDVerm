@@ -1,4 +1,4 @@
-import { dist, GAS } from "@twodverm/shared";
+import { dist, GAS, STORMFIEND_FIRE } from "@twodverm/shared";
 import { damageEnemy, damageHero } from "./damage";
 import type { World } from "./World";
 
@@ -22,6 +22,10 @@ export function updateHazards(world: World, dt: number): void {
       world.hazards.delete(hz.id);
       continue;
     }
+    if (hz.kind === "warpflame") {
+      tickWarpflame(world, hz, dt);
+      continue;
+    }
     for (const h of world.heroes.values()) {
       if (h.state === "dead") continue;
       if (dist(h.x, h.y, hz.x, hz.y) <= hz.radius + h.radius * 0.5) damageHero(world, h, GAS.heroDps * dt);
@@ -32,5 +36,20 @@ export function updateHazards(world: World, dt: number): void {
       e.hp -= GAS.enemyDps * dt;
       if (e.hp <= 0) damageEnemy(world, null, e, { damage: 1, stagger: 0, srcX: hz.x, srcY: hz.y });
     }
+  }
+}
+
+/** Stormfiend ground burn: green warpflame that keeps cooking anyone who stands in it. */
+function tickWarpflame(world: World, hz: { x: number; y: number; radius: number }, dt: number): void {
+  const dps = STORMFIEND_FIRE.groundBurnDps;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead") continue;
+    if (dist(h.x, h.y, hz.x, hz.y) <= hz.radius + h.radius * 0.5) damageHero(world, h, dps * dt);
+  }
+  for (const e of [...world.enemies.values()]) {
+    if (e.def.behavior === "boss" || e.def.id === "warpfire") continue;
+    if (dist(e.x, e.y, hz.x, hz.y) > hz.radius) continue;
+    e.hp -= dps * 0.35 * dt;
+    if (e.hp <= 0) damageEnemy(world, null, e, { damage: 1, stagger: 0, srcX: hz.x, srcY: hz.y });
   }
 }

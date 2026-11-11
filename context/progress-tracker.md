@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Stormfiend warpflame**: spray cone is 400px / 50° with animated green
+  flame VFX; ground tiles hit by the cone stay lit for 5s and deal DoT
+  (`warpflame` hazard, 14 DPS).
 - **Full Skaven roster** (spec `15-skaven-roster.md`): added Shielded
   Clanrat, Shielded Stormvermin, Plague Monk (flurry), Gutter Runner
   (leap + pin), Warpfire Thrower (cone spray), Sack Rat (flee + loot),

@@ -168,17 +168,25 @@ export const WARPFIRE = {
   sprayTurnRate: 0.9,
 };
 
-/** Stormfiend warpfire arms: shorter bursts than the Warpfire Thrower. */
+/** Stormfiend warpfire arms: long green cone that leaves burning ground. */
 export const STORMFIEND_FIRE = {
   minRange: 160,
-  maxRange: 300,
+  /** How far away a target can be for the fiend to start spraying. */
+  maxRange: 420,
   windup: 0.9,
   sprayTime: 2.2,
   cooldown: 7,
-  range: 240,
+  range: 400,
   arc: Math.PI * (50 / 180),
   dps: 22,
   sprayTurnRate: 0.8,
+  /** Lingering warpflame patches left on ground the cone sweeps. */
+  groundBurnDuration: 5,
+  groundBurnRadius: 30,
+  groundBurnDps: 14,
+  /** Along-cone / across-cone sample density when painting burn patches. */
+  groundBurnSteps: 10,
+  groundBurnRays: 5,
 };
 
 /** Gutter Runner: stalks unseen, leaps at an isolated hero, pins them. */
