@@ -1,8 +1,8 @@
 /**
  * Testing zone for combat and spawn checks.
  * Rooms: central (starts + one dummy per armor tier), summon room (two rows
- * of pads covering the full Skaven roster), and wastes gate (merchant +
- * party hold to open Gingey's Map).
+ * of pads covering the full Skaven roster, with two empty tiles between
+ * rows), and wastes gate (merchant + party hold to open Gingey's Map).
  *
  * Extra markers (see shared/src/level.ts):
  *   u/l/m/k/z  armor dummies (none / light / medium / heavy / super heavy)
@@ -30,8 +30,12 @@ export const TESTING_ZONE: readonly string[] = [
   "##############............................................#",
   "##############............................................#",
   "##############.............1...2...3...4...5...6...7......#",
+  "##############............................................#",
   "##############...........................................P#",
   "##############.............8...9...0...q...w...x...y......#",
+  "##############............................................#",
+  "##############............................................#",
+  "##############............................................#",
   "##############............................................#",
   "##############............................................#",
   "##############...........#################################",
