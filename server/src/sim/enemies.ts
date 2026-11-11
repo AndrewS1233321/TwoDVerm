@@ -499,15 +499,17 @@ function updateLeap(world: World, e: Enemy, dt: number): void {
   const step = RUNNER.leapSpeed * dt;
   const dx = Math.cos(e.leapAngle) * step;
   const dy = Math.sin(e.leapAngle) * step;
-  const p = moveCircle(world.level, world.gateOpen, e.x, e.y, e.radius, dx, dy);
-  const moved = Math.hypot(p.x - e.x, p.y - e.y);
-  e.x = p.x;
-  e.y = p.y;
+  const x0 = e.x;
+  const y0 = e.y;
+  // Airborne: no wall / floor collision. Hit radius still applies to pushes.
+  e.x += dx;
+  e.y += dy;
   for (const h of world.heroes.values()) {
     if (h.state === "dead" || h.state === "downed" || h.state === "grabbed" || h.invisT > 0) continue;
     // Push-block: while the hero is pushing, the pounce cannot land.
     if (h.state === "pushing") continue;
-    if (dist(e.x, e.y, h.x, h.y) > e.radius + h.radius + RUNNER.leapHitPad) continue;
+    // Near-centre connect along this step (radii ignored).
+    if (pointToSegmentDistance(h.x, h.y, x0, y0, e.x, e.y) > RUNNER.leapConnectDist) continue;
     if (h.iframesT > 0) {
       world.emit({ t: "dodge", id: h.id });
       continue;
@@ -516,12 +518,24 @@ function updateLeap(world: World, e: Enemy, dt: number): void {
     return;
   }
   e.shotT -= dt;
-  if (e.shotT <= 0 || moved < step * 0.4) {
+  if (e.shotT <= 0) {
     e.cooldown = Math.max(e.cooldown, RUNNER.cooldown);
     e.state = "staggered";
     e.stateT = RUNNER.recoverTime * 0.5;
     e.actionSeq++;
   }
+}
+
+/** Shortest distance from point P to segment AB. */
+function pointToSegmentDistance(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const ab2 = abx * abx + aby * aby;
+  if (ab2 < 1e-8) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * abx + (py - ay) * aby) / ab2;
+  if (t < 0) t = 0;
+  else if (t > 1) t = 1;
+  return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
 }
 
 function pin(world: World, e: Enemy, hero: Hero): void {

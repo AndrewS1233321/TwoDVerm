@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Gutter Runner leap connect**: pounce ignores movement collision and
+  only lands when centres are within `leapConnectDist` (6 px, swept along
+  the leap step); push / shield-bash still use the normal radius.
 - **Dodge length**: base dodge travel reduced to 60 px (`DODGE.speed`
   300 × `DODGE.time` 0.2s); charges and Viktor’s ult dash unchanged.
 - **Summon Room portal**: Testing-zone pads still trigger on step, but

@@ -31,9 +31,11 @@ Rat Ogre.
 - **Cone spray** (`sprayCone`): used by the Warpfire Thrower and the
   Stormfiend. Damages heroes in an arc with line of sight; cannot be
   blocked (dodge or leave the cone).
-- **Pin**: Gutter Runner reuses the hero `grabbed` state. The runner stays
-  on top dealing DPS; any teammate hit or push releases it (same path as
-  Packmaster drag).
+- **Pin**: Gutter Runner reuses the hero `grabbed` state. The leap ignores
+  movement collision and only connects when centres nearly overlap
+  (`RUNNER.leapConnectDist`); push / melee still use the runner's normal
+  radius. While pinned it stays on top dealing DPS; any teammate hit or
+  push releases it (same path as Packmaster drag).
 - **Boss pool**: `enemiesForRaces` exposes `bosses`. Authored Wastes maps
   pick the final boss from that list with the run seed (Rat Ogre or
   Stormfiend). The Default mission still always spawns a Rat Ogre. The HUD

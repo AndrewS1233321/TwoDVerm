@@ -196,8 +196,11 @@ export const RUNNER = {
   leapWindup: 0.35,
   leapSpeed: 620,
   leapMaxTime: 0.5,
-  /** Distance from the hero at which a leap connects. */
-  leapHitPad: 8,
+  /**
+   * Max centre-to-centre distance for a pounce to connect (near-overlap).
+   * Checked along the leap step so a fast tick cannot skip past the hero.
+   */
+  leapConnectDist: 6,
   pinDps: 9,
   recoverTime: 1.2,
   /** Minimum time between pounces; also how long it flees after a push stun. */

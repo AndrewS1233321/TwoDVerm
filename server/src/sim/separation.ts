@@ -16,7 +16,8 @@ export function separateCreatures(world: World): void {
     mass.push(h.radius * h.radius * HERO_MASS_MUL);
   }
   for (const e of world.enemies.values()) {
-    if (e.state === "drag") continue;
+    // Leap ignores movement collision; pin sits on the hero; drag is locked.
+    if (e.state === "drag" || e.state === "leap" || e.state === "pin") continue;
     bodies.push(e);
     mass.push(e.radius * e.radius);
   }
