@@ -250,7 +250,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     name: "Warplock Jezzail",
     radius: 16,
     hp: 110,
-    speed: 95,
+    speed: 5,
     turnRate: 4,
     armor: { head: "medium", front: "heavy", side: "medium", back: "light" },
     staggerResist: 2,

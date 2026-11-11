@@ -16,7 +16,7 @@ Update this file after every meaningful implementation change.
 ## Completed
 
 - **Warplock Jezzail (Ultra Elite)**: `ultraElite` flag + `behavior:
-  "jezzail"`; HP 110 / speed 95 / shield / infinite range (LoS only); aim
+  "jezzail"`; HP 110 / speed 5 / shield / infinite range (LoS only); aim
   2.2s with red laser, hitscan 100 dmg / 1 AP, reload 2s then full
   re-aim; Fantasy pavise+gunner sprite and sniper tracer; excluded from
   Director race pools; Testing summon pad `j` only (no mission spawn yet).
