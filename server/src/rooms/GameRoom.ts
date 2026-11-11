@@ -131,6 +131,14 @@ export class GameRoom extends Room<GameState> {
       this.resolveExpeditionAndStart();
     });
 
+    this.onMessage(MSG.devPickLocation, (client, raw: unknown) => {
+      if (!this.state.devTest) return;
+      if (client.sessionId !== this.state.hostId || this.state.phase !== "expedition") return;
+      const locationId = (raw as { locationId?: unknown } | null)?.locationId;
+      if (!isExpeditionLocationId(locationId)) return;
+      this.startExpeditionAt(locationId);
+    });
+
     this.onMessage(MSG.returnToLobby, (client) => {
       if (client.sessionId !== this.state.hostId) return;
       if (this.state.phase !== "victory" && this.state.phase !== "defeat") return;
@@ -237,9 +245,14 @@ export class GameRoom extends Room<GameState> {
 
   /** Majority vote wins; ties broken at random (Chaos Wastes style). */
   private resolveExpeditionAndStart(): void {
-    if (this.state.phase !== "expedition") return;
     const winner = this.tallyVotes();
     if (!winner) return;
+    this.startExpeditionAt(winner);
+  }
+
+  /** Begin the next wastes stop at `winner` (vote result or devTest jump). */
+  private startExpeditionAt(winner: ExpeditionLocationId): void {
+    if (this.state.phase !== "expedition") return;
     this.state.expeditionStop += 1;
     const stop = this.state.expeditionStop;
     const seed = rollProcSeed(this.world.roomSeed, stop, winner);

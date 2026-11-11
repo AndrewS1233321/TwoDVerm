@@ -4,6 +4,7 @@ import {
   armorSetsForHero,
   CREATURE_RACE_LABELS,
   describeTradeoffs,
+  EXPEDITION_LOCATION_IDS,
   EXPEDITION_LOCATIONS,
   GAME_MODE_LABELS,
   HERO_IDS,
@@ -39,6 +40,8 @@ export interface OverlayHandlers {
   onStart(): void;
   onVoteLocation(locationId: ExpeditionLocationId): void;
   onTravel(): void;
+  /** Wastes `devTest`: host jumps straight into a location. */
+  onDevPickLocation(locationId: ExpeditionLocationId): void;
   onReturnToLobby(): void;
   onLeave(): void;
   onPauseChange(paused: boolean): void;
@@ -444,8 +447,11 @@ export class Overlay {
     const me = state.players.get(localId);
     const myVote = isExpeditionLocationId(me?.vote) ? me.vote : null;
     const nextStop = Math.min(state.expeditionStop + 1, WASTES_EXPEDITION_STOPS);
+    const isHost = state.hostId === localId;
 
+    el("expedition-panel").classList.toggle("expedition-wide", state.devTest);
     el("expedition-progress").textContent = `Stop ${nextStop} of ${WASTES_EXPEDITION_STOPS}`;
+    this.renderDevTestMapGrid(state.devTest, isHost, nextStop);
 
     if (!this.inspected) this.inspected = myVote ?? optionA;
 
@@ -475,14 +481,15 @@ export class Overlay {
       })
       .join("");
 
-    const isHost = state.hostId === localId;
     const anyVote = players.some((p) => !!p.vote);
     const allVoted = players.filter((p) => p.connected).every((p) => !!p.vote);
     const travel = el<HTMLButtonElement>("travel-btn");
     travel.style.display = isHost ? "" : "none";
     travel.disabled = !anyVote;
     el("expedition-status").textContent = !myVote
-      ? "Inspect a path, then click Vote to confirm"
+      ? state.devTest && isHost
+        ? "Vote a fork, or pick any map on the right to jump in"
+        : "Inspect a path, then click Vote to confirm"
       : this.inspected && this.inspected !== myVote
         ? "Inspecting another path — Vote again to change"
         : isHost
@@ -492,6 +499,40 @@ export class Overlay {
           : allVoted
             ? "All voted — departing soon"
             : "Waiting for the rest of the party";
+  }
+
+  /** 3×3 name grid of every Wastes map; host click launches at current stop difficulty. */
+  private renderDevTestMapGrid(devTest: boolean, isHost: boolean, nextStop: number): void {
+    const grid = el("devtest-map-grid");
+    const cells = el("devtest-map-cells");
+    grid.hidden = !devTest;
+    if (!devTest) {
+      cells.innerHTML = "";
+      return;
+    }
+    const slots = 9;
+    const ids = EXPEDITION_LOCATION_IDS;
+    cells.innerHTML = "";
+    for (let i = 0; i < slots; i++) {
+      const id = ids[i];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "devtest-map-cell";
+      if (!id) {
+        btn.classList.add("empty");
+        btn.disabled = true;
+        btn.textContent = "";
+      } else {
+        const loc = EXPEDITION_LOCATIONS[id];
+        btn.textContent = loc.name;
+        btn.title = `Launch ${loc.name} at difficulty ${nextStop}`;
+        btn.disabled = !isHost;
+        if (isHost) {
+          btn.onclick = () => this.h.onDevPickLocation(id);
+        }
+      }
+      cells.appendChild(btn);
+    }
   }
 
   private updateVoteButton(myVote: ExpeditionLocationId | null): void {

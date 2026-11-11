@@ -11,6 +11,8 @@ export const MSG = {
   voteLocation: "voteLocation",
   /** Gingey Wastes: host confirms travel after votes. */
   travel: "travel",
+  /** Wastes `devTest`: host jumps straight to a named location. */
+  devPickLocation: "devPickLocation",
   /** Merchant hall: buy a shop item by id. */
   buyShopItem: "buyShopItem",
   /** Merchant hall: buy a hero perk by id. */

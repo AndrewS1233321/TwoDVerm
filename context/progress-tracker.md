@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Wastes `devTest` map grid**: on Gingey's Map, a 3×3 name grid of
+  every location sits to the right of the fork UI; host click jumps
+  straight into that map at the usual stop difficulty.
 - **Testing summon room spacing**: summon room + wastes gate shifted
   down 5 tiles; two empty tiles between the two summon-pad rows so the
   green pad sprites no longer overlap.

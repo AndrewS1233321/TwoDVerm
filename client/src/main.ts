@@ -28,6 +28,7 @@ const overlay = new Overlay({
   onStart: () => room?.send(MSG.start),
   onVoteLocation: (locationId: ExpeditionLocationId) => room?.send(MSG.voteLocation, { locationId }),
   onTravel: () => room?.send(MSG.travel),
+  onDevPickLocation: (locationId: ExpeditionLocationId) => room?.send(MSG.devPickLocation, { locationId }),
   onReturnToLobby: () => room?.send(MSG.returnToLobby),
   onLeave: () => leave(),
   onPauseChange: (paused) => (scene().inputBlocked = paused),
