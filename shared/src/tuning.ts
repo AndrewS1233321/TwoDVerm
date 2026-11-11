@@ -205,7 +205,7 @@ export const MONK = {
 export const RUNNER = {
   leapRange: 220,
   leapWindup: 0.35,
-  leapSpeed: 620,
+  leapSpeed: 465,
   leapMaxTime: 0.5,
   /**
    * Max centre-to-centre distance for a pounce to connect (near-overlap).

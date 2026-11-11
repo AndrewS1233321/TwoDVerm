@@ -15,6 +15,8 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Gutter Runner leap speed**: pounce travel reduced 25% (`leapSpeed`
+  465, was 620).
 - **Plague Monk flurry**: no more dash strikes. In melee it chases the
   hero while swinging — first engagement is 6 slashes (0.2s wind-up each,
   arcs follow its position), then a 1s pause, then repeating 3-hit
