@@ -69,5 +69,8 @@ Until web fonts are added, use `Georgia, serif` for titles and
 
 - Menus: centered panel on `surface` over `bgBase`, gold accent buttons.
 - In-game HUD: own health, block stamina and dodge charges bottom-left;
-  teammates' health top-left; ammo bottom-right.
+  level name and difficulty in small text at the top-left, with
+  teammates' health just under that; ammo bottom-right. Levels without
+  a rolled difficulty (Default, Testing zone, merchant hall) show the
+  name only.
 - Camera follows the local player.

@@ -14,6 +14,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Level corner label**: while playing or in a merchant hall, the HUD
+  shows the level name in small text at the top-left, with rolled
+  difficulty (`Difficulty 1.0` … `4.0`) on the line under it when the
+  level has one. Teammate bars sit below that label.
 - **Authored Wastes missions** (spec `13-authored-wastes-missions.md`):
   Grim Causeway, Weeping Quarry, Salt Hollow and Cinder Watch each load
   one fixed layout (`shared/src/levels/expeditionLevels.ts`) instead of

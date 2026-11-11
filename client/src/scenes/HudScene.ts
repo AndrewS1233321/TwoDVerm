@@ -7,11 +7,15 @@ import {
   dist,
   DOWNED,
   ENEMIES,
+  EXPEDITION_LOCATIONS,
   HEROES,
   INTERACT_RANGE,
+  isExpeditionLocationId,
   isHeroId,
   isInZone,
   MERCHANT_EXIT_HOLD,
+  parseLevelProps,
+  WASTES_MERCHANT_LEVEL_ID,
 } from "@twodverm/shared";
 import { hasState } from "../net/connection";
 import type { PlayerView } from "../net/types";
@@ -57,6 +61,8 @@ export class HudScene extends Phaser.Scene {
     t("hint", { fontSize: "12px", color: palette.textMuted, align: "center" }, 0.5, 0);
     t("heroName", { fontFamily: TITLE_FONT, fontSize: "15px", color: palette.accent }, 0, 1);
     t("hidden", { fontSize: "12px", color: palette.dodge }, 0, 0.5);
+    t("levelName", { fontSize: "13px" }, 0, 0);
+    t("levelDiff", { fontSize: "11px", color: palette.textMuted }, 0, 0);
     for (let i = 0; i < 3; i++) {
       this.teamTexts.push(this.add.text(0, 0, "", { fontFamily: FONT, fontSize: "12px", color: palette.textPrimary, stroke: "#000", strokeThickness: 3 }));
     }
@@ -106,7 +112,8 @@ export class HudScene extends Phaser.Scene {
     }
 
     this.drawSelf(me, W, H);
-    this.drawTeam(me);
+    const teamTop = this.drawLevelLabel();
+    this.drawTeam(me, teamTop);
     this.drawCenter(W, H);
     this.drawPrompt(me, W, H);
     this.drawOffscreen(me);
@@ -255,13 +262,25 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  private drawTeam(me: PlayerView): void {
+  /** Level name and difficulty in the top-left. Returns the y where teammate bars should start. */
+  private drawLevelLabel(): number {
+    const room = this.game_.room!;
+    const label = levelCornerLabel(room.state.levelId, room.state.levelProps);
+    const x = 14;
+    const y = 10;
+    this.texts.levelName!.setPosition(x, y).setText(label.name);
+    const showDiff = label.difficulty.length > 0;
+    this.texts.levelDiff!.setVisible(showDiff).setPosition(x, y + 16).setText(label.difficulty);
+    return showDiff ? y + 36 : y + 20;
+  }
+
+  private drawTeam(me: PlayerView, startY: number): void {
     const room = this.game_.room!;
     let i = 0;
     room.state.players.forEach((p) => {
       if (p.id === me.id || !isHeroId(p.heroId) || i >= this.teamTexts.length) return;
       const def = HEROES[p.heroId];
-      const y = 14 + i * 34;
+      const y = startY + i * 34;
       const x = 14;
       const g = this.g;
       g.fillStyle(0x000000, 0.45);
@@ -476,6 +495,16 @@ function bar(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h:
   g.fillRect(x, y, w * clamp(frac, 0, 1), h);
   g.lineStyle(1, 0x000000, 0.8);
   g.strokeRect(x, y, w, h);
+}
+
+function levelCornerLabel(levelId: string, levelProps: string): { name: string; difficulty: string } {
+  let name = "Default";
+  if (isExpeditionLocationId(levelId)) name = EXPEDITION_LOCATIONS[levelId].name;
+  else if (levelId === "testing") name = "Testing zone";
+  else if (levelId === WASTES_MERCHANT_LEVEL_ID) name = "Merchant hall";
+  else if (levelId === "wastes_camp") name = "Camp";
+  const props = levelProps ? parseLevelProps(levelProps) : null;
+  return { name, difficulty: props ? `Difficulty ${props.difficulty.toFixed(1)}` : "" };
 }
 
 function formatTime(s: number): string {
