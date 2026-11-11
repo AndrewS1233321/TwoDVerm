@@ -72,7 +72,7 @@ export interface RangedDef {
   holdSprayAfterShots?: number;
   /** Cooldown between spray shots (seconds). */
   holdSprayCooldown?: number;
-  /** Half-angle spread (radians) while spraying — much wider than `spread`. */
+  /** Half-angle spread (radians) while spraying; shots stay inside ± this. */
   holdSpraySpread?: number;
 }
 

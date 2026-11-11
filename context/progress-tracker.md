@@ -142,9 +142,9 @@ Update this file after every meaningful implementation change.
   still fires instantly at full damage. Guns keep hold-to-auto-fire.
 - **Markus repeater spray**: while holding LMB, the first
   `holdSprayAfterShots` (2) hip-fire shots use normal cooldown/spread;
-  further shots in that hold use `holdSprayCooldown` (0.03s) and a very
-  wide `holdSpraySpread`. Releasing LMB (or precision aim / dodge)
-  resets the streak. RMB precision is unchanged.
+  further shots in that hold use `holdSprayCooldown` (0.03s) and stay
+  inside a 30° cone (`holdSpraySpread` ±15°). Releasing LMB (or
+  precision aim / dodge) resets the streak. RMB precision is unchanged.
 - **Hero perks**: data-driven `PERKS` table (`shared/src/data/perks.ts`)
   with per-hero eligibility and `requires` / `excludes` fields for
   future dependencies. Merchant lists every eligible perk each visit

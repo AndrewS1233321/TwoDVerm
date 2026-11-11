@@ -84,7 +84,8 @@ export const REPEATER: RangedDef = {
   /** First N hip-fire shots in a hold stay accurate; after that, dump the mag. */
   holdSprayAfterShots: 2,
   holdSprayCooldown: 0.03,
-  holdSpraySpread: 0.55,
+  /** Half-angle of the rapid-fire cone (±15° → 30° full). */
+  holdSpraySpread: deg(15),
 };
 export const LONGBOW: RangedDef = {
   id: "longbow",
