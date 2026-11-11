@@ -261,14 +261,22 @@ function place(h: Hero, p: Point): void {
   killEnemy(world, shield, h);
 
   const monk = world.spawnEnemy("plagueMonk", origin.x + 28, origin.y, true)!;
-  const flurry = ENEMIES.plagueMonk.attacks[0]!;
-  monk.chainLeft = 2;
-  monk.attack = newAttack(flurry, "enemy");
+  const opener = ENEMIES.plagueMonk.attacks[0]!;
+  monk.chainLeft = 3;
+  monk.attack = newAttack(opener, "enemy");
   monk.state = "attack";
   monk.targetId = h.id;
-  // Finish the first swing so the chain follow-up starts.
-  for (let i = 0; i < 90 && monk.chainLeft === 2; i++) run(world, DT, () => immortal(world));
-  check("Plague Monk starts a chained flurry", monk.chainLeft === 1 && monk.state === "attack", `state ${monk.state} chain ${monk.chainLeft}`);
+  place(h, origin);
+  // Finish the opener so the first dash follow-up starts.
+  let flashed = false;
+  for (let i = 0; i < 120 && monk.chainLeft === 3; i++) {
+    place(h, origin);
+    const fx = run(world, DT, () => immortal(world));
+    if (fx.some((f) => f.t === "slashflash")) flashed = true;
+  }
+  const dashed = monk.attack?.def.id === "monk_dash";
+  check("Plague Monk opener chains into a dash strike", monk.chainLeft === 2 && dashed, `state ${monk.state} chain ${monk.chainLeft} atk ${monk.attack?.def.id}`);
+  check("Plague Monk dash shows a white slash flash", flashed);
   killEnemy(world, monk, h);
 
   place(h, origin);

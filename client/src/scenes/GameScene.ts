@@ -788,6 +788,10 @@ export class GameScene extends Phaser.Scene {
           this.effects.gasBurst(e.x, e.y, 72);
           this.sfxAt("gas", e, 0.9);
           break;
+        case "slashflash":
+          this.effects.slashFlash(e.x, e.y, e.facing, e.reach, e.arc);
+          this.sfxAt("heavySwing", e, 0.45);
+          break;
         case "setpiece":
           if (e.kind === "cannon") {
             this.effects.cannonBlast(e.x, e.y);

@@ -131,8 +131,36 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     elite: true,
     race: "skaven",
     attacks: [
-      { id: "monk_flurry", windup: 0.45, active: 0.1, recovery: 0.55, reach: 22, arc: deg(100), damage: 9, cleave: 1, stagger: 0, blockCost: 0.9, lunge: 140, chain: 3, swing: { from: -1.1, to: 1.1 } },
-      { id: "monk_leap", windup: 0.7, active: 0.18, recovery: 0.8, reach: 26, arc: deg(70), damage: 16, cleave: 1, stagger: 1, blockCost: 1.5, lunge: 260, swing: { from: 0.4, to: -0.2, thrust: 10 } },
+      // Opener: wind-up then strike in the telegraphed arc; chainLeft then fires 3 dash strikes.
+      {
+        id: "monk_opener",
+        windup: 0.55,
+        active: 0.12,
+        recovery: 0.18,
+        reach: 24,
+        arc: deg(110),
+        damage: 10,
+        cleave: 1,
+        stagger: 0,
+        blockCost: 0.9,
+        chain: 4,
+        swing: { from: -1.1, to: 1.1 },
+      },
+      // Follow-up: no wind-up; server dashes then strikes (white flash telegraph on client).
+      {
+        id: "monk_dash",
+        windup: 0,
+        active: 0.12,
+        recovery: 0.14,
+        reach: 22,
+        arc: deg(100),
+        damage: 9,
+        cleave: 1,
+        stagger: 0,
+        blockCost: 0.9,
+        lunge: 280,
+        swing: { from: -0.9, to: 0.9, thrust: 8 },
+      },
     ],
   },
   gunner: {

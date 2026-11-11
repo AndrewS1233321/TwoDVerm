@@ -16,7 +16,7 @@ Rat Ogre.
 | -- | ---- | ---- |
 | `shieldClanrat` | Shielded Clanrat | Horde (about 20% of clanrat picks) |
 | `shieldStormvermin` | Shielded Stormvermin | Elite |
-| `plagueMonk` | Plague Monk | Elite (3-hit flurry) |
+| `plagueMonk` | Plague Monk | Elite (wind-up opener + 3 dash strikes with white flash) |
 | `gutterRunner` | Gutter Runner | Special (leap + pin) |
 | `warpfire` | Warpfire Thrower | Special (fire cone) |
 | `sackRat` | Sack Rat | Loot runner (ambient, not a Director special) |

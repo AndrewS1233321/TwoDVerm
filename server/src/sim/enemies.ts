@@ -210,8 +210,12 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
     applyLunge(world, e, a, dt);
     if (done) {
-      if (e.chainLeft > 0 && target && target.state !== "dead") {
+      if (e.chainLeft > 0 && target && target.state !== "dead" && target.state !== "downed") {
         e.chainLeft--;
+        if (e.def.id === "plagueMonk") {
+          startMonkDash(world, e, target, e.chainLeft);
+          return;
+        }
         e.attack = newAttack(chainSwing(a.def, e.chainLeft, true), "enemy");
         e.actionSeq++;
         return;
@@ -249,6 +253,40 @@ function chainSwing(def: AttackDef, left: number, followUp: boolean): AttackDef 
     windup: followUp ? def.windup * CHAIN_WINDUP_MUL : def.windup,
     recovery: left > 0 ? def.recovery * CHAIN_RECOVERY_MUL : def.recovery,
   };
+}
+
+const MONK_DASH_DIST = 58;
+
+/** Plague Monk follow-up: face the hero, dash in, strike with no wind-up, flash the arc white. */
+function startMonkDash(world: World, e: Enemy, target: Hero, left: number): void {
+  faceToward(e, target.x, target.y, 100, 1);
+  const p = moveCircle(
+    world.level,
+    world.gateOpen,
+    e.x,
+    e.y,
+    e.radius,
+    Math.cos(e.facing) * MONK_DASH_DIST,
+    Math.sin(e.facing) * MONK_DASH_DIST,
+  );
+  e.x = p.x;
+  e.y = p.y;
+  const dash = e.def.attacks.find((a) => a.id === "monk_dash") ?? e.def.attacks[1]!;
+  const def: AttackDef = {
+    ...dash,
+    recovery: left > 0 ? dash.recovery * 0.85 : dash.recovery * 1.15,
+  };
+  e.attack = newAttack(def, "enemy");
+  e.state = "attack";
+  e.actionSeq++;
+  world.emit({
+    t: "slashflash",
+    x: e.x,
+    y: e.y,
+    facing: e.facing,
+    reach: e.radius + def.reach + 6,
+    arc: def.arc,
+  });
 }
 
 /** Damages every hero in a cone in front of `e` with line of sight; dodging heroes are skipped. */
@@ -540,6 +578,8 @@ function fleeFrom(world: World, e: Enemy, hx: number, hy: number, dt: number): v
 function chooseMeleeAttack(world: World, e: Enemy) {
   const list = e.def.attacks;
   if (list.length <= 1) return list[0];
+  // Plague Monk always opens with the wind-up combo (dashes are chain follow-ups).
+  if (e.def.id === "plagueMonk") return list[0];
   if (e.def.behavior === "boss") {
     let near = 0;
     for (const h of world.heroes.values()) {

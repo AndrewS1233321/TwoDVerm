@@ -129,4 +129,25 @@ export class Effects {
     this.ring(x, y, colors.accent, 300, 700);
     this.sparks(x, y, 0xfff0b0, 40, 320);
   }
+
+  /** Brief white flash of a melee arc (Plague Monk dash strikes). */
+  slashFlash(x: number, y: number, facing: number, reach: number, arc: number): void {
+    const g = this.scene.add.graphics().setDepth(26);
+    const half = Math.min(Math.PI, arc / 2);
+    g.fillStyle(0xffffff, 0.45);
+    g.slice(0, 0, reach, -half, half, false);
+    g.fillPath();
+    g.lineStyle(3, 0xffffff, 0.95);
+    g.slice(0, 0, reach, -half, half, false);
+    g.strokePath();
+    g.setPosition(x, y).setRotation(facing);
+    this.scene.tweens.add({
+      targets: g,
+      alpha: 0,
+      scale: 1.08,
+      duration: 180,
+      ease: "Cubic.easeOut",
+      onComplete: () => g.destroy(),
+    });
+  }
 }

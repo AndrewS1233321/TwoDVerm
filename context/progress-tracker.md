@@ -15,6 +15,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Plague Monk combo**: wind-up opener strike, then three no-wind-up
+  dashes toward the target; each dash emits a brief white `slashflash`
+  attack-arc FX.
 - **Stormfiend warpflame**: spray cone is 400px / 50° with animated green
   flame VFX; ground tiles hit by the cone stay lit for 5s and deal DoT
   (`warpflame` hazard, 14 DPS).

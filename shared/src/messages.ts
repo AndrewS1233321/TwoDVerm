@@ -93,6 +93,8 @@ export type FxEvent =
   | { t: "ward"; id: string; x: number; y: number }
   /** Wastes set piece: cannon fired, wall breached, bell rung, or the bell's clearing blast. */
   | { t: "setpiece"; kind: "cannon" | "breach" | "bell" | "hammer"; x: number; y: number }
+  /** Brief white flash of an attack arc (Plague Monk dash strikes). */
+  | { t: "slashflash"; x: number; y: number; facing: number; reach: number; arc: number }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {
