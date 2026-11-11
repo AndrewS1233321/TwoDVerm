@@ -109,6 +109,8 @@ export interface SpawnBudgets {
   bellWaveInterval: number;
   /** Stormvermin per bell wave. */
   bellWaveElites: number;
+  /** Plague Monks added on the bell's 3rd wave (`2 + 2 * difficulty`). */
+  bellWave3Monks: number;
 }
 
 export interface GeneratedLevelMeta {

@@ -23,6 +23,8 @@ export function budgetsFromDifficulty(difficulty: number): SpawnBudgets {
     bellKillTarget: Math.round(25 + d * 15),
     bellWaveInterval: Math.max(6, 11 - d),
     bellWaveElites: Math.floor(d / 2),
+    /** 2 base + 2 per difficulty (incl. current): d1→4 … d4→10. */
+    bellWave3Monks: 2 + 2 * d,
   };
 }
 

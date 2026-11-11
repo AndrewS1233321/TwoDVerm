@@ -103,6 +103,8 @@ export class World {
   private holdMidWaveDone = false;
   private bellKillsAtStart = 0;
   private bellWaveT = 0;
+  /** 1-based index of the next bell wave to fire. */
+  private bellWaveIndex = 0;
 
   private nextId = 1;
   private flowT = 0;
@@ -172,6 +174,7 @@ export class World {
     this.holdMidWaveDone = false;
     this.bellKillsAtStart = 0;
     this.bellWaveT = 0;
+    this.bellWaveIndex = 0;
     if (this.doorsSealed) {
       for (const i of this.level.setPieces?.sealDoors ?? []) this.level.tiles[i] = TILE_FLOOR;
     }
@@ -681,6 +684,7 @@ export class World {
     this.objectiveCount = 0;
     this.objectiveTarget = this.procMeta!.budgets.bellKillTarget;
     this.bellWaveT = 1.5;
+    this.bellWaveIndex = 0;
     this.emit({ t: "setpiece", kind: "bell", x: at.x, y: at.y });
     this.emit({ t: "announce", text: "The bell tolls! The doors are sealed. Survive!", kind: "event" });
   }
@@ -705,9 +709,16 @@ export class World {
     this.bellWaveT -= dt;
     if (this.bellWaveT > 0) return;
     this.bellWaveT = budgets.bellWaveInterval;
+    this.bellWaveIndex += 1;
     const difficulty = this.levelProps?.difficulty ?? 1;
+    const points = obj.spawnPoints?.length ? obj.spawnPoints : [obj.center];
     const size = Math.round(4 + 2 * difficulty) + 3 * Math.max(1, this.heroes.size);
-    this.director.spawnWaveAt(obj.spawnPoints?.length ? obj.spawnPoints : [obj.center], size, budgets.bellWaveElites);
+    this.director.spawnWaveAt(points, size, budgets.bellWaveElites);
+    // Third wave: Plague Monks (2 + 2×difficulty → 4 / 6 / 8 / 10).
+    if (this.bellWaveIndex === 3) {
+      this.director.queueTypedAt(points, "plagueMonk", budgets.bellWave3Monks);
+      this.emit({ t: "announce", text: "Plague Monks join the assault!", kind: "special" });
+    }
   }
 
   private setDoorsSealed(sealed: boolean): void {

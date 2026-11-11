@@ -56,9 +56,10 @@ the rubble gate tiles and the seal-door tiles for the client.
   inside `R`. The doors seal, regular hordes stop (event active) and
   waves spawn at the `V` points every `bellWaveInterval` seconds
   (`max(6, 11 - d)`), sized `round(4 + 2d) + 3 * heroes` plus
-  `floor(d / 2)` stormvermin. After `bellKillTarget` kills
-  (`round(25 + 15d)`) the hammer falls: every enemy dies, the doors
-  unseal and the exit gate opens.
+  `floor(d / 2)` stormvermin. On the **third** wave, also spawn
+  `bellWave3Monks` Plague Monks (`2 + 2d` → 4 / 6 / 8 / 10). After
+  `bellKillTarget` kills (`round(25 + 15d)`) the hammer falls: every
+  enemy dies, the doors unseal and the exit gate opens.
 
 The server syncs `objectiveCharge`, `objectiveCount`, `objectiveTarget`
 and `doorsSealed`. The client mirrors `doorsSealed` into its level tiles

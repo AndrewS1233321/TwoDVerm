@@ -202,6 +202,15 @@ export class Director {
     }
   }
 
+  /** Queue a fixed enemy type onto the given points (bell extras, scripted waves). */
+  queueTypedAt(points: Point[], type: EnemyId, count: number): void {
+    if (points.length === 0 || count <= 0) return;
+    const w = this.world;
+    for (let i = 0; i < count; i++) {
+      this.queue.push({ type, at: points[Math.floor(w.rng() * points.length)]! });
+    }
+  }
+
   /** Drop spawns that have not trickled in yet (e.g. after the bell's clearing blast). */
   clearQueue(): void {
     this.queue = [];
