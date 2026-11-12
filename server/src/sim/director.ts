@@ -170,16 +170,19 @@ export class Director {
     }
   }
 
-  /** First entry into a hold event: a horde at twice the regular size, plus any extra stormvermin. */
+  /**
+   * First entry into a hold event: a horde at twice the regular size, plus
+   * optional elites queued onto horde spawn points (same trickle path as hordes).
+   */
   triggerHoldEntryHorde(eliteCount = 0): void {
     this.startHorde(this.hordeSize() * 2, this.world.missionTime > 120);
-    this.queueStormvermin(eliteCount);
+    this.queueElitesFromHordeSpawns(eliteCount);
   }
 
-  /** Mid-hold reinforcement for elite-mix holds: a regular horde plus stormvermin. */
+  /** Mid-hold reinforcement for elite-mix holds: a regular horde plus race-pool elites. */
   triggerHoldMidWave(eliteCount: number): void {
     this.startHorde(this.hordeSize(), false, false);
-    this.queueStormvermin(eliteCount);
+    this.queueElitesFromHordeSpawns(eliteCount);
   }
 
   /** A regular horde right now (e.g. the cannon's noise draws the rats in). */
@@ -224,11 +227,14 @@ export class Director {
     this.queue = [];
   }
 
-  private queueStormvermin(count: number): void {
+  /** Queue elites onto horde spawn points using the level's allowed elite types. */
+  private queueElitesFromHordeSpawns(count: number): void {
     if (count <= 0) return;
     const points = this.pickSpawnPoints(this.world.level.hordeSpawns, 2);
     if (points.length === 0) return;
-    for (let i = 0; i < count; i++) this.queue.push({ type: "stormvermin", at: points[i % points.length]! });
+    for (let i = 0; i < count; i++) {
+      this.queue.push({ type: this.pickEliteType(), at: points[i % points.length]! });
+    }
   }
 
   private checkTriggers(): void {
@@ -256,7 +262,8 @@ export class Director {
 
   private stepEvent(dt: number): void {
     const w = this.world;
-    w.eventTimeLeft -= dt;
+    const occupied = w.standingHeroes().some((h) => isInZone(w.level, w.level.holdZone, h.x, h.y));
+    if (occupied) w.eventTimeLeft -= dt;
     this.waveT -= dt;
     if (this.waveT <= 0) {
       this.waveT = EVENT_WAVE_INTERVAL;

@@ -1,7 +1,18 @@
 import type { LevelProperties, SpawnBudgets } from "./types";
 
-/** Stormvermin in an elite-mix hold's entry horde, by difficulty 1–4. */
+/** Legacy budget field; elite-mix holds use `holdEliteMixCount` at runtime. */
 const HOLD_ELITES_BY_DIFFICULTY = [1, 2, 3, 5];
+
+/**
+ * Elite-mix hold elite count: minimum 4, plus 1 per player, plus 1 per
+ * player per difficulty level → `4 + players × (1 + difficulty)`.
+ * Types come from the level's allowed elite race pool at spawn time.
+ */
+export function holdEliteMixCount(players: number, difficulty: number): number {
+  const p = Math.max(1, Math.round(players));
+  const d = Math.max(1, Math.min(4, Math.round(difficulty)));
+  return 4 + p * (1 + d);
+}
 
 /** Derive spawn / layout budgets from level difficulty. */
 export function budgetsFromDifficulty(difficulty: number): SpawnBudgets {

@@ -73,7 +73,7 @@ export interface ProcObjective {
   center: Point;
   /** Enemy to spawn for mini_boss / boss; hold has none. */
   spawnType: EnemyId | null;
-  /** Hold only: entry and mid-hold hordes include stormvermin (budgets.holdEliteCount). */
+  /** Hold only: entry/mid elites use `holdEliteMixCount` from the race elite pool via horde spawns. */
   eliteMix?: boolean;
   /** Cannon / bell: where heroes press E. */
   interactPoint?: Point;
@@ -99,7 +99,7 @@ export interface SpawnBudgets {
   maxSpecials: number;
   raceSlots: number;
   holdDuration: number;
-  /** Stormvermin added to an elite-mix hold's entry horde (half again mid-hold). */
+  /** Legacy budget field; elite-mix holds use runtime `holdEliteMixCount` instead. */
   holdEliteCount: number;
   /** Seconds of held E at the cannon before it fires. */
   cannonChannel: number;

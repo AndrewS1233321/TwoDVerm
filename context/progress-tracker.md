@@ -24,6 +24,12 @@ Update this file after every meaningful implementation change.
   shield sprite; 4-hit light chain (3 sweeps + AP thrust); heavy wide
   sweep / high-stagger shield bash / AP thrust; shorter reach than the
   greatsword.
+- **Hold timer occupancy**: Default hold-the-square and Wastes hold
+  objectives only tick the countdown while ≥1 standing hero is in the
+  hold zone.
+- **Elite-mix hold elites**: count `4 + players × (1 + difficulty)`;
+  types from the level elite race pool; spawn via horde spawn points
+  (not into the hold centre). Mid-hold adds `ceil(count / 2)` more.
 - **Lobby AI teammates**: host can Add AI (or right-click) on free hero
   cards in Choose Your Hero; remove by clicking an AI seat. Synthetic
   seats count toward the 4-player cap, auto-fight/revive/follow in

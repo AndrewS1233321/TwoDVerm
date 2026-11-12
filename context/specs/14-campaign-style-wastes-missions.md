@@ -45,9 +45,13 @@ the rubble gate tiles and the seal-door tiles for the client.
 ## Objectives
 
 - **Elite-mix hold** (`kind: "hold"`, `eliteMix: true`): same timer and
-  gate as the normal hold, but the entry horde adds `holdEliteCount`
-  stormvermin (1/2/3/5 at difficulty 1–4) and a second horde with
-  `ceil(holdEliteCount / 2)` stormvermin arrives halfway through.
+  gate as the normal hold. Entry queues
+  `holdEliteMixCount = 4 + players × (1 + difficulty)` elites from the
+  level's allowed elite race pool onto **horde spawn points** (same
+  trickle path as hordes). Halfway through, a second horde arrives with
+  `ceil(count / 2)` more race-pool elites the same way. The hold timer
+  only ticks while at least one standing hero is in the zone (same for
+  normal holds and Default's hold-the-square).
 - **Cannon** (`kind: "cannon"`): stand within `OBJECTIVE_INTERACT_RANGE`
   (72 px) of the cannon and hold E for `cannonChannel` (2.5 s). Letting go
   resets the charge. On firing: muzzle and breach effects, the rubble

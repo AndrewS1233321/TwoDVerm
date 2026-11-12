@@ -4,6 +4,7 @@ import {
   ARMOR_SETS,
   bellKillTargetFor,
   bellWaveCount,
+  holdEliteMixCount,
   collideCircle,
   confineToBossRoom,
   confineToZone,
@@ -597,14 +598,20 @@ export class World {
             : `Hold the chamber (${Math.ceil(this.eventTimeLeft)}s)!`,
           kind: "event",
         });
-        this.director.triggerHoldEntryHorde(obj.eliteMix ? budgets.holdEliteCount : 0);
+        const players = Math.max(1, this.standingHeroes().length);
+        const difficulty = this.levelProps?.difficulty ?? 1;
+        const elites = obj.eliteMix ? holdEliteMixCount(players, difficulty) : 0;
+        this.director.triggerHoldEntryHorde(elites);
       }
       if (this.eventActive && this.holdObjectiveId === obj.id) {
-        this.eventTimeLeft -= dt;
+        if (inZone) this.eventTimeLeft -= dt;
         if (obj.eliteMix && !this.holdMidWaveDone && this.eventTimeLeft <= budgets.holdDuration / 2) {
           this.holdMidWaveDone = true;
-          this.director.triggerHoldMidWave(Math.ceil(budgets.holdEliteCount / 2));
-          this.emit({ t: "announce", text: "Stormvermin storm the yard!", kind: "special" });
+          const players = Math.max(1, this.standingHeroes().length);
+          const difficulty = this.levelProps?.difficulty ?? 1;
+          const midElites = Math.ceil(holdEliteMixCount(players, difficulty) / 2);
+          this.director.triggerHoldMidWave(midElites);
+          this.emit({ t: "announce", text: "Elites storm the yard!", kind: "special" });
         }
         if (this.eventTimeLeft <= 0) {
           this.eventActive = false;
