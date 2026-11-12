@@ -172,16 +172,17 @@ export class Director {
 
   /**
    * First entry into a hold event: a horde at twice the regular size, plus
-   * optional elites queued onto horde spawn points (same trickle path as hordes).
+   * optional elites on horde spawn points. Pass `eliteOnly` for elite-mix holds
+   * (no regular horde — elites only).
    */
-  triggerHoldEntryHorde(eliteCount = 0): void {
-    this.startHorde(this.hordeSize() * 2, this.world.missionTime > 120);
+  triggerHoldEntryHorde(eliteCount = 0, eliteOnly = false): void {
+    if (!eliteOnly) this.startHorde(this.hordeSize() * 2, this.world.missionTime > 120);
     this.queueElitesFromHordeSpawns(eliteCount);
   }
 
-  /** Mid-hold reinforcement for elite-mix holds: a regular horde plus race-pool elites. */
-  triggerHoldMidWave(eliteCount: number): void {
-    this.startHorde(this.hordeSize(), false, false);
+  /** Mid-hold reinforcement. Elite-mix uses `eliteOnly` (no regular horde). */
+  triggerHoldMidWave(eliteCount: number, eliteOnly = false): void {
+    if (!eliteOnly) this.startHorde(this.hordeSize(), false, false);
     this.queueElitesFromHordeSpawns(eliteCount);
   }
 

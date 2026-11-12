@@ -5,6 +5,7 @@ import {
   bellKillTargetFor,
   bellWaveCount,
   holdEliteMixCount,
+  holdEliteMixMidCount,
   collideCircle,
   confineToBossRoom,
   confineToZone,
@@ -600,8 +601,11 @@ export class World {
         });
         const players = Math.max(1, this.standingHeroes().length);
         const difficulty = this.levelProps?.difficulty ?? 1;
-        const elites = obj.eliteMix ? holdEliteMixCount(players, difficulty) : 0;
-        this.director.triggerHoldEntryHorde(elites);
+        if (obj.eliteMix) {
+          this.director.triggerHoldEntryHorde(holdEliteMixCount(players, difficulty), true);
+        } else {
+          this.director.triggerHoldEntryHorde(0);
+        }
       }
       if (this.eventActive && this.holdObjectiveId === obj.id) {
         if (inZone) this.eventTimeLeft -= dt;
@@ -609,8 +613,7 @@ export class World {
           this.holdMidWaveDone = true;
           const players = Math.max(1, this.standingHeroes().length);
           const difficulty = this.levelProps?.difficulty ?? 1;
-          const midElites = Math.ceil(holdEliteMixCount(players, difficulty) / 2);
-          this.director.triggerHoldMidWave(midElites);
+          this.director.triggerHoldMidWave(holdEliteMixMidCount(players, difficulty), true);
           this.emit({ t: "announce", text: "Elites storm the yard!", kind: "special" });
         }
         if (this.eventTimeLeft <= 0) {
