@@ -542,13 +542,13 @@ export class GameScene extends Phaser.Scene {
         view.afterimage();
       }
       if (e.state === "spray") {
-        const green = def.warpfire === true;
+        const fiend = def.warpfire === true;
         this.effects.sparks(
           view.position.x + Math.cos(e.facing) * (def.radius + 14),
           view.position.y + Math.sin(e.facing) * (def.radius + 14),
-          green ? colors.warp : 0xff5a1f,
-          green ? 8 : 4,
-          green ? 110 : 70,
+          colors.warp,
+          fiend ? 8 : 4,
+          fiend ? 110 : 70,
         );
       }
     });

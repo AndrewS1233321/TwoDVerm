@@ -383,8 +383,9 @@ export class CreatureView {
       if (info.state === "spray_windup" || info.state === "spray") {
         const fiend = !!ENEMIES[this.opts.typeId as EnemyId]?.warpfire;
         const fire = fiend ? STORMFIEND_FIRE : WARPFIRE;
-        const cone = fiend ? 0x7cff4f : 0xff5a1f;
-        const tip = fiend ? 0xb8ff7a : 0xff8a3a;
+        // Bright warp-green for both Warpfire Thrower and Stormfiend.
+        const cone = 0x7cff4f;
+        const tip = 0xb8ff7a;
         const t = info.state === "spray_windup" ? 0.35 + 0.35 * Math.sin(now * 0.03) : 0.55;
         const half = fire.arc / 2;
         ground.fillStyle(cone, info.state === "spray" ? 0.18 : 0.1);
