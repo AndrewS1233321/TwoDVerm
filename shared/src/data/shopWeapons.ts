@@ -7,6 +7,7 @@ import {
   PISTOLS,
   RAPIER,
   REPEATER,
+  SWORD_AND_SHIELD,
   WAR_HAMMER,
 } from "./weapons";
 
@@ -29,6 +30,7 @@ export const ZERO_WEAPON_MODS: WeaponHeroMods = {
 
 export type ShopWeaponId =
   | "soldier_greatsword"
+  | "soldier_sword_and_shield"
   | "soldier_repeater"
   | "ranger_daggers"
   | "ranger_longbow"
@@ -60,6 +62,15 @@ export const SHOP_WEAPONS: Record<ShopWeaponId, ShopWeapon> = {
     cost: COST,
     mods: { ...ZERO_WEAPON_MODS },
     melee: GREATSWORD,
+  },
+  soldier_sword_and_shield: {
+    id: "soldier_sword_and_shield",
+    hero: "soldier",
+    slot: "primary",
+    name: "Sword and Shield",
+    cost: COST,
+    mods: { ...ZERO_WEAPON_MODS, stamina: 4, staggerResist: 1 },
+    melee: SWORD_AND_SHIELD,
   },
   soldier_repeater: {
     id: "soldier_repeater",

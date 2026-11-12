@@ -28,6 +28,7 @@ placeholders** for a later pass.
 | Id | Hero | Slot | Combat kit |
 | -- | ---- | ---- | ---------- |
 | `soldier_greatsword` | Markus | primary | Executioner Greatsword |
+| `soldier_sword_and_shield` | Markus | primary | Sword and Shield (+4 stamina, +1 stagger resist) |
 | `soldier_repeater` | Markus | secondary | Repeater Handgun |
 | `ranger_daggers` | Kerri | primary | Dual Daggers |
 | `ranger_longbow` | Kerri | secondary | Longbow |

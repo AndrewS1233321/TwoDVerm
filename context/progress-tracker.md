@@ -15,11 +15,15 @@ Update this file after every meaningful implementation change.
 ## Completed
 
 - **Merchant weapons (unit 17)**: hero-bound primary/secondary shop
-  catalog (defaults only); buy for 100 GP replaces that slot (re-buy
-  allowed); live heroes clone kit defs so shared `HEROES` is never
-  mutated; weapon hero-mods are +0 placeholders; combat numbers
-  unchanged. Shop Weapons section lists Primary/Secondary for the
-  local hero.
+  catalog; buy for 100 GP replaces that slot (re-buy allowed); live
+  heroes clone kit defs so shared `HEROES` is never mutated; weapon
+  hero-mods wired (mostly +0). Shop Weapons section lists
+  Primary/Secondary for the local hero.
+- **Markus Sword and Shield**: purchasable primary (`soldier_sword_and_shield`,
+  100 GP); +4 block stamina and +1 stagger resist; short sword + left
+  shield sprite; 4-hit light chain (3 sweeps + AP thrust); heavy wide
+  sweep / high-stagger shield bash / AP thrust; shorter reach than the
+  greatsword.
 - **Lobby AI teammates**: host can Add AI (or right-click) on free hero
   cards in Choose Your Hero; remove by clicking an AI seat. Synthetic
   seats count toward the 4-player cap, auto-fight/revive/follow in

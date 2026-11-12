@@ -18,6 +18,26 @@ export const GREATSWORD: WeaponDef = {
   ],
 };
 
+/** Markus Sword and Shield: shorter reach than the greatsword; fast lights + shield bash. */
+export const SWORD_AND_SHIELD: WeaponDef = {
+  id: "swordAndShield",
+  name: "Sword and Shield",
+  style: "swordAndShield",
+  heavyCharge: 0.4,
+  blockCostMul: 0.85,
+  light: [
+    { id: "ss_l1", windup: 0.1, active: 0.07, recovery: 0.14, reach: 30, arc: deg(100), damage: 11, cleave: 2, stagger: 0, blockCost: 1, swing: { from: -1.15, to: 1.0 } },
+    { id: "ss_l2", windup: 0.1, active: 0.07, recovery: 0.14, reach: 30, arc: deg(100), damage: 11, cleave: 2, stagger: 0, blockCost: 1, swing: { from: 1.15, to: -1.0 } },
+    { id: "ss_l3", windup: 0.1, active: 0.07, recovery: 0.15, reach: 30, arc: deg(110), damage: 12, cleave: 3, stagger: 1, blockCost: 1, swing: { from: -1.25, to: 1.15 } },
+    { id: "ss_l4", windup: 0.12, active: 0.08, recovery: 0.2, reach: 34, arc: deg(28), damage: 16, cleave: 1, stagger: 1, blockCost: 1, armorPierce: 1, swing: { from: 0, to: 0, thrust: 14 } },
+  ],
+  heavy: [
+    { id: "ss_h1", windup: 0.1, active: 0.14, recovery: 0.4, reach: 36, arc: deg(160), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.55, to: 1.55 } },
+    { id: "ss_h2", windup: 0.08, active: 0.1, recovery: 0.35, reach: 22, arc: deg(80), damage: 10, cleave: 2, stagger: 4, blockCost: 2, swing: { from: 0, to: 0, thrust: 12 } },
+    { id: "ss_h3", windup: 0.1, active: 0.12, recovery: 0.45, reach: 34, arc: deg(24), damage: 36, cleave: 1, stagger: 2, blockCost: 2, armorPierce: 1, swing: { from: 0, to: 0, thrust: 16 } },
+  ],
+};
+
 export const DUAL_DAGGERS: WeaponDef = {
   id: "daggers",
   name: "Dual Daggers",

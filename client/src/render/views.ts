@@ -12,7 +12,14 @@ import {
   type EnemyId,
 } from "@twodverm/shared";
 import { colors } from "./palette";
-import { handOffset, TEX_SCALE, WEAPON_INFO, weaponTextureKey, type DrawnWeaponStyle } from "./textures";
+import {
+  handOffset,
+  isDualMeleeStyle,
+  TEX_SCALE,
+  WEAPON_INFO,
+  weaponTextureKey,
+  type DrawnWeaponStyle,
+} from "./textures";
 
 export interface PoseInfo {
   x: number;
@@ -104,8 +111,13 @@ export class CreatureView {
       const key = weaponTextureKey(opts.weaponStyle);
       const originX = info.handle / (info.length + 4);
       this.weapon = scene.add.image(0, 0, key).setScale(1 / TEX_SCALE).setOrigin(originX, 0.5);
-      if (opts.weaponStyle === "daggers") {
-        this.weapon2 = scene.add.image(0, 0, key).setScale(1 / TEX_SCALE).setOrigin(originX, 0.5);
+      if (isDualMeleeStyle(opts.weaponStyle)) {
+        const offStyle: DrawnWeaponStyle = opts.weaponStyle === "swordAndShield" ? "shield" : opts.weaponStyle;
+        const off = WEAPON_INFO[offStyle];
+        this.weapon2 = scene.add
+          .image(0, 0, weaponTextureKey(offStyle))
+          .setScale(1 / TEX_SCALE)
+          .setOrigin(off.handle / (off.length + 4), 0.5);
       }
     }
     const parts: Phaser.GameObjects.GameObject[] = [];
@@ -215,7 +227,13 @@ export class CreatureView {
     this.weapon.setTexture(weaponTextureKey(style)).setOrigin(info.handle / (info.length + 4), 0.5);
     if (this.weapon2) {
       this.weapon2.setVisible(dual);
-      if (dual) this.weapon2.setTexture(weaponTextureKey(style)).setOrigin(info.handle / (info.length + 4), 0.5);
+      if (dual) {
+        const offStyle: DrawnWeaponStyle = style === "swordAndShield" ? "shield" : style;
+        const off = WEAPON_INFO[offStyle];
+        this.weapon2
+          .setTexture(weaponTextureKey(offStyle))
+          .setOrigin(off.handle / (off.length + 4), 0.5);
+      }
     }
   }
 
@@ -234,7 +252,7 @@ export class CreatureView {
     if (wantRanged !== this.showingRanged) {
       this.showingRanged = wantRanged;
       if (wantRanged) this.setWeaponStyle(this.opts.rangedStyle!, this.opts.rangedStyle === "pistols");
-      else this.setWeaponStyle(this.opts.weaponStyle!, this.opts.weaponStyle === "daggers");
+      else this.setWeaponStyle(this.opts.weaponStyle!, isDualMeleeStyle(this.opts.weaponStyle));
     }
     const r = this.opts.radius;
     const hand = handOffset(r);

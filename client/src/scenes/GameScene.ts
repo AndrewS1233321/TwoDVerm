@@ -10,11 +10,13 @@ import {
   ENEMIES,
   HEROES,
   isHeroId,
+  isShopWeaponId,
   JEZZAIL,
   MSG,
   parseLevelById,
   parseLevelProps,
   raycastWalls,
+  SHOP_WEAPONS,
   TILE_FLOOR,
   TILE_GATE,
   TICK_MS,
@@ -435,18 +437,20 @@ export class GameScene extends Phaser.Scene {
       if (!isHeroId(p.heroId)) return;
       seen.add(p.id);
       let view = this.heroViews.get(p.id);
-      if (view && view.opts.typeId !== p.heroId) {
+      const def = HEROES[p.heroId];
+      const primary = isShopWeaponId(p.primaryWeaponId) ? SHOP_WEAPONS[p.primaryWeaponId] : null;
+      const meleeStyle = primary?.slot === "primary" ? primary.melee.style : def.weapon.style;
+      if (view && (view.opts.typeId !== p.heroId || view.opts.weaponStyle !== meleeStyle)) {
         view.destroy();
         view = undefined;
       }
       if (!view) {
-        const def = HEROES[p.heroId];
         view = new CreatureView(this, {
           kind: "hero",
           typeId: p.heroId,
           radius: def.radius,
           texture: heroTextureKey(p.heroId),
-          weaponStyle: def.weapon.style,
+          weaponStyle: meleeStyle,
           rangedStyle: rangedWeaponStyle(p.heroId),
           name: p.name,
           isLocal: p.id === this.localId,

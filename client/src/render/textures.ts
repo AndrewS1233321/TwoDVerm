@@ -26,6 +26,7 @@ export function handOffset(radius: number): { x: number; y: number } {
 
 export type DrawnWeaponStyle =
   | WeaponStyle
+  | "shield"
   | "ratblade"
   | "hookpole"
   | "repeater"
@@ -37,6 +38,10 @@ export type DrawnWeaponStyle =
 
 export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: number }> = {
   greatsword: { length: 46, handle: 4 },
+  /** Short arming sword (right hand) for Markus Sword and Shield. */
+  swordAndShield: { length: 30, handle: 4 },
+  /** Left-hand kite shield paired with swordAndShield. */
+  shield: { length: 18, handle: 9 },
   daggers: { length: 20, handle: 3 },
   hammer: { length: 36, handle: 3 },
   rapier: { length: 50, handle: 4 },
@@ -52,6 +57,11 @@ export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: num
   chaosAxe: { length: 34, handle: 4 },
   chaosSword: { length: 30, handle: 4 },
 };
+
+/** Melee styles that draw a second left-hand prop (off-hand dagger or shield). */
+export function isDualMeleeStyle(style: DrawnWeaponStyle | null | undefined): boolean {
+  return style === "daggers" || style === "swordAndShield";
+}
 
 export function rangedWeaponStyle(heroId: HeroId): DrawnWeaponStyle {
   return HEROES[heroId].ranged.id as DrawnWeaponStyle;
@@ -763,6 +773,33 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
       g.lineStyle(S * 0.6, 0x8a9099, 1);
       g.lineBetween(12 * S, cy, 42 * S, cy);
       break;
+    case "swordAndShield":
+      // Shorter arming sword than the Executioner Greatsword.
+      g.fillStyle(wood);
+      g.fillRect(0, cy - 1.3 * S, 7 * S, 2.6 * S);
+      g.fillStyle(0xd9b44a);
+      g.fillRect(7 * S, cy - 4 * S, 2 * S, 8 * S);
+      g.fillStyle(steel);
+      g.fillRect(9 * S, cy - 1.8 * S, 17 * S, 3.6 * S);
+      g.fillTriangle(26 * S, cy - 1.8 * S, 26 * S, cy + 1.8 * S, 30 * S, cy);
+      g.lineStyle(S * 0.5, 0x8a9099, 1);
+      g.lineBetween(10 * S, cy, 26 * S, cy);
+      break;
+    case "shield": {
+      const scx = 9 * S;
+      g.fillStyle(0x3d6fb6);
+      g.fillEllipse(scx, cy, 15 * S, 18 * S);
+      g.fillStyle(0x2a4f86);
+      g.fillEllipse(scx, cy, 12 * S, 15 * S);
+      g.lineStyle(S * 1.2, 0xd9b44a, 1);
+      g.strokeEllipse(scx, cy, 15 * S, 18 * S);
+      g.fillStyle(0xd9b44a);
+      g.fillCircle(scx, cy, 2.2 * S);
+      g.lineStyle(S * 0.8, 0xc9a14a, 1);
+      g.lineBetween(scx, cy - 7 * S, scx, cy + 7 * S);
+      g.lineBetween(scx - 5 * S, cy, scx + 5 * S, cy);
+      break;
+    }
     case "daggers":
       g.fillStyle(wood);
       g.fillRect(0, cy - 1.2 * S, 5 * S, 2.4 * S);

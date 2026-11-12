@@ -31,7 +31,15 @@ export interface AttackDef {
   swing: { from: number; to: number; thrust?: number };
 }
 
-export type WeaponStyle = "greatsword" | "daggers" | "hammer" | "rapier" | "claws" | "halberd" | "fists";
+export type WeaponStyle =
+  | "greatsword"
+  | "swordAndShield"
+  | "daggers"
+  | "hammer"
+  | "rapier"
+  | "claws"
+  | "halberd"
+  | "fists";
 
 export interface WeaponDef {
   id: string;
