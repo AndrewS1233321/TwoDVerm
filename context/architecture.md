@@ -71,6 +71,11 @@ Every creature (hero or enemy) has:
   staggered, dodging, downed, dead
 - `hp`, plus heroes have `blockStamina` and `dodgeCharges`
 - Combat rules read these fields the same way for heroes and enemies.
+- Equipped shop weapons: each hero has a **primary** (melee `WeaponDef`)
+  and **secondary** (ranged `RangedDef`) shop id. Live heroes clone
+  `HeroDef` with those kits; merchant buy replaces one slot. Weapons may
+  add hero attribute mods; gear stats are `heroStatsWithGear` = armor
+  trade-offs + weapon mods.
 - An armor loadout: a level (none / light / medium / heavy / super heavy)
   at each location (head, front, side, back). Enemies take it from their
   data entry; heroes from their equipped full armor set, whose trade-offs

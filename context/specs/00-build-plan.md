@@ -24,5 +24,6 @@ Each unit ends with something playable. Write the spec file for a unit
 | 14   | Campaign-style Wastes missions | Custom section lists, elite-mix hold, cannon and bell set pieces; Hallowed Rampart | 13 |
 | 15   | Full Skaven roster | Shield rats, Plague Monk, Gutter Runner, Warpfire, Sack Rat, Stormfiend (no Lords) | 14 |
 | 16   | Chaos Rotblood roster | Fanatic–Bile Troll; Lifeleech / Blightstormer; Testing pads; Chaos race pools (no Lords) | 15 |
+| 17   | Merchant weapons | Hero-bound primary/secondary shop kits; buy/equip; +0 hero-mod placeholders | 16 |
 
 Units 01 to 06 deliver a playable multiplayer brawler.

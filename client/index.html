@@ -643,10 +643,18 @@
       .shop-perk-card .shop-item-buy {
         min-width: 0;
       }
-      #shop-armor.shop-perks {
+      #shop-armor.shop-perks,
+      #shop-weapons.shop-perks {
         display: flex;
         flex-direction: column;
         gap: 10px;
+      }
+      .shop-weapon-slot {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
       .shop-item.owned {
         opacity: 0.7;
@@ -863,6 +871,8 @@
               <button id="shop-buy-dmg" class="primary">Buy</button>
             </div>
           </div>
+          <h3 class="shop-section">Weapons</h3>
+          <div id="shop-weapons" class="shop-perks"></div>
           <h3 class="shop-section">Perks</h3>
           <div id="shop-perks" class="shop-perks"></div>
           <h3 class="shop-section">Armour</h3>

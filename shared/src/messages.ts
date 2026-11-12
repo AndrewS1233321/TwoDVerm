@@ -23,6 +23,8 @@ export const MSG = {
   buyPerk: "buyPerk",
   /** Merchant hall: buy and equip a full hero armor set by id. */
   buyArmorSet: "buyArmorSet",
+  /** Merchant hall: buy and equip a hero-bound primary or secondary weapon. */
+  buyWeapon: "buyWeapon",
   fx: "fx",
 } as const;
 

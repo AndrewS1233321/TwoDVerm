@@ -1,4 +1,5 @@
 import type { HeroDef, HeroId } from "./types";
+import { sumWeaponMods, type ShopWeaponId } from "./shopWeapons";
 
 export type ArmorLevel = "none" | "light" | "medium" | "heavy" | "superHeavy";
 
@@ -161,6 +162,24 @@ export function armoredHeroStats(def: HeroDef, setId: ArmorSetId): ArmoredHeroSt
     dodges: Math.max(0, def.dodges + (t.dodgesDelta ?? 0)),
     dodgeSpeedMul: t.dodgeDistanceMul ?? 1,
     stamina: def.stamina * (t.staminaMul ?? 1),
+  };
+}
+
+/** Armor trade-offs plus additive primary/secondary weapon mods. */
+export function heroStatsWithGear(
+  def: HeroDef,
+  setId: ArmorSetId,
+  primaryWeaponId: ShopWeaponId,
+  secondaryWeaponId: ShopWeaponId,
+): ArmoredHeroStats {
+  const base = armoredHeroStats(def, setId);
+  const mods = sumWeaponMods(primaryWeaponId, secondaryWeaponId);
+  return {
+    speed: base.speed + mods.speed,
+    turnRateMul: base.turnRateMul,
+    dodges: Math.max(0, base.dodges + mods.dodges),
+    dodgeSpeedMul: base.dodgeSpeedMul,
+    stamina: base.stamina + mods.stamina,
   };
 }
 

@@ -16,6 +16,7 @@ export * from "./data/gold";
 export * from "./data/shop";
 export * from "./data/perks";
 export * from "./data/armor";
+export * from "./data/shopWeapons";
 export { MISSION_1 } from "./levels/mission1";
 export { TESTING_ZONE } from "./levels/testingZone";
 export { WASTES_CAMP } from "./levels/wastesCamp";

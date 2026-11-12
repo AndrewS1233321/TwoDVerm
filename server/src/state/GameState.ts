@@ -66,6 +66,10 @@ export class PlayerState extends Schema {
   @type("string") perks = "";
   /** Equipped armor set id. */
   @type("string") armorSetId = "";
+  /** Equipped primary (melee) shop weapon id. */
+  @type("string") primaryWeaponId = "";
+  /** Equipped secondary (ranged) shop weapon id. */
+  @type("string") secondaryWeaponId = "";
   /** True while Rune Ward is charged (drives the glow). */
   @type("boolean") wardReady = false;
   /** True while Riposte is charged after a dodge. */

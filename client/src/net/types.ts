@@ -62,6 +62,10 @@ export interface PlayerView {
   perks: string;
   /** Equipped armor set id. */
   armorSetId: string;
+  /** Equipped primary (melee) shop weapon id. */
+  primaryWeaponId: string;
+  /** Equipped secondary (ranged) shop weapon id. */
+  secondaryWeaponId: string;
   /** Rune Ward charged (glow). */
   wardReady: boolean;
   /** Riposte charged after a dodge. */

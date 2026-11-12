@@ -17,6 +17,8 @@ import {
   isInZone,
   isPerkId,
   isShopItemId,
+  isShopWeaponId,
+  SHOP_WEAPONS,
   MAX_ENEMIES,
   MERCHANT_EXIT_HOLD,
   OBJECTIVE_INTERACT_RANGE,
@@ -44,7 +46,7 @@ import { Director } from "./director";
 import { updateEnemy } from "./enemies";
 import { FlowField } from "./flowField";
 import { updateHazards } from "./hazards";
-import { createHero, equipArmorSet, processHeroInputs, resetHeroForMission, updateHero } from "./heroes";
+import { createHero, equipArmorSet, equipWeapon, processHeroInputs, resetHeroForMission, updateHero } from "./heroes";
 import { separateCreatures } from "./separation";
 import type { Barrel, Enemy, Hazard, Hero, Pickup } from "./types";
 
@@ -256,6 +258,22 @@ export class World {
     if (set.hero !== hero.def.id || hero.armorSetId === set.id || hero.gold < set.cost) return false;
     hero.gold -= set.cost;
     equipArmorSet(hero, set.id);
+    this.emit({ t: "pickup", id: hero.id, kind: "shop" });
+    return true;
+  }
+
+  /**
+   * Buy and equip a hero-bound primary or secondary weapon.
+   * Allowed even when that weapon is already equipped (gold sink).
+   */
+  buyWeapon(heroId: string, weaponId: string): boolean {
+    if (!isShopWeaponId(weaponId)) return false;
+    const hero = this.shopper(heroId);
+    if (!hero) return false;
+    const weapon = SHOP_WEAPONS[weaponId];
+    if (weapon.hero !== hero.def.id || hero.gold < weapon.cost) return false;
+    hero.gold -= weapon.cost;
+    equipWeapon(hero, weaponId);
     this.emit({ t: "pickup", id: hero.id, kind: "shop" });
     return true;
   }

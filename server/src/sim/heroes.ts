@@ -1,8 +1,11 @@
 import {
-  armoredHeroStats,
   type ArmorSetId,
   BARREL,
   DEFAULT_ARMOR_SET,
+  DEFAULT_PRIMARY,
+  DEFAULT_SECONDARY,
+  HEROES,
+  SHOP_WEAPONS,
   barrelCarrySpeedMul,
   barrelThrowReady,
   BLOCK,
@@ -14,6 +17,7 @@ import {
   HERO_STATE_TURN,
   HERO_TURN_RATE,
   hasLineOfSight,
+  heroStatsWithGear,
   INTERACT_RANGE,
   MAX_INPUTS_PER_TICK,
   MAX_QUEUED_INPUTS,
@@ -36,6 +40,7 @@ import {
   SMOKE_BOMB,
   smokeCloudRadius,
   stepMovement,
+  sumWeaponMods,
   VOLLEY,
   type AttackDef,
   inAttackArc,
@@ -43,6 +48,7 @@ import {
   type HeroDef,
   type InputMessage,
   type MoveMods,
+  type ShopWeaponId,
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, heroMeleeHits, newAttack } from "./attacks";
 import { damageBarrel, dropBarrel, throwBarrel, tryPickupBarrel, pushBarrels } from "./barrels";
@@ -53,6 +59,26 @@ import type { World } from "./World";
 const SHOOT_RECOVERY = 0.22;
 const KNOCKBACK_DECAY = 10;
 
+/** Clone a hero kit with equipped shop weapons (never mutate shared `HEROES`). */
+function liveHeroDef(
+  base: HeroDef,
+  primaryWeaponId: ShopWeaponId,
+  secondaryWeaponId: ShopWeaponId,
+): HeroDef {
+  const primary = SHOP_WEAPONS[primaryWeaponId];
+  const secondary = SHOP_WEAPONS[secondaryWeaponId];
+  if (primary.slot !== "primary" || secondary.slot !== "secondary") {
+    throw new Error(`Bad weapon slots for ${base.id}: ${primaryWeaponId}, ${secondaryWeaponId}`);
+  }
+  const mods = sumWeaponMods(primaryWeaponId, secondaryWeaponId);
+  return {
+    ...base,
+    weapon: primary.melee,
+    ranged: secondary.ranged,
+    staggerResist: base.staggerResist + mods.staggerResist,
+  };
+}
+
 export function createHero(
   id: string,
   name: string,
@@ -60,13 +86,17 @@ export function createHero(
   x: number,
   y: number,
   armorSetId: ArmorSetId = DEFAULT_ARMOR_SET[def.id],
+  primaryWeaponId: ShopWeaponId = DEFAULT_PRIMARY[def.id],
+  secondaryWeaponId: ShopWeaponId = DEFAULT_SECONDARY[def.id],
 ): Hero {
-  const stats = armoredHeroStats(def, armorSetId);
+  const base = HEROES[def.id];
+  const live = liveHeroDef(base, primaryWeaponId, secondaryWeaponId);
+  const stats = heroStatsWithGear(base, armorSetId, primaryWeaponId, secondaryWeaponId);
   const hero: Hero = {
     id,
     name,
-    def,
-    radius: def.radius,
+    def: live,
+    radius: live.radius,
     connected: true,
     x,
     y,
@@ -77,7 +107,7 @@ export function createHero(
     dodgeSpeed: DODGE.speed,
     kvx: 0,
     kvy: 0,
-    hp: def.hp,
+    hp: live.hp,
     state: "idle",
     stateT: 0,
     staggerT: 0,
@@ -99,7 +129,7 @@ export function createHero(
     dodgeRefillT: 0,
     dodgeCooldown: 0,
     iframesT: 0,
-    ammo: def.ranged.ammo,
+    ammo: live.ranged.ammo,
     shotCd: 0,
     rangedMode: false,
     rangedHoldShots: 0,
@@ -137,6 +167,8 @@ export function createHero(
     dmgUpStacks: 0,
     perks: new Set(),
     armorSetId,
+    primaryWeaponId,
+    secondaryWeaponId,
     stats,
     wardCd: 0,
     invisT: 0,
@@ -150,7 +182,16 @@ export function createHero(
 }
 
 export function resetHeroForMission(hero: Hero, x: number, y: number): void {
-  const fresh = createHero(hero.id, hero.name, hero.def, x, y, hero.armorSetId);
+  const fresh = createHero(
+    hero.id,
+    hero.name,
+    HEROES[hero.def.id],
+    x,
+    y,
+    hero.armorSetId,
+    hero.primaryWeaponId,
+    hero.secondaryWeaponId,
+  );
   fresh.connected = hero.connected;
   fresh.ackSeq = hero.ackSeq;
   fresh.actionSeq = hero.actionSeq + 1;
@@ -163,9 +204,24 @@ export function resetHeroForMission(hero: Hero, x: number, y: number): void {
 /** Swap the hero's whole armor set. Stamina and dodge charges are capped to the new maximums. */
 export function equipArmorSet(hero: Hero, setId: ArmorSetId): void {
   hero.armorSetId = setId;
-  hero.stats = armoredHeroStats(hero.def, setId);
+  const base = HEROES[hero.def.id];
+  hero.stats = heroStatsWithGear(base, setId, hero.primaryWeaponId, hero.secondaryWeaponId);
   hero.stamina = Math.min(hero.stamina, hero.stats.stamina);
   hero.dodgeCharges = Math.min(hero.dodgeCharges, hero.stats.dodges);
+}
+
+/** Equip a hero-bound shop weapon into its primary or secondary slot. */
+export function equipWeapon(hero: Hero, weaponId: ShopWeaponId): void {
+  const w = SHOP_WEAPONS[weaponId];
+  if (w.hero !== hero.def.id) return;
+  if (w.slot === "primary") hero.primaryWeaponId = weaponId;
+  else hero.secondaryWeaponId = weaponId;
+  const base = HEROES[hero.def.id];
+  hero.def = liveHeroDef(base, hero.primaryWeaponId, hero.secondaryWeaponId);
+  hero.stats = heroStatsWithGear(base, hero.armorSetId, hero.primaryWeaponId, hero.secondaryWeaponId);
+  hero.stamina = Math.min(hero.stamina, hero.stats.stamina);
+  hero.dodgeCharges = Math.min(hero.dodgeCharges, hero.stats.dodges);
+  if (w.slot === "secondary") hero.ammo = Math.min(hero.ammo, hero.def.ranged.ammo);
 }
 
 export function queueInput(hero: Hero, input: InputMessage): void {

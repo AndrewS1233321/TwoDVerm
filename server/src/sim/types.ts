@@ -1,4 +1,14 @@
-import type { ArmoredHeroStats, ArmorSetId, AttackDef, EnemyDef, HeroDef, InputMessage, MoveBody, PerkId } from "@twodverm/shared";
+import type {
+  ArmoredHeroStats,
+  ArmorSetId,
+  AttackDef,
+  EnemyDef,
+  HeroDef,
+  InputMessage,
+  MoveBody,
+  PerkId,
+  ShopWeaponId,
+} from "@twodverm/shared";
 
 export type AttackKind = "light" | "heavy" | "enemy";
 export type AttackPhase = "windup" | "active" | "recovery";
@@ -125,7 +135,11 @@ export interface Hero extends MoveBody {
   perks: Set<PerkId>;
   /** Equipped full armor set; persists for the whole run. */
   armorSetId: ArmorSetId;
-  /** Base stats after the armor set's trade-offs. Read these instead of `def` for speed, dodges and stamina. */
+  /** Equipped primary (melee) shop weapon; persists for the whole run. */
+  primaryWeaponId: ShopWeaponId;
+  /** Equipped secondary (ranged) shop weapon; persists for the whole run. */
+  secondaryWeaponId: ShopWeaponId;
+  /** Base stats after armor trade-offs and weapon mods. Read these instead of `def` for speed, dodges and stamina. */
   stats: ArmoredHeroStats;
   /** Seconds until Rune Ward is ready again (ready when <= 0). */
   wardCd: number;

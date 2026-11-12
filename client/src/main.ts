@@ -1,5 +1,13 @@
 import Phaser from "phaser";
-import { MSG, type ArmorSetId, type ExpeditionLocationId, type HeroId, type PerkId, type ShopItemId } from "@twodverm/shared";
+import {
+  MSG,
+  type ArmorSetId,
+  type ExpeditionLocationId,
+  type HeroId,
+  type PerkId,
+  type ShopItemId,
+  type ShopWeaponId,
+} from "@twodverm/shared";
 import { unlockAudio } from "./audio/sfx";
 import { createGame, forgetRoom, friendlyError, joinGame, tryReconnect, type GameRoom } from "./net/connection";
 import { GameScene } from "./scenes/GameScene";
@@ -37,6 +45,7 @@ const overlay = new Overlay({
   onBuyShopItem: (itemId: ShopItemId) => room?.send(MSG.buyShopItem, { itemId }),
   onBuyPerk: (perkId: PerkId) => room?.send(MSG.buyPerk, { perkId }),
   onBuyArmorSet: (setId: ArmorSetId) => room?.send(MSG.buyArmorSet, { setId }),
+  onBuyWeapon: (weaponId: ShopWeaponId) => room?.send(MSG.buyWeapon, { weaponId }),
 });
 
 async function connect(open: () => Promise<GameRoom>): Promise<void> {
