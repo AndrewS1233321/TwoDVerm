@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import {
+  circularExitPortal,
   DECOR_COBBLE,
   DECOR_FOREST,
   DECOR_MINE,
@@ -253,7 +254,75 @@ export class LevelRenderer {
               ? "EXIT"
               : "SAFE ROOM"
             : this.lockedExitText();
-    this.exitLabel = zone(this.level.endZone, colors.success, exitText);
+    this.exitLabel = this.drawExitZone(exitText);
+  }
+
+  /** Staging/testing: large blue circle; other maps keep the green rectangle. */
+  private drawExitZone(label: string): Phaser.GameObjects.Text | null {
+    const portal = circularExitPortal(this.level);
+    if (portal) {
+      const g = this.scene.add.graphics().setDepth(1);
+      const color = colors.exitPortal;
+      g.fillStyle(color, 0.14);
+      g.fillCircle(portal.x, portal.y, portal.radius);
+      g.lineStyle(3, color, 0.7);
+      g.strokeCircle(portal.x, portal.y, portal.radius);
+      g.lineStyle(1.5, color, 0.35);
+      g.strokeCircle(portal.x, portal.y, portal.radius * 0.72);
+      const text = this.scene.add
+        .text(portal.x, portal.y, label, {
+          fontFamily: "Georgia, serif",
+          fontSize: "18px",
+          color: "#" + color.toString(16).padStart(6, "0"),
+        })
+        .setOrigin(0.5)
+        .setAlpha(0.7)
+        .setDepth(1);
+      this.disposables.push(g, text);
+      return text;
+    }
+    return this.drawRectZone(this.level.endZone, colors.success, label);
+  }
+
+  private drawRectZone(
+    set: Set<number>,
+    color: number,
+    label: string,
+  ): Phaser.GameObjects.Text | null {
+    if (set.size === 0) return null;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const i of set) {
+      const tx = i % this.level.width;
+      const ty = Math.floor(i / this.level.width);
+      minX = Math.min(minX, tx);
+      minY = Math.min(minY, ty);
+      maxX = Math.max(maxX, tx);
+      maxY = Math.max(maxY, ty);
+    }
+    const T = TILE_SIZE;
+    const x = minX * T,
+      y = minY * T,
+      w = (maxX - minX + 1) * T,
+      h = (maxY - minY + 1) * T;
+    const g = this.scene.add.graphics().setDepth(1);
+    g.fillStyle(color, 0.12);
+    g.fillRect(x, y, w, h);
+    g.lineStyle(2, color, 0.6);
+    g.strokeRect(x + 2, y + 2, w - 4, h - 4);
+    const text = this.scene.add
+      .text(x + w / 2, y + h / 2, label, {
+        fontFamily: "Georgia, serif",
+        fontSize: "18px",
+        color: "#" + color.toString(16).padStart(6, "0"),
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.55)
+      .setDepth(1);
+    this.disposables.push(g, text);
+    return text;
   }
 
   private drawGate(): void {

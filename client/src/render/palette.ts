@@ -14,6 +14,8 @@ export const palette = {
   warp: "#7cff4f",
   smoke: "#c4beb4",
   success: "#6fbf5f",
+  /** Staging / testing circular exit portal (TO THE WASTES). */
+  exitPortal: "#4a9fff",
   heroSoldier: "#3d6fb6",
   heroRanger: "#4f9a4a",
   heroDwarf: "#c4782f",
@@ -36,6 +38,7 @@ export const colors = {
   warp: toColorNumber(palette.warp),
   smoke: toColorNumber(palette.smoke),
   success: toColorNumber(palette.success),
+  exitPortal: toColorNumber(palette.exitPortal),
   textPrimary: toColorNumber(palette.textPrimary),
   textMuted: toColorNumber(palette.textMuted),
 };

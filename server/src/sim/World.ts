@@ -16,6 +16,7 @@ import {
   initialLevelIdForMode,
   INTERACT_RANGE,
   isArmorSetId,
+  isInEndExit,
   isInZone,
   isPerkId,
   isShopItemId,
@@ -561,7 +562,7 @@ export class World {
     const ready =
       living.length > 0 &&
       standing.length === living.length &&
-      standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y));
+      standing.every((h) => isInEndExit(this.level, h.x, h.y));
     if (ready) {
       this.merchantHold += dt;
       if (this.merchantHold >= MERCHANT_EXIT_HOLD) {
@@ -891,7 +892,7 @@ export class World {
       const ready =
         living.length > 0 &&
         standing.length === living.length &&
-        standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y));
+        standing.every((h) => isInEndExit(this.level, h.x, h.y));
       if (ready) {
         this.merchantHold += dt;
         if (this.merchantHold >= MERCHANT_EXIT_HOLD) {
@@ -905,7 +906,7 @@ export class World {
       return;
     }
 
-    if (standing.every((h) => isInZone(this.level, this.level.endZone, h.x, h.y))) {
+    if (standing.every((h) => isInEndExit(this.level, h.x, h.y))) {
       this.phase = "victory";
       this.emit({ t: "announce", text: "Mission complete!", kind: "info" });
     }

@@ -12,7 +12,7 @@ import {
   INTERACT_RANGE,
   isExpeditionLocationId,
   isHeroId,
-  isInZone,
+  isInEndExit,
   MERCHANT_EXIT_HOLD,
   OBJECTIVE_INTERACT_RANGE,
   parseLevelProps,
@@ -462,7 +462,7 @@ export class HudScene extends Phaser.Scene {
       if (p.state === "dead") return;
       living++;
       const able = p.state !== "downed" && p.state !== "grabbed";
-      if (able && isInZone(level, level.endZone, p.x, p.y)) inZone++;
+      if (able && isInEndExit(level, p.x, p.y)) inZone++;
     });
     return living > 1 && inZone > 0 && inZone < living;
   }

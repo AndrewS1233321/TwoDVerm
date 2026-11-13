@@ -316,7 +316,7 @@ export class GameRoom extends Room<GameState> {
         brain = { seq: 0, ranged: false };
         this.aiBrains.set(p.id, brain);
       }
-      queueInput(hero, thinkAiHero(this.world, hero, brain));
+      queueInput(hero, thinkAiHero(this.world, hero, brain, this.state.hostId));
     }
   }
 

@@ -24,6 +24,9 @@ Update this file after every meaningful implementation change.
   shield sprite; 4-hit light chain (3 sweeps + AP thrust); heavy wide
   sweep / high-stagger shield bash / AP thrust; shorter reach than the
   greatsword.
+- **TO THE WASTES portal**: staging/testing exit is a blue circle whose
+  diameter matches the long side of the old rectangular `E` zone;
+  standing checks use that circle.
 - **Hold timer occupancy**: Default hold-the-square and Wastes hold
   objectives only tick the countdown while ≥1 standing hero is in the
   hold zone.
@@ -33,7 +36,9 @@ Update this file after every meaningful implementation change.
 - **Lobby AI teammates**: host can Add AI (or right-click) on free hero
   cards in Choose Your Hero; remove by clicking an AI seat. Synthetic
   seats count toward the 4-player cap, auto-fight/revive/follow in
-  missions, and auto-vote on Wastes forks.
+  missions, and auto-vote on Wastes forks. AI farther than 700px from
+  the host instantly snaps beside them.
+
 - **Chaos Rotblood roster** (spec `16-chaos-roster.md`): Fanatic, Raider,
   Bulwark, Savage (flurry), Mauler, Chaos Warrior, Lifeleech (teleport +
   dodgeable drain), Blightstormer (chasing storm), Chaos Spawn, Bile Troll

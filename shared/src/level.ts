@@ -342,3 +342,53 @@ export function isSolidTile(level: Level, gateOpen: boolean, tx: number, ty: num
 export function isInZone(level: Level, zone: Set<number>, x: number, y: number): boolean {
   return zone.has(tileIndexAt(level, x, y));
 }
+
+/** Axis-aligned tile bounds of a zone, in world pixels (tile edges). */
+export function zonePixelBounds(
+  level: Level,
+  zone: Set<number>,
+): { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; cx: number; cy: number } | null {
+  if (zone.size === 0) return null;
+  let minTX = Infinity;
+  let minTY = Infinity;
+  let maxTX = -Infinity;
+  let maxTY = -Infinity;
+  for (const i of zone) {
+    const tx = i % level.width;
+    const ty = Math.floor(i / level.width);
+    minTX = Math.min(minTX, tx);
+    minTY = Math.min(minTY, ty);
+    maxTX = Math.max(maxTX, tx);
+    maxTY = Math.max(maxTY, ty);
+  }
+  const minX = minTX * TILE_SIZE;
+  const minY = minTY * TILE_SIZE;
+  const maxX = (maxTX + 1) * TILE_SIZE;
+  const maxY = (maxTY + 1) * TILE_SIZE;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return { minX, minY, maxX, maxY, width, height, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+}
+
+/**
+ * Testing / Wastes staging "TO THE WASTES" pad: circular portal whose diameter
+ * equals the long side of the authored rectangular `E` zone.
+ */
+export function circularExitPortal(level: Level): { x: number; y: number; radius: number } | null {
+  if (level.summonPads.length === 0) return null;
+  const bounds = zonePixelBounds(level, level.endZone);
+  if (!bounds) return null;
+  const diameter = Math.max(bounds.width, bounds.height);
+  return { x: bounds.cx, y: bounds.cy, radius: diameter / 2 };
+}
+
+/** Exit membership: circular portal on staging/testing, otherwise tile zone. */
+export function isInEndExit(level: Level, x: number, y: number): boolean {
+  const portal = circularExitPortal(level);
+  if (portal) {
+    const dx = x - portal.x;
+    const dy = y - portal.y;
+    return dx * dx + dy * dy <= portal.radius * portal.radius;
+  }
+  return isInZone(level, level.endZone, x, y);
+}

@@ -1,6 +1,9 @@
-import { angleTo, dist, type InputMessage } from "@twodverm/shared";
+import { angleTo, collideCircle, dist, type InputMessage } from "@twodverm/shared";
 import type { Enemy, Hero } from "./types";
 import type { World } from "./World";
+
+/** Snap AI back to the host when farther than this (world px). */
+const AI_HOST_SNAP_DISTANCE = 700;
 
 /** Per-AI combat mode (melee vs ranged preference). */
 export interface AiHeroBrain {
@@ -11,8 +14,9 @@ export interface AiHeroBrain {
 /**
  * Simple teammate AI: revive downed allies, fight nearby enemies, otherwise
  * follow the nearest human. Mirrors `scripts/bot-friend.ts` think().
+ * @param hostId room host session id — AI snaps to that hero beyond 700px
  */
-export function thinkAiHero(world: World, me: Hero, brain: AiHeroBrain): InputMessage {
+export function thinkAiHero(world: World, me: Hero, brain: AiHeroBrain, hostId = ""): InputMessage {
   brain.seq++;
   const input: InputMessage = {
     seq: brain.seq,
@@ -30,6 +34,15 @@ export function thinkAiHero(world: World, me: Hero, brain: AiHeroBrain): InputMe
   };
   if (world.phase !== "playing" && world.phase !== "merchant") return input;
   if (me.state === "dead" || me.state === "downed" || me.state === "grabbed") return input;
+
+  const host = hostId ? world.heroes.get(hostId) : undefined;
+  if (host && host.state !== "dead" && dist(me.x, me.y, host.x, host.y) > AI_HOST_SNAP_DISTANCE) {
+    const p = collideCircle(world.level, world.gateOpen, host.x - 24, host.y + 16, me.radius);
+    me.x = p.x;
+    me.y = p.y;
+    me.aimX = host.x;
+    me.aimY = host.y;
+  }
 
   const others = [...world.heroes.values()].filter((h) => h.id !== me.id && h.state !== "dead");
   let nearest: Enemy | null = null;
