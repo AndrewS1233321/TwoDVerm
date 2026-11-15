@@ -1,3 +1,4 @@
+import { CASTLE_DEFENCE } from "./levels/castleDefence";
 import { MISSION_1 } from "./levels/mission1";
 import { TESTING_ZONE } from "./levels/testingZone";
 import { WASTES_CAMP } from "./levels/wastesCamp";
@@ -7,21 +8,22 @@ import { isExpeditionLocationId, WASTES_MERCHANT_LEVEL_ID, type ExpeditionLocati
 import { parseAuthoredMission } from "./procgen/authoredMission";
 import { rollLevelProperties } from "./procgen/rollProps";
 
-export type GameMode = "default" | "testing" | "wastes";
+export type GameMode = "default" | "testing" | "wastes" | "castle";
 
-export const GAME_MODES: readonly GameMode[] = ["default", "testing", "wastes"];
+export const GAME_MODES: readonly GameMode[] = ["default", "testing", "wastes", "castle"];
 
 export const GAME_MODE_LABELS: Record<GameMode, string> = {
   default: "Default",
   testing: "Testing zone",
   wastes: "The Gingey Wastes",
+  castle: "Castle Defence",
 };
 
 /** Starting gold when a Wastes room is created with the host's `devTest` option. */
 export const DEV_TEST_START_GOLD = 1000;
 
 export function isGameMode(v: unknown): v is GameMode {
-  return v === "default" || v === "testing" || v === "wastes";
+  return v === "default" || v === "testing" || v === "wastes" || v === "castle";
 }
 
 export function sanitizeGameMode(raw: unknown): GameMode {
@@ -31,11 +33,18 @@ export function sanitizeGameMode(raw: unknown): GameMode {
 /** Level id used while a wastes party is still in lobby / map vote. */
 export const WASTES_CAMP_LEVEL_ID = "wastes_camp";
 
-export type LevelId = "default" | "testing" | typeof WASTES_CAMP_LEVEL_ID | typeof WASTES_MERCHANT_LEVEL_ID | ExpeditionLocationId;
+export type LevelId =
+  | "default"
+  | "testing"
+  | "castle"
+  | typeof WASTES_CAMP_LEVEL_ID
+  | typeof WASTES_MERCHANT_LEVEL_ID
+  | ExpeditionLocationId;
 
 export function initialLevelIdForMode(mode: GameMode): LevelId {
   if (mode === "testing") return "testing";
   if (mode === "wastes") return WASTES_CAMP_LEVEL_ID;
+  if (mode === "castle") return "castle";
   return "default";
 }
 
@@ -44,6 +53,8 @@ export function levelRowsForId(id: string): readonly string[] {
   switch (id) {
     case "testing":
       return TESTING_ZONE;
+    case "castle":
+      return CASTLE_DEFENCE;
     case WASTES_CAMP_LEVEL_ID:
       return WASTES_CAMP;
     case WASTES_MERCHANT_LEVEL_ID:

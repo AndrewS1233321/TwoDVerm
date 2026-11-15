@@ -176,6 +176,16 @@ export class GameState extends Schema {
   @type("boolean") doorsSealed = false;
   @type("float32") missionTime = 0;
   @type("uint16") totalKills = 0;
+  /** Castle Defence: waves started (0 before first). */
+  @type("uint8") waveNumber = 0;
+  @type("uint8") waveTotal = 0;
+  /** Seconds until the next wave may start. */
+  @type("float32") waveTimer = 0;
+  @type("boolean") waveActive = false;
+  @type("float32") kingHp = 0;
+  @type("float32") kingMaxHp = 0;
+  @type("float32") kingX = 0;
+  @type("float32") kingY = 0;
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
   @type({ map: EnemyState }) enemies = new MapSchema<EnemyState>();
   @type({ map: PickupState }) pickups = new MapSchema<PickupState>();

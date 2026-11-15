@@ -86,6 +86,17 @@ export function enemyMeleeHits(world: World, enemy: Enemy, a: ActiveAttack): voi
     a.hitsLeft--;
     damageBarrel(world, b, a.def.damage, enemy.id);
   }
+  const king = world.king;
+  if (king && king.hp > 0 && !a.hit.has("king")) {
+    if (
+      inAttackArc(enemy.x, enemy.y, enemy.radius, enemy.facing, a.def.reach, a.def.arc, king.x, king.y, king.radius) &&
+      hasLineOfSight(world.level, world.gateOpen, enemy.x, enemy.y, king.x, king.y)
+    ) {
+      a.hit.add("king");
+      a.hitsLeft--;
+      world.damageKing(a.def.damage);
+    }
+  }
   for (const h of world.heroes.values()) {
     if (a.hitsLeft <= 0) break;
     if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;

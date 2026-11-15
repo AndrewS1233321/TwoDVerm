@@ -123,6 +123,7 @@ function applyKnockback(world: World, e: Enemy, dt: number): void {
 }
 
 function shouldAggro(world: World, e: Enemy): boolean {
+  if (world.mode === "castle" && world.king && world.king.hp > 0) return true;
   for (const h of world.heroes.values()) {
     if (h.state === "dead" || h.invisT > 0) continue;
     const d = dist(e.x, e.y, h.x, h.y);
@@ -130,6 +131,15 @@ function shouldAggro(world: World, e: Enemy): boolean {
     if (d < ENEMY_AGGRO.sightRange && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, h.x, h.y)) return true;
   }
   return false;
+}
+
+/** Chase destination: castle king when defending, else the picked hero. */
+function chasePos(world: World, hero: Hero | undefined): { x: number; y: number; radius: number } | null {
+  if (world.mode === "castle" && world.king && world.king.hp > 0) {
+    return { x: world.king.x, y: world.king.y, radius: world.king.radius };
+  }
+  if (!hero) return null;
+  return { x: hero.x, y: hero.y, radius: hero.radius };
 }
 
 function alert(world: World, source: Enemy): void {
@@ -232,15 +242,16 @@ function flurryTuning(e: Enemy): { windup: number; openerHits: number; followHit
 }
 
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  const chase = chasePos(world, target);
   if (e.state === "attack" && e.attack) {
     const a = e.attack;
     const flurry = flurryTuning(e);
-    if (target) {
+    if (chase) {
       if (flurry) {
-        faceToward(e, target.x, target.y, 1.6, dt);
-        moveToward(world, e, target.x, target.y, flurry.chaseSpeedMul, dt);
+        faceToward(e, chase.x, chase.y, 1.6, dt);
+        moveToward(world, e, chase.x, chase.y, flurry.chaseSpeedMul, dt);
       } else if (a.phase === "windup") {
-        faceToward(e, target.x, target.y, 0.5, dt);
+        faceToward(e, chase.x, chase.y, 0.5, dt);
       }
     }
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
@@ -265,12 +276,12 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     return;
   }
   e.state = "chase";
-  if (!target) return;
+  if (!chase) return;
   const attack = chooseMeleeAttack(world, e);
   if (!attack) return;
-  const gap = edgeDistance(e, target);
-  if (gap <= attack.reach * 0.85 && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, target.x, target.y)) {
-    const off = faceToward(e, target.x, target.y, 1, dt);
+  const gap = dist(e.x, e.y, chase.x, chase.y) - e.radius - chase.radius;
+  if (gap <= attack.reach * 0.85 && hasLineOfSight(world.level, world.gateOpen, e.x, e.y, chase.x, chase.y)) {
+    const off = faceToward(e, chase.x, chase.y, 1, dt);
     if (off < 0.5 && e.cooldown <= 0) {
       const flurry = flurryTuning(e);
       if (flurry) {
@@ -286,7 +297,7 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     }
     return;
   }
-  moveToward(world, e, target.x, target.y, 1, dt);
+  moveToward(world, e, chase.x, chase.y, 1, dt);
 }
 
 /** Flurry swings: follow-ups wind up fast and every swing but the last recovers quickly. */

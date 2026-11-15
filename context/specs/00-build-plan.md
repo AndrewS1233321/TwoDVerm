@@ -25,5 +25,6 @@ Each unit ends with something playable. Write the spec file for a unit
 | 15   | Full Skaven roster | Shield rats, Plague Monk, Gutter Runner, Warpfire, Sack Rat, Stormfiend (no Lords) | 14 |
 | 16   | Chaos Rotblood roster | Fanatic–Bile Troll; Lifeleech / Blightstormer; Testing pads; Chaos race pools (no Lords) | 15 |
 | 17   | Merchant weapons | Hero-bound primary/secondary shop kits; buy/equip; +0 hero-mod placeholders | 16 |
+| 18   | Castle Defence | Moated castle, king 5000 HP, data-driven waves, mid-mission merchant | 17 |
 
 Units 01 to 06 deliver a playable multiplayer brawler.

@@ -136,3 +136,7 @@ constrains back armor relative to front or side.
 10. Destructible barrels are world entities (synced separately from
     pickups): push, melee/ranged damage, E to pick up, Q to drop,
     charged left-click throw that breaks on impact.
+11. Castle Defence disables the normal Director and runs
+    `CastleDefenceDirector` from a data table (`shared/src/data/castleDefence.ts`).
+    Win = last wave cleared; lose = king HP reaches 0. Water tiles
+    (`TILE_WATER`) are solid. Mid-mission merchant shopping is allowed.

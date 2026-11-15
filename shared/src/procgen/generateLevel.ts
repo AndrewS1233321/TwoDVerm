@@ -278,6 +278,8 @@ export function generateLevel(props: LevelProperties, seed: number): GenerateLev
     summonPads: [],
     summonPortal: null,
     merchantSpawns: [],
+    kingSpawn: null,
+    castlePathSpawns: { left: [], top: [], right: [] },
     roomLabels: [],
   };
 

@@ -9,6 +9,7 @@ import {
   TILE_GATE,
   TILE_SIZE,
   TILE_WALL,
+  TILE_WATER,
   type Level,
 } from "@twodverm/shared";
 import { colors, shade } from "./palette";
@@ -135,6 +136,15 @@ export class LevelRenderer {
         const y = ty * T;
         const t = this.tile(tx, ty);
         const r = hash(tx, ty);
+        if (t === TILE_WATER) {
+          g.fillStyle(shade(0x1a3a5c, 0.9 + r * 0.2));
+          g.fillRect(x, y, T, T);
+          g.fillStyle(0x2a6a9a, 0.35 + r * 0.2);
+          g.fillCircle(x + T * (0.3 + r * 0.4), y + T * (0.35 + hash(tx, ty + 2) * 0.3), 3 + r * 4);
+          g.fillStyle(0x0e2438, 0.45);
+          g.fillRect(x, y + T - 3, T, 3);
+          continue;
+        }
         if (t === TILE_WALL) {
           if (!this.nearFloor(tx, ty)) {
             g.fillStyle(0x161311);

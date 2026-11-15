@@ -8,12 +8,17 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Playtest Default, Testing zone, and The Gingey Wastes expedition
-  loop; playtest Skaven and Chaos Rotblood rosters from the Testing
-  summon pads and tune numbers from feedback.
+- Playtest Castle Defence (waves, king HP, mid-mission shop) alongside
+  Default / Testing / Wastes; tune wave table from feedback.
 
 ## Completed
 
+- **Castle Defence mode (unit 18)**: lobby mode with moated keep map
+  (`TILE_WATER`, bridges L/top/R, king 5000 HP, merchant). Data-driven
+  waves 1–5 (top path only); next wave waits for clear then
+  `delayAfterPrev`; HUD wave timer + king bar; mid-mission shop;
+  win on last wave clear / lose if king dies. Spec
+  `context/specs/18-castle-defence.md`.
 - **Merchant weapons (unit 17)**: hero-bound primary/secondary shop
   catalog; buy for 100 GP replaces that slot (re-buy allowed); live
   heroes clone kit defs so shared `HEROES` is never mutated; weapon

@@ -44,6 +44,7 @@ import {
   type ProcObjective,
 } from "@twodverm/shared";
 import { createBarrel, updateBarrels } from "./barrels";
+import { CastleDefenceDirector, createCastleKing, type CastleKing } from "./castleDefence";
 import { killEnemy } from "./damage";
 import { Director } from "./director";
 import { updateEnemy } from "./enemies";
@@ -71,9 +72,17 @@ export class World {
   flowSmall: FlowField;
   flowWide: FlowField;
   readonly director: Director;
+  readonly castleDirector: CastleDefenceDirector;
   readonly rng: () => number;
   /** Room-wide seed used for procgen rolls. */
   readonly roomSeed: number;
+
+  /** Castle Defence VIP; null outside that mode / before mission start. */
+  king: CastleKing | null = null;
+  castleWaveNumber = 0;
+  castleWaveTotal = 0;
+  castleWaveTimer = 0;
+  castleWaveActive = false;
 
   fx: FxEvent[] = [];
   phase: GamePhase = "lobby";
@@ -126,6 +135,7 @@ export class World {
     this.flowSmall = new FlowField(this.level, false);
     this.flowWide = new FlowField(this.level, true);
     this.director = new Director(this);
+    this.castleDirector = new CastleDefenceDirector();
     this.rng = createRng(seed);
   }
 
@@ -227,15 +237,32 @@ export class World {
     for (const hero of this.heroes.values()) hero.gold = DEV_TEST_START_GOLD;
   }
 
-  /** Hero who may trade right now (merchant phase, standing, next to the merchant). */
+  /** Hero who may trade right now (merchant phase, or Castle Defence mid-mission, standing, next to the merchant). */
   private shopper(heroId: string): Hero | null {
-    if (this.phase !== "merchant") return null;
+    const shopPhase =
+      this.phase === "merchant" || (this.mode === "castle" && this.phase === "playing");
+    if (!shopPhase) return null;
     const hero = this.heroes.get(heroId);
     if (!hero || hero.state === "dead" || hero.state === "downed") return null;
     const nearMerchant = [...this.enemies.values()].some(
       (e) => e.def.id === "merchant" && dist(hero.x, hero.y, e.x, e.y) <= INTERACT_RANGE + e.radius + 24,
     );
     return nearMerchant ? hero : null;
+  }
+
+  /** True when this mode/phase allows opening the merchant shop UI. */
+  canOpenShop(): boolean {
+    return this.phase === "merchant" || (this.mode === "castle" && this.phase === "playing");
+  }
+
+  /** Apply melee/projectile damage to the castle king. Heroes never hurt the king. */
+  damageKing(amount: number): void {
+    if (!this.king || this.king.hp <= 0 || amount <= 0) return;
+    this.king.hp = Math.max(0, this.king.hp - amount);
+    if (this.king.hp <= 0 && this.phase === "playing") {
+      this.phase = "defeat";
+      this.emit({ t: "announce", text: "The king has fallen...", kind: "info" });
+    }
   }
 
   /** Buy a one-time hero perk. Returns false if the buy is rejected. */
@@ -330,11 +357,26 @@ export class World {
       resetHeroForMission(hero, start.x, start.y);
     }
     this.spawnLevelPickupsAndBarrels();
+    this.king = null;
+    this.castleWaveNumber = 0;
+    this.castleWaveTotal = 0;
+    this.castleWaveTimer = 0;
+    this.castleWaveActive = false;
     if (this.mode === "testing") this.setupTestingZone();
+    else if (this.mode === "castle") this.setupCastleDefence();
     else if (this.mode === "wastes" && this.procMeta) this.director.reset();
     else if (this.mode !== "wastes") this.director.reset();
     this.rebuildFlow();
     this.phase = "playing";
+  }
+
+  private setupCastleDefence(): void {
+    for (const p of this.level.merchantSpawns) {
+      this.spawnEnemy("merchant", p.x, p.y, false);
+    }
+    const spawn = this.level.kingSpawn;
+    this.king = spawn ? createCastleKing(spawn) : null;
+    this.castleDirector.reset(this);
   }
 
   /** Place ammo / med pickups and map-authored barrels from the current level. */
@@ -503,7 +545,12 @@ export class World {
   rebuildFlow(): void {
     const visible = (h: Hero) => h.invisT <= 0;
     const targets = this.standingHeroes().filter(visible);
-    const list = targets.length > 0 ? targets : this.aliveHeroes().filter(visible);
+    const list: { x: number; y: number }[] =
+      targets.length > 0 ? [...targets] : [...this.aliveHeroes().filter(visible)];
+    // Castle Defence: path rats toward the king as the primary flow sink.
+    if (this.mode === "castle" && this.king && this.king.hp > 0) {
+      list.push(this.king);
+    }
     this.flowSmall.rebuild(this.gateOpen, list);
     this.flowWide.rebuild(this.gateOpen, list);
   }
@@ -547,6 +594,7 @@ export class World {
     this.missionTime += dt;
     updateBarrels(this, dt);
     if (this.mode === "testing") this.updateSummonPads();
+    else if (this.mode === "castle") this.castleDirector.step(this, dt);
     else if (this.procMeta) {
       this.updateProcObjectives(dt);
       this.director.step(dt);
@@ -879,6 +927,8 @@ export class World {
       this.emit({ t: "announce", text: "Your party has fallen...", kind: "info" });
       return;
     }
+    // Castle Defence: victory/defeat come from the wave director and king HP.
+    if (this.mode === "castle") return;
     if (this.level.endZone.size === 0) return;
     // Testing zone has a wastes-gate pad; standing there must never end the mission.
     if (this.mode === "testing") return;

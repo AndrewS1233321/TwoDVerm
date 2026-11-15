@@ -285,12 +285,35 @@ export class GameScene extends Phaser.Scene {
     this.top.clear();
     this.syncHeroes(delta);
     this.syncEnemies(delta);
+    this.drawKing(state);
     this.syncPickups();
     this.syncBarrels();
     this.updateBarrelThrowPreview(delta / 1000, me);
     this.drawHazards();
     this.levelRenderer.setGateOpen(state.gateOpen);
     this.followCamera();
+  }
+
+  /** Castle Defence VIP — simple regal figure at synced king position. */
+  private drawKing(state: { kingMaxHp: number; kingHp: number; kingX: number; kingY: number }): void {
+    if (!state.kingMaxHp || state.kingHp <= 0) return;
+    const x = state.kingX;
+    const y = state.kingY;
+    const g = this.ground;
+    g.fillStyle(0x1a1520, 0.55);
+    g.fillCircle(x, y + 4, 16);
+    g.fillStyle(0xc9a14a, 1);
+    g.fillCircle(x, y - 2, 12);
+    g.fillStyle(0xe8d9a0, 1);
+    g.fillCircle(x, y - 4, 8);
+    g.fillStyle(0x8b1e1e, 1);
+    g.fillTriangle(x - 10, y - 12, x - 4, y - 22, x + 2, y - 12);
+    g.fillTriangle(x - 4, y - 12, x + 2, y - 22, x + 8, y - 12);
+    g.fillTriangle(x + 2, y - 12, x + 8, y - 22, x + 12, y - 12);
+    g.fillStyle(0xffe08a, 1);
+    g.fillCircle(x - 4, y - 22, 2);
+    g.fillCircle(x + 2, y - 24, 2.5);
+    g.fillCircle(x + 8, y - 22, 2);
   }
 
   /** True while local ranged + RMB precision aim is held. */

@@ -929,7 +929,7 @@ function fireRay(
 }
 
 function tryOpenMerchantShop(world: World, hero: Hero): boolean {
-  if (world.phase !== "merchant") return false;
+  if (!world.canOpenShop()) return false;
   for (const e of world.enemies.values()) {
     if (e.def.id !== "merchant") continue;
     if (dist(hero.x, hero.y, e.x, e.y) > INTERACT_RANGE + e.radius) continue;

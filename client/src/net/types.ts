@@ -159,6 +159,15 @@ export interface GameStateView {
   doorsSealed: boolean;
   missionTime: number;
   totalKills: number;
+  /** Castle Defence wave HUD. */
+  waveNumber: number;
+  waveTotal: number;
+  waveTimer: number;
+  waveActive: boolean;
+  kingHp: number;
+  kingMaxHp: number;
+  kingX: number;
+  kingY: number;
   players: MapLike<PlayerView>;
   enemies: MapLike<EnemyView>;
   pickups: MapLike<PickupView>;

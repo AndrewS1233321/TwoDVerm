@@ -159,7 +159,9 @@ export class Overlay {
   }
 
   openShop(): void {
-    if (!this.inRoom || this.currentPhase !== "merchant") return;
+    if (!this.inRoom) return;
+    const castlePlay = this.lastState?.gameMode === "castle" && this.currentPhase === "playing";
+    if (this.currentPhase !== "merchant" && !castlePlay) return;
     this.shopOpen = true;
     this.perkSignature = "";
     this.armorSignature = "";

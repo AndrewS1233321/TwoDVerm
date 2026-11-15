@@ -90,6 +90,21 @@ export function syncWorld(world: World, state: GameState): void {
   state.finalObjectiveComplete = world.finalObjectiveComplete;
   state.procProgress = world.procProgress;
   state.levelProps = world.levelProps ? serializeLevelProps(world.levelProps) : "";
+  state.waveNumber = world.castleWaveNumber;
+  state.waveTotal = world.castleWaveTotal;
+  state.waveTimer = r1(Math.max(0, world.castleWaveTimer));
+  state.waveActive = world.castleWaveActive;
+  if (world.king) {
+    state.kingHp = r1(Math.max(0, world.king.hp));
+    state.kingMaxHp = world.king.maxHp;
+    state.kingX = r1(world.king.x);
+    state.kingY = r1(world.king.y);
+  } else {
+    state.kingHp = 0;
+    state.kingMaxHp = 0;
+    state.kingX = 0;
+    state.kingY = 0;
+  }
 
   for (const hero of world.heroes.values()) {
     const s = state.players.get(hero.id);

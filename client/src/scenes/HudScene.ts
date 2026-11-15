@@ -66,6 +66,9 @@ export class HudScene extends Phaser.Scene {
     t("hidden", { fontSize: "12px", color: palette.dodge }, 0, 0.5);
     t("levelName", { fontSize: "13px" }, 0, 0);
     t("levelDiff", { fontSize: "11px", color: palette.textMuted }, 0, 0);
+    t("wave", { fontSize: "14px", fontStyle: "bold", color: palette.accent }, 0, 0);
+    t("waveTimer", { fontSize: "12px", color: palette.textMuted }, 0, 0);
+    t("kingHp", { fontSize: "12px", color: "#e8c86a" }, 0, 0);
     for (let i = 0; i < 3; i++) {
       this.teamTexts.push(this.add.text(0, 0, "", { fontFamily: FONT, fontSize: "12px", color: palette.textPrimary, stroke: "#000", strokeThickness: 3 }));
     }
@@ -274,7 +277,41 @@ export class HudScene extends Phaser.Scene {
     this.texts.levelName!.setPosition(x, y).setText(label.name);
     const showDiff = label.difficulty.length > 0;
     this.texts.levelDiff!.setVisible(showDiff).setPosition(x, y + 16).setText(label.difficulty);
-    return showDiff ? y + 36 : y + 20;
+    let nextY = showDiff ? y + 36 : y + 20;
+
+    const castle = room.state.gameMode === "castle" && room.state.waveTotal > 0;
+    this.texts.wave!.setVisible(castle);
+    this.texts.waveTimer!.setVisible(castle);
+    this.texts.kingHp!.setVisible(castle && room.state.kingMaxHp > 0);
+    if (castle) {
+      const n = Math.max(1, room.state.waveNumber || 1);
+      const total = room.state.waveTotal;
+      this.texts.wave!.setPosition(x, nextY).setText(`Wave ${Math.min(n, total)} / ${total}`);
+      nextY += 18;
+      const timer = Math.max(0, room.state.waveTimer);
+      const timerText =
+        room.state.waveActive && timer <= 0
+          ? "Wave in progress"
+          : room.state.waveNumber >= total && !room.state.waveActive
+            ? "Last wave cleared"
+            : `Next wave in ${Math.ceil(timer)}s`;
+      this.texts.waveTimer!.setPosition(x, nextY).setText(timerText);
+      nextY += 16;
+      if (room.state.kingMaxHp > 0) {
+        const frac = clamp(room.state.kingHp / room.state.kingMaxHp, 0, 1);
+        this.g.fillStyle(0x000000, 0.45);
+        this.g.fillRoundedRect(x - 2, nextY, 168, 14, 4);
+        this.g.fillStyle(0x3a2e12, 1);
+        this.g.fillRoundedRect(x, nextY + 2, 164, 10, 3);
+        this.g.fillStyle(0xc9a14a, 1);
+        this.g.fillRoundedRect(x, nextY + 2, 164 * frac, 10, 3);
+        this.texts.kingHp!
+          .setPosition(x + 2, nextY)
+          .setText(`King ${Math.ceil(room.state.kingHp)} / ${Math.ceil(room.state.kingMaxHp)}`);
+        nextY += 20;
+      }
+    }
+    return nextY;
   }
 
   private drawTeam(me: PlayerView, startY: number): void {
@@ -487,7 +524,10 @@ export class HudScene extends Phaser.Scene {
             ? `Charging… ${Math.max(0, minHold - hold).toFixed(1)}s`
             : `Hold left click ${minHold}s+ to throw · E to drop`;
       }
-      if (!prompt && room.state.phase === "merchant") {
+      const shopOk =
+        room.state.phase === "merchant" ||
+        (room.state.gameMode === "castle" && room.state.phase === "playing");
+      if (!prompt && shopOk) {
         room.state.enemies.forEach((e) => {
           if (e.type !== "merchant") return;
           const reach = INTERACT_RANGE + (ENEMIES.merchant?.radius ?? 16);
@@ -551,6 +591,7 @@ function levelCornerLabel(levelId: string, levelProps: string): { name: string; 
   let name = "Default";
   if (isExpeditionLocationId(levelId)) name = EXPEDITION_LOCATIONS[levelId].name;
   else if (levelId === "testing") name = "Testing zone";
+  else if (levelId === "castle") name = "Castle Defence";
   else if (levelId === WASTES_MERCHANT_LEVEL_ID) name = "Merchant hall";
   else if (levelId === "wastes_camp") name = "Camp";
   const props = levelProps ? parseLevelProps(levelProps) : null;

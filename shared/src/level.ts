@@ -5,6 +5,8 @@ import type { DummyEnemyId, EnemyId } from "./data/types";
 export const TILE_FLOOR = 0;
 export const TILE_WALL = 1;
 export const TILE_GATE = 2;
+/** Impassable moat / water (Castle Defence). */
+export const TILE_WATER = 3;
 
 export const DECOR_PLAIN = 0;
 export const DECOR_COBBLE = 1;
@@ -106,6 +108,13 @@ export interface Level {
   summonPortal: Point | null;
   /** Centres where a merchant NPC should stand (Gingey Wastes hall). */
   merchantSpawns: Point[];
+  /** Castle Defence king spawn (world centre), or null. */
+  kingSpawn: Point | null;
+  /**
+   * Castle Defence wave spawns by approach. v1 uses `top` only;
+   * left/right are reserved for later path selection.
+   */
+  castlePathSpawns: { left: Point[]; top: Point[]; right: Point[] };
   roomLabels: RoomLabel[];
   /** Authored Wastes set pieces; absent on maps without them. */
   setPieces?: LevelSetPieces;
@@ -153,6 +162,8 @@ export function parseLevel(rows: readonly string[]): Level {
     summonPads: [],
     summonPortal: null,
     merchantSpawns: [],
+    kingSpawn: null,
+    castlePathSpawns: { left: [], top: [], right: [] },
     roomLabels: [],
   };
 
@@ -164,6 +175,10 @@ export function parseLevel(rows: readonly string[]): Level {
       if (ch === "#" || ch === " ") continue;
       if (ch === "G") {
         tiles[i] = TILE_GATE;
+        continue;
+      }
+      if (ch === "~") {
+        tiles[i] = TILE_WATER;
         continue;
       }
       tiles[i] = TILE_FLOOR;
@@ -185,7 +200,17 @@ export function parseLevel(rows: readonly string[]): Level {
         case "H": level.holdZone.add(i); break;
         case "T": level.bossTrigger.add(i); break;
         case "S": level.playerStarts.push(c); break;
-        case "h": level.hordeSpawns.push(c); break;
+        case "h":
+          level.hordeSpawns.push(c);
+          // Assign to nearest castle approach by map position (top / left / right).
+          {
+            const midX = (width * TILE_SIZE) / 2;
+            const midY = (height * TILE_SIZE) / 2;
+            if (c.y < midY * 0.55) level.castlePathSpawns.top.push(c);
+            else if (c.x < midX) level.castlePathSpawns.left.push(c);
+            else level.castlePathSpawns.right.push(c);
+          }
+          break;
         case "p": level.specialSpawns.push(c); break;
         case "r": level.ambientRats.push(c); break;
         case "s": level.ambientElites.push(c); break;
@@ -194,6 +219,7 @@ export function parseLevel(rows: readonly string[]): Level {
         case "M": level.medKits.push(c); break;
         case "N": level.merchantSpawns.push(c); break;
         case "P": level.summonPortal = c; break;
+        case "Y": level.kingSpawn = c; break;
       }
     }
   }
@@ -334,7 +360,7 @@ export function tileIndexAt(level: Level, x: number, y: number): number {
 export function isSolidTile(level: Level, gateOpen: boolean, tx: number, ty: number): boolean {
   if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) return true;
   const t = level.tiles[ty * level.width + tx];
-  if (t === TILE_WALL) return true;
+  if (t === TILE_WALL || t === TILE_WATER) return true;
   if (t === TILE_GATE) return !gateOpen;
   return false;
 }
