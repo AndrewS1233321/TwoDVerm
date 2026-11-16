@@ -14,11 +14,12 @@ Update this file after every meaningful implementation change.
 ## Completed
 
 - **Castle Defence mode (unit 18)**: lobby mode with moated keep map
-  (`TILE_WATER`, bridges L/top/R, king 5000 HP, merchant). Data-driven
-  waves 1–5 (top path only); next wave waits for clear then
-  `delayAfterPrev`; HUD wave timer + king bar; mid-mission shop;
-  win on last wave clear / lose if king dies. Spec
-  `context/specs/18-castle-defence.md`.
+  (`TILE_WATER`, bridges L/top/R, king 5000 HP, merchant). Keep has
+  three wide (6-tile) openings — left, top/middle, right — so the
+  courtyard connects to the outer approaches. Data-driven waves 1–5
+  (top path only); next wave waits for clear then `delayAfterPrev`;
+  HUD wave timer + king bar; mid-mission shop; win on last wave clear
+  / lose if king dies. Spec `context/specs/18-castle-defence.md`.
 - **Merchant weapons (unit 17)**: hero-bound primary/secondary shop
   catalog; buy for 100 GP replaces that slot (re-buy allowed); live
   heroes clone kit defs so shared `HEROES` is never mutated; weapon
