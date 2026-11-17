@@ -72,6 +72,7 @@ export class LevelRenderer {
     this.disposables.push(this.gateGfx);
     this.drawGate();
     this.drawSetPieces();
+    this.drawEnemySpawnMarkers();
     if (this.mine) this.placeLanterns();
     else this.placeTorches();
   }
@@ -391,6 +392,32 @@ export class LevelRenderer {
     g.fillRect(x, y + T - 9, T, 3);
   }
 
+  /**
+   * Castle Defence (and any map with a king): one ritual circle + red
+   * pentagram at each path's spawn cluster centre (left / top / right).
+   */
+  private drawEnemySpawnMarkers(): void {
+    if (!this.level.kingSpawn) return;
+    const bags = this.level.castlePathSpawns;
+    const centers: { x: number; y: number }[] = [];
+    for (const list of [bags.left, bags.top, bags.right]) {
+      if (list.length === 0) continue;
+      let x = 0;
+      let y = 0;
+      for (const p of list) {
+        x += p.x;
+        y += p.y;
+      }
+      centers.push({ x: x / list.length, y: y / list.length });
+    }
+    if (centers.length === 0) return;
+
+    const g = this.scene.add.graphics().setDepth(2);
+    this.disposables.push(g);
+    const r = TILE_SIZE * 2.4;
+    for (const c of centers) drawSpawnPentagram(g, c.x, c.y, r);
+  }
+
   /** Cannon on its carriage (aimed at the rubble wall) and the temple bell. */
   private drawSetPieces(): void {
     const sp = this.level.setPieces;
@@ -689,4 +716,35 @@ export class LevelRenderer {
       }
     }
   }
+}
+
+/** Dark circle with a red five-pointed star (pentagram) for enemy spawn pads. */
+function drawSpawnPentagram(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number): void {
+  g.fillStyle(0x1a0505, 0.55);
+  g.fillCircle(cx, cy, r);
+  g.lineStyle(3, colors.health, 0.95);
+  g.strokeCircle(cx, cy, r);
+  g.lineStyle(1.5, 0xff6b5a, 0.55);
+  g.strokeCircle(cx, cy, r * 0.88);
+
+  const tipR = r * 0.72;
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    pts.push({ x: cx + Math.cos(a) * tipR, y: cy + Math.sin(a) * tipR });
+  }
+  // Visit every second vertex for a classic pentagram.
+  const order = [0, 2, 4, 1, 3, 0];
+  g.lineStyle(2.5, 0xff2a2a, 1);
+  g.beginPath();
+  g.moveTo(pts[0]!.x, pts[0]!.y);
+  for (let i = 1; i < order.length; i++) {
+    const p = pts[order[i]!]!;
+    g.lineTo(p.x, p.y);
+  }
+  g.closePath();
+  g.strokePath();
+
+  g.fillStyle(colors.health, 0.35);
+  g.fillCircle(cx, cy, 4);
 }

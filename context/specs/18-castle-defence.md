@@ -15,6 +15,8 @@ waves. Win when the last wave is cleared; lose if the king dies.
   36 tiles (3× the original 12-tile band / 200% larger); outer map
   border grows to fit. Castle, moat, and bridges stay the same size.
 - v1 waves spawn only from the **top** bridge approach (`h` markers).
+- Spawn clusters render as a dark circle with a red pentagram (one per
+  left / top / right path).
 
 ## Waves
 
