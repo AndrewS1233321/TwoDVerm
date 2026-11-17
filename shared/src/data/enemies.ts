@@ -269,7 +269,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     name: "Rat Ogre",
     radius: 34,
     hp: 1400,
-    speed: 220,
+    speed: 190,
     turnRate: 2.6,
     armor: UNARMORED,
     staggerResist: 99,
