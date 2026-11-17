@@ -24,7 +24,7 @@ export const SWORD_AND_SHIELD: WeaponDef = {
   name: "Sword and Shield",
   style: "swordAndShield",
   heavyCharge: 0.4,
-  blockCostMul: 0.85,
+  blockCostMul: 1,
   light: [
     { id: "ss_l1", windup: 0.1, active: 0.07, recovery: 0.14, reach: 30, arc: deg(100), damage: 11, cleave: 2, stagger: 0, blockCost: 1, swing: { from: -1.15, to: 1.0 } },
     { id: "ss_l2", windup: 0.1, active: 0.07, recovery: 0.14, reach: 30, arc: deg(100), damage: 11, cleave: 2, stagger: 0, blockCost: 1, swing: { from: 1.15, to: -1.0 } },
@@ -43,7 +43,7 @@ export const DUAL_DAGGERS: WeaponDef = {
   name: "Dual Daggers",
   style: "daggers",
   heavyCharge: 0.3,
-  blockCostMul: 1.5,
+  blockCostMul: 1,
   light: [
     { id: "dd_l1", windup: 0.12, active: 0.08, recovery: 0.18, reach: 30, arc: deg(70), damage: 9, cleave: 1, stagger: 0, blockCost: 1, backstabMul: 1.6, swing: { from: -0.9, to: 0.7 } },
     { id: "dd_l2", windup: 0.12, active: 0.08, recovery: 0.18, reach: 30, arc: deg(70), damage: 9, cleave: 1, stagger: 0, blockCost: 1, backstabMul: 1.6, swing: { from: 0.9, to: -0.7 } },
@@ -61,7 +61,7 @@ export const WAR_HAMMER: WeaponDef = {
   name: "Dwarf War Hammer",
   style: "hammer",
   heavyCharge: 0.55,
-  blockCostMul: 0.6,
+  blockCostMul: 1,
   light: [
     { id: "wh_l1", windup: 0.3, active: 0.14, recovery: 0.4, reach: 40, arc: deg(120), damage: 16, cleave: 3, stagger: 2, blockCost: 1, swing: { from: -1.3, to: 1.1 } },
     { id: "wh_l2", windup: 0.28, active: 0.14, recovery: 0.4, reach: 40, arc: deg(120), damage: 16, cleave: 3, stagger: 2, blockCost: 1, swing: { from: 1.3, to: -1.1 } },
@@ -78,7 +78,7 @@ export const RAPIER: WeaponDef = {
   name: "Duellist Rapier",
   style: "rapier",
   heavyCharge: 0.35,
-  blockCostMul: 1.2,
+  blockCostMul: 1,
   light: [
     { id: "ra_l1", windup: 0.14, active: 0.08, recovery: 0.22, reach: 54, arc: deg(25), damage: 13, cleave: 1, stagger: 0, blockCost: 1, swing: { from: 0, to: 0, thrust: 18 } },
     { id: "ra_l2", windup: 0.16, active: 0.1, recovery: 0.25, reach: 46, arc: deg(90), damage: 11, cleave: 2, stagger: 1, blockCost: 1, swing: { from: -1, to: 1 } },

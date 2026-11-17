@@ -48,6 +48,10 @@ export interface WeaponDef {
   heavy: AttackDef[];
   /** Seconds of charging (after the hold threshold) before the heavy attack can be released. */
   heavyCharge: number;
+  /**
+   * Multiplies an attack's `blockCost` when this weapon is equipped.
+   * Default is 1 for all kit weapons; perks / items may raise or lower it later.
+   */
   blockCostMul: number;
   style: WeaponStyle;
 }
