@@ -15,11 +15,12 @@ Update this file after every meaningful implementation change.
 
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
-  grassy fields (`DECOR_GRASS`, depth = 50% castle width), king 5000 HP
-  + merchant inside (no water in the courtyard). Data-driven waves 1–5
-  (top path only); next wave waits for clear then `delayAfterPrev`;
-  HUD wave timer + king bar; mid-mission shop; win on last wave clear
-  / lose if king dies. Spec `context/specs/18-castle-defence.md`.
+  grassy fields (`DECOR_GRASS`, depth 36 = 3× original band), king
+  5000 HP + merchant inside (no water in the courtyard). Map 108×100.
+  Data-driven waves 1–5 (top path only); next wave waits for clear then
+  `delayAfterPrev`; HUD wave timer + king bar; mid-mission shop; win on
+  last wave clear / lose if king dies. Spec
+  `context/specs/18-castle-defence.md`.
 - **Merchant weapons (unit 17)**: hero-bound primary/secondary shop
   catalog; buy for 100 GP replaces that slot (re-buy allowed); live
   heroes clone kit defs so shared `HEROES` is never mutated; weapon

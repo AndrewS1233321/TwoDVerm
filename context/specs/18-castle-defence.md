@@ -11,8 +11,9 @@ waves. Win when the last wave is cleared; lose if the king dies.
   Keep interior is solid floor (no water inside the walls).
 - Full water moat (`~` → impassable `TILE_WATER`) around the keep;
   only crossable via three large (6-tile) bridges: left, top/middle, right.
-- Outside the moat: grassy fields (`;` → `DECOR_GRASS`) whose depth is
-  50% of the castle width on each side.
+- Outside the moat: grassy fields (`;` → `DECOR_GRASS`). Field depth is
+  36 tiles (3× the original 12-tile band / 200% larger); outer map
+  border grows to fit. Castle, moat, and bridges stay the same size.
 - v1 waves spawn only from the **top** bridge approach (`h` markers).
 
 ## Waves

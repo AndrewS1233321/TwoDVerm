@@ -205,12 +205,14 @@ export function parseLevel(rows: readonly string[]): Level {
         case "S": level.playerStarts.push(c); break;
         case "h":
           level.hordeSpawns.push(c);
-          // Assign to nearest castle approach by map position (top / left / right).
+          // Assign to nearest map edge approach (top / left / right).
           {
-            const midX = (width * TILE_SIZE) / 2;
-            const midY = (height * TILE_SIZE) / 2;
-            if (c.y < midY * 0.55) level.castlePathSpawns.top.push(c);
-            else if (c.x < midX) level.castlePathSpawns.left.push(c);
+            const worldW = width * TILE_SIZE;
+            const distTop = c.y;
+            const distLeft = c.x;
+            const distRight = worldW - c.x;
+            if (distTop <= distLeft && distTop <= distRight) level.castlePathSpawns.top.push(c);
+            else if (distLeft < distRight) level.castlePathSpawns.left.push(c);
             else level.castlePathSpawns.right.push(c);
           }
           break;
