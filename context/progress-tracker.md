@@ -31,8 +31,9 @@ Update this file after every meaningful implementation change.
   radius) with 0.3s wind-up each, chases while comboing, 15 dmg /
   blockCost 1 per swipe, 6s CD.
   (5) `ogre_claw`: hero within 40px, 0.7s wind-up, 110° × 5-tile cone,
-  30 dmg / blockCost 2 / minor stagger, 1s CD. Chase-only while waiting.
-  `ogre2` keeps archived kit.
+  30 dmg / blockCost 2 / minor stagger, 1s CD. Shared 2s gap after any
+  ability before the next may start. Chase-only while waiting. `ogre2`
+  keeps archived kit.
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
   grassy fields (`DECOR_GRASS`, depth 36 = 3× original band), king

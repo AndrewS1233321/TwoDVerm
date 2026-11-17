@@ -15,6 +15,7 @@ import {
   moveCircle,
   raycastWalls,
   MONK,
+  OGRE_ABILITY_GAP,
   OGRE_CHARGE,
   OGRE_CLAW,
   OGRE_GROUND_SLAM,
@@ -51,6 +52,7 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
   e.overheadCd -= dt;
   e.pummelCd -= dt;
   e.clawCd -= dt;
+  e.abilityGapCd -= dt;
   applyKnockback(world, e, dt);
 
   // Test dummies never chase or attack; they only take hits.
@@ -389,7 +391,16 @@ function endOgreCharge(e: Enemy): void {
   e.stateT = 0;
   e.chargeDist = 0;
   e.chargeHit.clear();
+  e.abilityGapCd = OGRE_ABILITY_GAP;
   e.actionSeq++;
+}
+
+function endOgreAttack(e: Enemy): void {
+  e.attack = null;
+  e.state = "chase";
+  e.stateT = 0;
+  e.chainLeft = 0;
+  e.abilityGapCd = OGRE_ABILITY_GAP;
 }
 
 /**
@@ -636,10 +647,7 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
           return;
         }
       }
-      e.attack = null;
-      e.state = "chase";
-      e.stateT = 0;
-      e.chainLeft = 0;
+      endOgreAttack(e);
     }
     return;
   }
@@ -678,74 +686,77 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
 
   e.state = "chase";
 
-  // Priority 1: ground slam (rear 160° / 70px).
-  if (e.cooldown <= 0 && anyHeroBehindOgre(world, e)) {
-    const slam = e.def.attacks.find((at) => at.id === "ogre_ground_slam");
-    if (slam) {
-      e.attack = newAttack(slam, "enemy");
-      e.state = "attack";
-      e.actionSeq++;
-      e.chainLeft = 0;
-      e.cooldown = OGRE_GROUND_SLAM.cooldown;
-      return;
+  // Shared 2s gap after any ability — chase only until it expires.
+  if (e.abilityGapCd <= 0) {
+    // Priority 1: ground slam (rear 160° / 70px).
+    if (e.cooldown <= 0 && anyHeroBehindOgre(world, e)) {
+      const slam = e.def.attacks.find((at) => at.id === "ogre_ground_slam");
+      if (slam) {
+        e.attack = newAttack(slam, "enemy");
+        e.state = "attack";
+        e.actionSeq++;
+        e.chainLeft = 0;
+        e.cooldown = OGRE_GROUND_SLAM.cooldown;
+        return;
+      }
     }
-  }
 
-  // Priority 2: charge preferred target when nobody is nearby.
-  if (e.fireCd <= 0 && !anyHeroWithin(world, e, OGRE_CHARGE.minHeroDistance)) {
-    if (!validTarget(world, e.targetId)) e.targetId = pickTarget(world, e);
-    if (validTarget(world, e.targetId)) {
-      e.state = "charge";
-      e.chargeDist = 0;
-      e.chargeHit.clear();
-      e.fireCd = OGRE_CHARGE.cooldown;
-      e.actionSeq++;
-      return;
+    // Priority 2: charge preferred target when nobody is nearby.
+    if (e.fireCd <= 0 && !anyHeroWithin(world, e, OGRE_CHARGE.minHeroDistance)) {
+      if (!validTarget(world, e.targetId)) e.targetId = pickTarget(world, e);
+      if (validTarget(world, e.targetId)) {
+        e.state = "charge";
+        e.chargeDist = 0;
+        e.chargeHit.clear();
+        e.fireCd = OGRE_CHARGE.cooldown;
+        e.actionSeq++;
+        return;
+      }
     }
-  }
 
-  // Priority 3: overhead smash when a hero is within 2 tiles.
-  if (e.overheadCd <= 0) {
-    const near = nearestHeroInOverheadRange(world, e);
-    const overhead = e.def.attacks.find((at) => at.id === "ogre_overhead");
-    if (near && overhead) {
-      e.facing = angleTo(e.x, e.y, near.x, near.y);
-      e.attack = newAttack(overhead, "enemy");
-      e.state = "attack";
-      e.actionSeq++;
-      e.chainLeft = 0;
-      e.overheadCd = OGRE_OVERHEAD.cooldown;
-      return;
+    // Priority 3: overhead smash when a hero is within 2 tiles.
+    if (e.overheadCd <= 0) {
+      const near = nearestHeroInOverheadRange(world, e);
+      const overhead = e.def.attacks.find((at) => at.id === "ogre_overhead");
+      if (near && overhead) {
+        e.facing = angleTo(e.x, e.y, near.x, near.y);
+        e.attack = newAttack(overhead, "enemy");
+        e.state = "attack";
+        e.actionSeq++;
+        e.chainLeft = 0;
+        e.overheadCd = OGRE_OVERHEAD.cooldown;
+        return;
+      }
     }
-  }
 
-  // Priority 4: pummeling swipes when a hero is within 80px.
-  if (e.pummelCd <= 0) {
-    const near = nearestHeroInPummelRange(world, e);
-    const pummel = e.def.attacks.find((at) => at.id === "ogre_pummel");
-    if (near && pummel) {
-      e.facing = angleTo(e.x, e.y, near.x, near.y);
-      e.attack = newAttack(pummel, "enemy");
-      e.state = "attack";
-      e.actionSeq++;
-      e.chainLeft = OGRE_PUMMEL.hits - 1;
-      e.pummelCd = OGRE_PUMMEL.cooldown;
-      return;
+    // Priority 4: pummeling swipes when a hero is within 80px.
+    if (e.pummelCd <= 0) {
+      const near = nearestHeroInPummelRange(world, e);
+      const pummel = e.def.attacks.find((at) => at.id === "ogre_pummel");
+      if (near && pummel) {
+        e.facing = angleTo(e.x, e.y, near.x, near.y);
+        e.attack = newAttack(pummel, "enemy");
+        e.state = "attack";
+        e.actionSeq++;
+        e.chainLeft = OGRE_PUMMEL.hits - 1;
+        e.pummelCd = OGRE_PUMMEL.cooldown;
+        return;
+      }
     }
-  }
 
-  // Priority 5: standard claw when a hero is within 40px.
-  if (e.clawCd <= 0) {
-    const near = nearestHeroInClawRange(world, e);
-    const claw = e.def.attacks.find((at) => at.id === "ogre_claw");
-    if (near && claw) {
-      e.facing = angleTo(e.x, e.y, near.x, near.y);
-      e.attack = newAttack(claw, "enemy");
-      e.state = "attack";
-      e.actionSeq++;
-      e.chainLeft = 0;
-      e.clawCd = OGRE_CLAW.cooldown;
-      return;
+    // Priority 5: standard claw when a hero is within 40px.
+    if (e.clawCd <= 0) {
+      const near = nearestHeroInClawRange(world, e);
+      const claw = e.def.attacks.find((at) => at.id === "ogre_claw");
+      if (near && claw) {
+        e.facing = angleTo(e.x, e.y, near.x, near.y);
+        e.attack = newAttack(claw, "enemy");
+        e.state = "attack";
+        e.actionSeq++;
+        e.chainLeft = 0;
+        e.clawCd = OGRE_CLAW.cooldown;
+        return;
+      }
     }
   }
 

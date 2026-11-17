@@ -228,6 +228,8 @@ export interface Enemy {
   pummelCd: number;
   /** Rat Ogre: seconds until the standard claw is ready again. */
   clawCd: number;
+  /** Rat Ogre: shared gap after any ability before the next may start. */
+  abilityGapCd: number;
   /** Rat Ogre: world px already traveled during the current charge. */
   chargeDist: number;
   /** Ally / hero ids already struck during the current charge. */

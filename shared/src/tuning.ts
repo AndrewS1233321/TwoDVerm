@@ -323,6 +323,9 @@ export const BILE_TROLL = {
   kneelHeal: 280,
 };
 
+/** Shared lockout after any Rat Ogre ability finishes before another may start. */
+export const OGRE_ABILITY_GAP = 2;
+
 /**
  * Rat Ogre ground slam (priority 1): rear-proximity trigger, radial knockback AoE.
  * AttackDef `ogre_ground_slam` mirrors damage / windup; this holds trigger + AoE geometry.
