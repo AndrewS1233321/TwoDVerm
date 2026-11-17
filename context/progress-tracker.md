@@ -10,7 +10,7 @@ Update this file after every meaningful implementation change.
 
 - Playtest Castle Defence (waves, king HP, mid-mission shop) alongside
   Default / Testing / Wastes; tune wave table from feedback.
-- Continue Rat Ogre ability rewrite (priorities 1–2 shipped; further
+- Continue Rat Ogre ability rewrite (priorities 1–3 shipped; further
   abilities TBD).
 
 ## Completed

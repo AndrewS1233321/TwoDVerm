@@ -17,6 +17,8 @@ import {
   MONK,
   OGRE_CHARGE,
   OGRE_GROUND_SLAM,
+  OGRE_OVERHEAD,
+  ogreOverheadAoeOffset,
   RUNNER,
   SACK_RAT,
   SAVAGE,
@@ -44,6 +46,7 @@ const CHAIN_RECOVERY_MUL = 0.35;
 export function updateEnemy(world: World, e: Enemy, dt: number): void {
   e.cooldown -= dt;
   e.fireCd -= dt;
+  e.overheadCd -= dt;
   applyKnockback(world, e, dt);
 
   // Test dummies never chase or attack; they only take hits.
@@ -433,15 +436,65 @@ function ogreChargeCollisions(world: World, e: Enemy): boolean {
   return false;
 }
 
+function ogreOverheadCentre(e: Enemy): { x: number; y: number } {
+  const off = ogreOverheadAoeOffset(e.radius);
+  return { x: e.x + Math.cos(e.facing) * off, y: e.y + Math.sin(e.facing) * off };
+}
+
+/** Nearest living hero within overhead trigger range, or null. */
+function nearestHeroInOverheadRange(world: World, e: Enemy): Hero | null {
+  let best: Hero | null = null;
+  let bestD = Infinity;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.invisT > 0) continue;
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d > OGRE_OVERHEAD.triggerRange) continue;
+    if (d < bestD) {
+      bestD = d;
+      best = h;
+    }
+  }
+  return best;
+}
+
+/** Front-circle overhead smash hits (heroes in the telegraph circle). */
+function applyOgreOverhead(world: World, e: Enemy, a: ActiveAttack): void {
+  if (a.hitsLeft <= 0) return;
+  const c = ogreOverheadCentre(e);
+  const r = OGRE_OVERHEAD.aoeRadius;
+
+  for (const h of world.heroes.values()) {
+    if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
+    if (dist(c.x, c.y, h.x, h.y) > r) continue;
+    const result = strikeHero(world, h, {
+      damage: OGRE_OVERHEAD.damage,
+      stagger: OGRE_OVERHEAD.stagger,
+      blockCost: OGRE_OVERHEAD.blockCost,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
+    a.hit.add(h.id);
+    if (result !== "dodged") a.hitsLeft--;
+  }
+}
+
 /**
  * Rat Ogre AI: ability priority list (more entries later).
  * 1) Ground slam — rear 160° / 70px, off slam CD.
  * 2) Charge — no heroes within 340px, off charge CD; locks preferred target.
+ * 3) Overhead — hero within 2 tiles, off overhead CD; front circle smash.
  * Otherwise chase only (no legacy melee).
  */
 function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
   if (e.state === "attack" && e.attack) {
-    const done = advanceAttack(e.attack, dt, () => applyOgreGroundSlam(world, e, e.attack!));
+    const a = e.attack;
+    const apply =
+      a.def.id === "ogre_overhead"
+        ? () => applyOgreOverhead(world, e, a)
+        : () => applyOgreGroundSlam(world, e, a);
+    // Facing is locked during slam / overhead so the red telegraph matches the hit.
+    const done = advanceAttack(a, dt, apply);
     if (done) {
       e.attack = null;
       e.state = "chase";
@@ -486,7 +539,7 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
 
   // Priority 1: ground slam (rear 160° / 70px).
   if (e.cooldown <= 0 && anyHeroBehindOgre(world, e)) {
-    const slam = e.def.attacks.find((a) => a.id === "ogre_ground_slam") ?? e.def.attacks[0];
+    const slam = e.def.attacks.find((at) => at.id === "ogre_ground_slam");
     if (slam) {
       e.attack = newAttack(slam, "enemy");
       e.state = "attack";
@@ -506,6 +559,21 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
       e.chargeHit.clear();
       e.fireCd = OGRE_CHARGE.cooldown;
       e.actionSeq++;
+      return;
+    }
+  }
+
+  // Priority 3: overhead smash when a hero is within 2 tiles.
+  if (e.overheadCd <= 0) {
+    const near = nearestHeroInOverheadRange(world, e);
+    const overhead = e.def.attacks.find((at) => at.id === "ogre_overhead");
+    if (near && overhead) {
+      e.facing = angleTo(e.x, e.y, near.x, near.y);
+      e.attack = newAttack(overhead, "enemy");
+      e.state = "attack";
+      e.actionSeq++;
+      e.chainLeft = 0;
+      e.overheadCd = OGRE_OVERHEAD.cooldown;
       return;
     }
   }

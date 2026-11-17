@@ -1,5 +1,5 @@
 import { deg } from "../math";
-import { OGRE_GROUND_SLAM } from "../tuning";
+import { OGRE_GROUND_SLAM, OGRE_OVERHEAD } from "../tuning";
 import { dummyArmorLoadout, UNARMORED, type ArmorLevel } from "./armor";
 import type { CombatEnemyId, DummyEnemyId, EnemyDef, EnemyId } from "./types";
 
@@ -293,6 +293,20 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
         stagger: OGRE_GROUND_SLAM.stagger,
         blockCost: OGRE_GROUND_SLAM.blockCost,
         swing: { from: 0, to: 0, thrust: 4 },
+      },
+      // Priority-3 front overhead — telegraph/hit circle resolved in updateRatOgre.
+      {
+        id: "ogre_overhead",
+        windup: OGRE_OVERHEAD.windup,
+        active: OGRE_OVERHEAD.active,
+        recovery: OGRE_OVERHEAD.recovery,
+        reach: OGRE_OVERHEAD.aoeRadius,
+        arc: deg(360),
+        damage: OGRE_OVERHEAD.damage,
+        cleave: 99,
+        stagger: OGRE_OVERHEAD.stagger,
+        blockCost: OGRE_OVERHEAD.blockCost,
+        swing: { from: 1.1, to: -0.35, thrust: 10 },
       },
     ],
   },

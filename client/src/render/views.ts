@@ -7,6 +7,8 @@ import {
   getAttack,
   lerp,
   OGRE_GROUND_SLAM,
+  OGRE_OVERHEAD,
+  ogreOverheadAoeOffset,
   RIPOSTE,
   STORMFIEND_FIRE,
   WARPFIRE,
@@ -399,6 +401,18 @@ export class CreatureView {
         ground.strokeCircle(info.x, info.y, radius);
         ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
         ground.strokeCircle(info.x, info.y, radius * t);
+      } else if (def && info.phase === 1 && info.action === "ogre_overhead") {
+        const t = clamp(elapsed / Math.max(0.01, def.windup), 0, 1);
+        const off = ogreOverheadAoeOffset(r);
+        const cx = info.x + Math.cos(info.facing) * off;
+        const cy = info.y + Math.sin(info.facing) * off;
+        const radius = OGRE_OVERHEAD.aoeRadius;
+        ground.fillStyle(colors.health, 0.2 + 0.38 * t);
+        ground.fillCircle(cx, cy, radius);
+        ground.lineStyle(3, colors.health, 0.55 + 0.45 * t);
+        ground.strokeCircle(cx, cy, radius);
+        ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
+        ground.strokeCircle(cx, cy, radius * t);
       } else if (def && info.phase === 1) {
         const t = clamp(elapsed / def.windup, 0, 1);
         const reach = r + def.reach + 6;

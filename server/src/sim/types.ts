@@ -222,6 +222,8 @@ export interface Enemy {
    * Rat Ogre: seconds until charge is ready again.
    */
   fireCd: number;
+  /** Rat Ogre: seconds until overhead smash is ready again. */
+  overheadCd: number;
   /** Rat Ogre: world px already traveled during the current charge. */
   chargeDist: number;
   /** Ally / hero ids already struck during the current charge. */
