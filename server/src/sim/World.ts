@@ -483,6 +483,22 @@ export class World {
     this.pickups.set(id, { id, kind, x, y, used: false });
   }
 
+  /** Castle Defence: restore map med kits (used ones become available again). */
+  respawnCastleMedKits(): void {
+    if (this.mode !== "castle") return;
+    for (const spot of this.level.medKits) {
+      let found = false;
+      for (const p of this.pickups.values()) {
+        if (p.kind !== "med") continue;
+        if (dist(p.x, p.y, spot.x, spot.y) > 8) continue;
+        p.used = false;
+        found = true;
+        break;
+      }
+      if (!found) this.addPickup("med", spot.x, spot.y);
+    }
+  }
+
   spawnEnemy(type: EnemyId, x: number, y: number, aggro: boolean): Enemy | null {
     if (this.enemies.size >= MAX_ENEMIES) return null;
     const def = ENEMIES[type];

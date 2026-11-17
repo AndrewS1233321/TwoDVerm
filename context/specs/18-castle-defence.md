@@ -47,6 +47,8 @@ that hero or the king. Melee hits can damage either.
 ## Merchant
 
 Shop allowed during `playing` in this mode when near the merchant.
+Ammo crate 4 tiles right of the merchant (reusable). Med kit 4 tiles
+left; it respawns at the start of each wave.
 
 ## Non-goals
 

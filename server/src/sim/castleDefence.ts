@@ -128,6 +128,7 @@ export class CastleDefenceDirector {
 
     this.waveActive = true;
     this.waveIndex++;
+    world.respawnCastleMedKits();
     const announceKind = def.kind === "boss" ? "boss" : def.kind === "miniboss" ? "special" : "horde";
     const label =
       def.kind === "boss" ? `Boss wave ${def.id}!` : def.kind === "miniboss" ? `Mini-boss wave ${def.id}!` : `Wave ${def.id} incoming!`;
