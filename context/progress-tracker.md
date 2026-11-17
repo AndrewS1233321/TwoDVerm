@@ -17,7 +17,8 @@ Update this file after every meaningful implementation change.
 
 - **Rat Ogre abilities (priorities 1–2)**: discarded legacy `ogre_slam` /
   `ogre_sweep`. (1) `ogre_ground_slam`: rear 160° / 70px, 0.3s red 450px
-  telegraph, 15 dmg / blockCost 2 / stagger 99, 6-tile knockback, 12s CD.
+  telegraph (6-tile / 192px AoE), 15 dmg / blockCost 2 / stagger 99,
+  6-tile knockback, 12s CD.
   (2) Charge: if no heroes within 340px, rush preferred target up to 150
   tiles at 1.6× speed / 3× turn; 50 dmg / minor stagger / blockCost 3 /
   96px knockback on first hero hit; allies take 15 dmg + 6-tile shove +

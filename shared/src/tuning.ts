@@ -331,8 +331,8 @@ export const OGRE_GROUND_SLAM = {
   rearArc: deg(160),
   /** Centre-to-centre trigger range behind the ogre. */
   triggerRange: 70,
-  /** Full radial hit / telegraph radius from the ogre centre. */
-  radius: 450,
+  /** Full radial hit / telegraph radius from the ogre centre (6 tiles). */
+  radius: 6 * 32,
   damage: 15,
   stagger: 99,
   blockCost: 2,
