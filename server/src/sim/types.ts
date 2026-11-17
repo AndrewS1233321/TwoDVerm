@@ -181,7 +181,9 @@ export type EnemyAiState =
   /** Lifeleech draining a grabbed hero. */
   | "drain"
   /** Bile Troll kneel-regen interruptible phase. */
-  | "kneel";
+  | "kneel"
+  /** Rat Ogre priority-2 charge. */
+  | "charge";
 
 export interface Enemy {
   id: string;
@@ -215,8 +217,15 @@ export interface Enemy {
   leapAngle: number;
   /** Sack Rat: seconds spent out of sight and far from the party. */
   escapeT: number;
-  /** Stormfiend: seconds until its warpfire can spray again. */
+  /**
+   * Stormfiend: seconds until warpfire can spray again.
+   * Rat Ogre: seconds until charge is ready again.
+   */
   fireCd: number;
+  /** Rat Ogre: world px already traveled during the current charge. */
+  chargeDist: number;
+  /** Ally / hero ids already struck during the current charge. */
+  chargeHit: Set<string>;
 }
 
 export interface Hazard {

@@ -343,3 +343,29 @@ export const OGRE_GROUND_SLAM = {
   /** Knockback travel in tiles (× TILE_SIZE world px). */
   knockbackTiles: 6,
 };
+
+/**
+ * Rat Ogre charge (priority 2): starts only when no heroes are nearby.
+ * Tracks travel distance against `rangeTiles`; ends on first hero hit or max range.
+ */
+export const OGRE_CHARGE = {
+  /** No living hero may be inside this centre distance to begin a charge. */
+  minHeroDistance: 340,
+  /** Max charge travel in tiles (× TILE_SIZE). */
+  rangeTiles: 150,
+  /** Movement multiplier while charging (60% faster). */
+  speedMul: 1.6,
+  /** Turn-rate multiplier while charging. */
+  turnMul: 3,
+  damage: 50,
+  /** Minor stagger vs heroes (enough for resist 2 kits). */
+  stagger: 2,
+  blockCost: 3,
+  /** Hero knockback travel in world px. */
+  knockbackPx: 96,
+  cooldown: 20,
+  /** Allied rats struck during the charge. */
+  allyDamage: 15,
+  allyKnockbackTiles: 6,
+  allyStaggerTime: 1.8,
+};

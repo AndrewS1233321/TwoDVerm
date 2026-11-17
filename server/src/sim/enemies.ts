@@ -15,6 +15,7 @@ import {
   moveCircle,
   raycastWalls,
   MONK,
+  OGRE_CHARGE,
   OGRE_GROUND_SLAM,
   RUNNER,
   SACK_RAT,
@@ -28,7 +29,7 @@ import {
   type AttackDef,
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, enemyMeleeHits, newAttack } from "./attacks";
-import { damageEnemy, damageHero, downHero, releaseGrab, strikeHero } from "./damage";
+import { damageEnemy, damageHero, downHero, releaseGrab, staggerEnemy, strikeHero } from "./damage";
 import type { ActiveAttack, Enemy, Hero } from "./types";
 import type { World } from "./World";
 
@@ -71,10 +72,13 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
     return;
   }
 
-  e.stateT -= dt;
-  if (e.stateT <= 0 || !validTarget(world, e.targetId)) {
-    e.targetId = pickTarget(world, e);
-    e.stateT = RETARGET_INTERVAL;
+  // Charge locks the preferred target for the whole rush.
+  if (e.state !== "charge") {
+    e.stateT -= dt;
+    if (e.stateT <= 0 || !validTarget(world, e.targetId)) {
+      e.targetId = pickTarget(world, e);
+      e.stateT = RETARGET_INTERVAL;
+    }
   }
   const target = world.heroes.get(e.targetId);
 
@@ -365,10 +369,75 @@ function applyOgreGroundSlam(world: World, e: Enemy, a: ActiveAttack): void {
   }
 }
 
+function anyHeroWithin(world: World, e: Enemy, range: number): boolean {
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.invisT > 0) continue;
+    if (dist(e.x, e.y, h.x, h.y) <= range) return true;
+  }
+  return false;
+}
+
+function endOgreCharge(e: Enemy): void {
+  e.state = "chase";
+  e.stateT = 0;
+  e.chargeDist = 0;
+  e.chargeHit.clear();
+  e.actionSeq++;
+}
+
 /**
- * Rat Ogre AI: ability priority list (more entries later). Priority 1 is ground slam
- * whenever a hero is in the rear trigger cone and the ability is off cooldown.
- * No legacy melee slam/sweep — chase only while waiting on abilities.
+ * Charge collision: first hero hit ends the rush; allies take damage + shove along the way.
+ * The locked charge target remains hittable even if they go invisible mid-rush; other
+ * heroes still require visibility. After the charge ends, normal invis rules apply again.
+ */
+function ogreChargeCollisions(world: World, e: Enemy): boolean {
+  const heroKnock = radialKnockImpulse(OGRE_CHARGE.knockbackPx, HERO_KNOCKBACK_DECAY);
+  const allyKnock = radialKnockImpulse(OGRE_CHARGE.allyKnockbackTiles * TILE_SIZE, KNOCKBACK_DECAY);
+
+  for (const other of world.enemies.values()) {
+    if (other.id === e.id || e.chargeHit.has(other.id)) continue;
+    if (other.def.id === "merchant" || other.def.behavior === "dummy") continue;
+    if (dist(e.x, e.y, other.x, other.y) > e.radius + other.radius) continue;
+    e.chargeHit.add(other.id);
+    damageEnemy(world, null, other, {
+      damage: OGRE_CHARGE.allyDamage,
+      stagger: 99,
+      srcX: e.x,
+      srcY: e.y,
+    });
+    if (!world.enemies.has(other.id)) continue;
+    applyRadialKnockback(world, e.x, e.y, other, allyKnock);
+    staggerEnemy(other, OGRE_CHARGE.allyStaggerTime, { force: true });
+  }
+
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || e.chargeHit.has(h.id)) continue;
+    const lockedTarget = h.id === e.targetId;
+    // Only the locked charge target can be hit while invisible.
+    if (!lockedTarget && h.invisT > 0) continue;
+    if (dist(e.x, e.y, h.x, h.y) > e.radius + h.radius) continue;
+    e.chargeHit.add(h.id);
+    const result = strikeHero(world, h, {
+      damage: OGRE_CHARGE.damage,
+      stagger: OGRE_CHARGE.stagger,
+      blockCost: OGRE_CHARGE.blockCost,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
+    if (result !== "dodged") {
+      applyRadialKnockback(world, e.x, e.y, h, heroKnock);
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Rat Ogre AI: ability priority list (more entries later).
+ * 1) Ground slam — rear 160° / 70px, off slam CD.
+ * 2) Charge — no heroes within 340px, off charge CD; locks preferred target.
+ * Otherwise chase only (no legacy melee).
  */
 function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
   if (e.state === "attack" && e.attack) {
@@ -381,9 +450,41 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
     return;
   }
 
+  if (e.state === "charge") {
+    const maxRange = OGRE_CHARGE.rangeTiles * TILE_SIZE;
+    // Locked preferred target: keep steering even if they go invisible mid-charge.
+    // If they die, keep rushing on current facing until range expires.
+    if (target && target.state !== "dead") {
+      faceToward(e, target.x, target.y, OGRE_CHARGE.turnMul, dt);
+    }
+    const step = e.def.speed * OGRE_CHARGE.speedMul * dt;
+    const p = moveCircle(
+      world.level,
+      world.gateOpen,
+      e.x,
+      e.y,
+      e.radius,
+      Math.cos(e.facing) * step,
+      Math.sin(e.facing) * step,
+    );
+    e.x = p.x;
+    e.y = p.y;
+    // Count intended travel so walls cannot soft-lock an endless charge.
+    e.chargeDist += step;
+    if (ogreChargeCollisions(world, e)) {
+      endOgreCharge(e);
+      return;
+    }
+    if (e.chargeDist >= maxRange) {
+      endOgreCharge(e);
+      return;
+    }
+    return;
+  }
+
   e.state = "chase";
 
-  // Priority 1: ground slam (rear 160° / 70px). Highest when off cooldown.
+  // Priority 1: ground slam (rear 160° / 70px).
   if (e.cooldown <= 0 && anyHeroBehindOgre(world, e)) {
     const slam = e.def.attacks.find((a) => a.id === "ogre_ground_slam") ?? e.def.attacks[0];
     if (slam) {
@@ -392,6 +493,19 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
       e.actionSeq++;
       e.chainLeft = 0;
       e.cooldown = OGRE_GROUND_SLAM.cooldown;
+      return;
+    }
+  }
+
+  // Priority 2: charge preferred target when nobody is nearby.
+  if (e.fireCd <= 0 && !anyHeroWithin(world, e, OGRE_CHARGE.minHeroDistance)) {
+    if (!validTarget(world, e.targetId)) e.targetId = pickTarget(world, e);
+    if (validTarget(world, e.targetId)) {
+      e.state = "charge";
+      e.chargeDist = 0;
+      e.chargeHit.clear();
+      e.fireCd = OGRE_CHARGE.cooldown;
+      e.actionSeq++;
       return;
     }
   }

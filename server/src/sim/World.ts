@@ -531,6 +531,8 @@ export class World {
       leapAngle: 0,
       escapeT: 0,
       fireCd: 0,
+      chargeDist: 0,
+      chargeHit: new Set(),
     };
     this.enemies.set(id, enemy);
     return enemy;

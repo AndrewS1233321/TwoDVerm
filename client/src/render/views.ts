@@ -98,6 +98,8 @@ export class CreatureView {
   private flashUntil = 0;
   private lastInfo: PoseInfo | null = null;
   private showingRanged = false;
+  /** Next time (performance.now) a charge motion-blur ghost may spawn. */
+  private nextChargeTrailAt = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -156,6 +158,27 @@ export class CreatureView {
       .setTint(0x9fd3ff)
       .setDepth(this.root.depth - 1);
     this.scene.tweens.add({ targets: ghost, alpha: 0, duration: 220, onComplete: () => ghost.destroy() });
+  }
+
+  /** Motion-blur ghost left behind while the Rat Ogre charges. */
+  private chargeTrail(): void {
+    const facing = this.root.rotation;
+    const back = 10;
+    const ghost = this.scene.add
+      .image(this.root.x - Math.cos(facing) * back, this.root.y - Math.sin(facing) * back, this.opts.texture)
+      .setScale(1 / TEX_SCALE)
+      .setRotation(facing)
+      .setAlpha(0.4)
+      .setTint(0xff6a4a)
+      .setDepth(this.root.depth - 1);
+    this.scene.tweens.add({
+      targets: ghost,
+      alpha: 0,
+      x: ghost.x - Math.cos(facing) * 18,
+      y: ghost.y - Math.sin(facing) * 18,
+      duration: 200,
+      onComplete: () => ghost.destroy(),
+    });
   }
 
   get position(): { x: number; y: number } {
@@ -217,6 +240,11 @@ export class CreatureView {
     this.root.setAlpha(bodyAlpha);
     this.shadow.setAlpha(hidden ? 0.08 : 0.35);
     this.label?.setAlpha(hidden ? (this.opts.isLocal ? 0.45 : 0) : 1);
+
+    if (info.state === "charge" && now >= this.nextChargeTrailAt) {
+      this.chargeTrail();
+      this.nextChargeTrailAt = now + 45;
+    }
 
     this.animateWeapon(info, now);
     this.drawOverlays(info, now, ground, top);
@@ -424,6 +452,19 @@ export class CreatureView {
       if (info.state === "crouch") {
         top.fillStyle(0x8a3fa0, 0.45 + 0.25 * Math.sin(now * 0.04));
         top.fillCircle(info.x, info.y, r * 0.55);
+      }
+      if (info.state === "charge") {
+        const pulse = 0.55 + 0.45 * Math.sin(now * 0.035);
+        const gx = info.x + Math.cos(info.facing) * (r + 16);
+        const gy = info.y + Math.sin(info.facing) * (r + 16);
+        ground.fillStyle(colors.health, 0.22 + 0.18 * pulse);
+        ground.fillCircle(gx, gy, r * 0.95);
+        top.fillStyle(0xff2a1a, 0.4 + 0.35 * pulse);
+        top.fillCircle(gx, gy, 9 + 5 * pulse);
+        top.lineStyle(2, 0xff6644, 0.5 + 0.4 * pulse);
+        top.beginPath();
+        top.arc(info.x, info.y, r + 10, info.facing - 0.7, info.facing + 0.7, false);
+        top.strokePath();
       }
       if (info.state === "staggered") {
         top.lineStyle(2, 0xffe27a, 0.8);
