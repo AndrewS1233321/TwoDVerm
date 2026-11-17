@@ -1,4 +1,5 @@
 import { deg } from "../math";
+import { OGRE_GROUND_SLAM } from "../tuning";
 import { dummyArmorLoadout, UNARMORED, type ArmorLevel } from "./armor";
 import type { CombatEnemyId, DummyEnemyId, EnemyDef, EnemyId } from "./types";
 
@@ -278,11 +279,24 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     elite: false,
     race: "skaven",
     attacks: [
-      { id: "ogre_slam", windup: 0.9, active: 0.16, recovery: 0.9, reach: 36, arc: deg(100), damage: 32, cleave: 4, stagger: 3, blockCost: 3, swing: { from: 0.5, to: -0.1, thrust: 12 } },
-      { id: "ogre_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
+      // Priority-1 ground slam — old slam/sweep discarded. Reach = AoE − body for
+      // telegraph sizing; hits are resolved radially in updateRatOgre.
+      {
+        id: "ogre_ground_slam",
+        windup: OGRE_GROUND_SLAM.windup,
+        active: OGRE_GROUND_SLAM.active,
+        recovery: OGRE_GROUND_SLAM.recovery,
+        reach: OGRE_GROUND_SLAM.radius - 34,
+        arc: deg(360),
+        damage: OGRE_GROUND_SLAM.damage,
+        cleave: 99,
+        stagger: OGRE_GROUND_SLAM.stagger,
+        blockCost: OGRE_GROUND_SLAM.blockCost,
+        swing: { from: 0, to: 0, thrust: 4 },
+      },
     ],
   },
-  /** Preserved snapshot of Rat Ogre for A/B tuning; same stats as `ogre` at clone time. */
+  /** Preserved snapshot of Rat Ogre for A/B tuning; keeps legacy slam/sweep. */
   ogre2: {
     id: "ogre2",
     name: "Rat Ogre 2",

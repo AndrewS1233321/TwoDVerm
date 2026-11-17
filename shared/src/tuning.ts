@@ -321,3 +321,25 @@ export const BILE_TROLL = {
   kneelDuration: 3.5,
   kneelHeal: 280,
 };
+
+/**
+ * Rat Ogre ground slam (priority 1): rear-proximity trigger, radial knockback AoE.
+ * AttackDef `ogre_ground_slam` mirrors damage / windup; this holds trigger + AoE geometry.
+ */
+export const OGRE_GROUND_SLAM = {
+  /** Rear cone width (degrees) relative to facing + π. */
+  rearArc: deg(160),
+  /** Centre-to-centre trigger range behind the ogre. */
+  triggerRange: 70,
+  /** Full radial hit / telegraph radius from the ogre centre. */
+  radius: 450,
+  damage: 15,
+  stagger: 99,
+  blockCost: 2,
+  windup: 0.3,
+  active: 0.12,
+  recovery: 0.55,
+  cooldown: 12,
+  /** Knockback travel in tiles (× TILE_SIZE world px). */
+  knockbackTiles: 6,
+};

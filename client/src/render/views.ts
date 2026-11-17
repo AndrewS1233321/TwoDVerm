@@ -6,6 +6,7 @@ import {
   GUNNER,
   getAttack,
   lerp,
+  OGRE_GROUND_SLAM,
   RIPOSTE,
   STORMFIEND_FIRE,
   WARPFIRE,
@@ -360,7 +361,17 @@ export class CreatureView {
     const elapsed = (this.clock - this.animStart) / 1000;
 
     if (this.opts.kind === "enemy") {
-      if (def && info.phase === 1) {
+      if (def && info.phase === 1 && info.action === "ogre_ground_slam") {
+        const t = clamp(elapsed / Math.max(0.01, def.windup), 0, 1);
+        const radius = OGRE_GROUND_SLAM.radius;
+        // Solid red ground highlight for the full slam AoE while winding up.
+        ground.fillStyle(colors.health, 0.18 + 0.35 * t);
+        ground.fillCircle(info.x, info.y, radius);
+        ground.lineStyle(3, colors.health, 0.55 + 0.45 * t);
+        ground.strokeCircle(info.x, info.y, radius);
+        ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
+        ground.strokeCircle(info.x, info.y, radius * t);
+      } else if (def && info.phase === 1) {
         const t = clamp(elapsed / def.windup, 0, 1);
         const reach = r + def.reach + 6;
         const half = Math.min(Math.PI, def.arc / 2);

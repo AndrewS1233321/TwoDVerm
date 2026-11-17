@@ -10,9 +10,17 @@ Update this file after every meaningful implementation change.
 
 - Playtest Castle Defence (waves, king HP, mid-mission shop) alongside
   Default / Testing / Wastes; tune wave table from feedback.
+- Continue Rat Ogre ability rewrite (priority 1 ground slam shipped;
+  further abilities TBD).
 
 ## Completed
 
+- **Rat Ogre ground slam (ability priority 1)**: discarded legacy
+  `ogre_slam` / `ogre_sweep`. New `ogre_ground_slam`: if a hero is in the
+  rear 160° within 70px and the ability is off CD, stomp with 0.3s red
+  ground telegraph (450px), then radial 15 dmg / blockCost 2 / stagger 99,
+  6-tile knockback to heroes and enemies, 12s cooldown. Chase-only while
+  waiting on abilities. `ogre2` keeps the archived slam/sweep kit.
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
   grassy fields (`DECOR_GRASS`, depth 36 = 3× original band), king

@@ -15,6 +15,7 @@ import {
   moveCircle,
   raycastWalls,
   MONK,
+  OGRE_GROUND_SLAM,
   RUNNER,
   SACK_RAT,
   SAVAGE,
@@ -27,13 +28,15 @@ import {
   type AttackDef,
 } from "@twodverm/shared";
 import { advanceAttack, applyLunge, enemyMeleeHits, newAttack } from "./attacks";
-import { damageHero, downHero, releaseGrab, strikeHero } from "./damage";
-import type { Enemy, Hero } from "./types";
+import { damageEnemy, damageHero, downHero, releaseGrab, strikeHero } from "./damage";
+import type { ActiveAttack, Enemy, Hero } from "./types";
 import type { World } from "./World";
 
 const DIRECT_CHASE_DISTANCE = 220;
 const RETARGET_INTERVAL = 0.5;
 const KNOCKBACK_DECAY = 9;
+/** Matches hero knockback decay in heroes.ts — used to convert travel distance → impulse. */
+const HERO_KNOCKBACK_DECAY = 10;
 const CHAIN_WINDUP_MUL = 0.35;
 const CHAIN_RECOVERY_MUL = 0.35;
 
@@ -83,6 +86,7 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
       if (e.def.warpfire) updateStormfiend(world, e, target, dt);
       else if (e.def.bile) updateBileTroll(world, e, target, dt);
       else if (e.def.id === "chaosSpawn") updateChaosSpawn(world, e, target, dt);
+      else if (e.def.id === "ogre") updateRatOgre(world, e, target, dt);
       else updateMelee(world, e, target, dt);
       break;
     case "runner":
@@ -278,6 +282,124 @@ function flurryTuning(e: Enemy): { windup: number; openerHits: number; followHit
   if (e.def.id === "plagueMonk") return MONK;
   if (e.def.id === "savage") return SAVAGE;
   return null;
+}
+
+/** True if any living hero stands in the ogre's rear cone within trigger range. */
+function heroBehindOgre(e: Enemy, h: Hero): boolean {
+  if (h.state === "dead" || h.invisT > 0) return false;
+  if (dist(e.x, e.y, h.x, h.y) > OGRE_GROUND_SLAM.triggerRange) return false;
+  const toHero = angleTo(e.x, e.y, h.x, h.y);
+  const rear = e.facing + Math.PI;
+  return Math.abs(angleDiff(rear, toHero)) <= OGRE_GROUND_SLAM.rearArc / 2;
+}
+
+function anyHeroBehindOgre(world: World, e: Enemy): boolean {
+  for (const h of world.heroes.values()) {
+    if (heroBehindOgre(e, h)) return true;
+  }
+  return false;
+}
+
+function radialKnockImpulse(px: number, decay: number): number {
+  return px * decay;
+}
+
+function applyRadialKnockback(
+  world: World,
+  fromX: number,
+  fromY: number,
+  target: { x: number; y: number; kvx: number; kvy: number },
+  impulse: number,
+): void {
+  const dx = target.x - fromX;
+  const dy = target.y - fromY;
+  const len = Math.hypot(dx, dy);
+  const a = len > 1e-3 ? Math.atan2(dy, dx) : world.rng() * Math.PI * 2;
+  target.kvx += Math.cos(a) * impulse;
+  target.kvy += Math.sin(a) * impulse;
+}
+
+/** Ground-slam active window: radial damage + knockback to heroes and other enemies. */
+function applyOgreGroundSlam(world: World, e: Enemy, a: ActiveAttack): void {
+  if (a.hitsLeft <= 0) return;
+  const r = OGRE_GROUND_SLAM.radius;
+  const knockPx = OGRE_GROUND_SLAM.knockbackTiles * TILE_SIZE;
+  const heroImpulse = radialKnockImpulse(knockPx, HERO_KNOCKBACK_DECAY);
+  const enemyImpulse = radialKnockImpulse(knockPx, KNOCKBACK_DECAY);
+
+  const king = world.king;
+  if (king && king.hp > 0 && !a.hit.has("king") && dist(e.x, e.y, king.x, king.y) <= r) {
+    a.hit.add("king");
+    world.damageKing(OGRE_GROUND_SLAM.damage);
+  }
+
+  for (const h of world.heroes.values()) {
+    if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
+    if (dist(e.x, e.y, h.x, h.y) > r) continue;
+    const result = strikeHero(world, h, {
+      damage: OGRE_GROUND_SLAM.damage,
+      stagger: OGRE_GROUND_SLAM.stagger,
+      blockCost: OGRE_GROUND_SLAM.blockCost,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
+    a.hit.add(h.id);
+    if (result === "dodged") continue;
+    applyRadialKnockback(world, e.x, e.y, h, heroImpulse);
+  }
+
+  for (const other of world.enemies.values()) {
+    if (other.id === e.id || a.hit.has(other.id)) continue;
+    if (other.def.id === "merchant" || other.def.behavior === "dummy") continue;
+    if (dist(e.x, e.y, other.x, other.y) > r) continue;
+    a.hit.add(other.id);
+    damageEnemy(world, null, other, {
+      damage: OGRE_GROUND_SLAM.damage,
+      stagger: OGRE_GROUND_SLAM.stagger,
+      srcX: e.x,
+      srcY: e.y,
+    });
+    if (!world.enemies.has(other.id)) continue;
+    applyRadialKnockback(world, e.x, e.y, other, enemyImpulse);
+  }
+}
+
+/**
+ * Rat Ogre AI: ability priority list (more entries later). Priority 1 is ground slam
+ * whenever a hero is in the rear trigger cone and the ability is off cooldown.
+ * No legacy melee slam/sweep — chase only while waiting on abilities.
+ */
+function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
+  if (e.state === "attack" && e.attack) {
+    const done = advanceAttack(e.attack, dt, () => applyOgreGroundSlam(world, e, e.attack!));
+    if (done) {
+      e.attack = null;
+      e.state = "chase";
+      e.stateT = 0;
+    }
+    return;
+  }
+
+  e.state = "chase";
+
+  // Priority 1: ground slam (rear 160° / 70px). Highest when off cooldown.
+  if (e.cooldown <= 0 && anyHeroBehindOgre(world, e)) {
+    const slam = e.def.attacks.find((a) => a.id === "ogre_ground_slam") ?? e.def.attacks[0];
+    if (slam) {
+      e.attack = newAttack(slam, "enemy");
+      e.state = "attack";
+      e.actionSeq++;
+      e.chainLeft = 0;
+      e.cooldown = OGRE_GROUND_SLAM.cooldown;
+      return;
+    }
+  }
+
+  const chase = chasePos(world, e, target);
+  if (!chase) return;
+  faceToward(e, chase.x, chase.y, 1, dt);
+  moveToward(world, e, chase.x, chase.y, 1, dt);
 }
 
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
