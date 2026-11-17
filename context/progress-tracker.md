@@ -24,9 +24,10 @@ Update this file after every meaningful implementation change.
   96px knockback on first hero hit; allies take 15 dmg + 6-tile shove +
   forced stagger; blur trail + red frontal glow; 20s CD; target locked
   mid-charge.
-  (3) `ogre_overhead`: hero within 2 tiles, 1.2s wind-up, front circle
-  AoE (4-tile diameter) with red ground glow, 70 dmg / blockCost 3 /
-  stagger 3, 5s CD. Chase-only while waiting. `ogre2` keeps archived kit.
+  (3) `ogre_overhead`: hero within 2 tiles, 0.35s wind-up, front circle
+  AoE (5-tile diameter, rear edge on ogre centre) with red ground glow,
+  70 dmg / blockCost 3 / stagger 3, 5s CD. Chase-only while waiting.
+  `ogre2` keeps archived kit.
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
   grassy fields (`DECOR_GRASS`, depth 36 = 3× original band), king
@@ -93,8 +94,8 @@ Update this file after every meaningful implementation change.
 - **Gutter Runner leap connect**: pounce ignores movement collision and
   only lands when centres are within `leapConnectDist` (6 px, swept along
   the leap step); push / shield-bash still use the normal radius.
-- **Dodge length**: base dodge travel reduced to 60 px (`DODGE.speed`
-  300 × `DODGE.time` 0.2s); charges and Viktor’s ult dash unchanged.
+- **Dodge length**: base dodge travel is 90 px (`DODGE.speed` 400 ×
+  `DODGE.time` 0.225s); Viktor’s Animosity ult dash unchanged.
 - **Summon Room portal**: Testing-zone pads still trigger on step, but
   creatures emerge from a far-right warp portal (`P` marker) instead of
   spawning on the pad sprite; client draws a pulsing portal and a warp

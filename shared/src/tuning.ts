@@ -3,9 +3,10 @@ import { deg } from "./math";
 export const HERO_TURN_RATE = 14;
 
 export const DODGE = {
-  time: 0.2,
-  /** World px/s; with `time`, base dodge travel is 60 px. */
-  speed: 300,
+  /** Duration so that `speed * time` = 90 px of travel. */
+  time: 90 / 400,
+  /** World px/s; with `time`, base dodge travel is 90 px. */
+  speed: 400,
   cooldown: 0.25,
   /** Seconds after the last dodge before charges start refilling. */
   refillDelay: 0.7,
@@ -372,26 +373,30 @@ export const OGRE_CHARGE = {
 
 /**
  * Rat Ogre overhead smash (priority 3): close-range front circle.
- * AoE centre sits just ahead of the body along facing (`ogre.radius + aoeRadius`).
+ * Near edge of the circle sits on the ogre centre; the disc extends forward
+ * along facing (AoE centre = ogre centre + facing * aoeRadius).
  */
 export const OGRE_OVERHEAD = {
   /** Centre-to-centre range to begin the overhead (2 tiles). */
   triggerRange: 2 * 32,
   /** Hit / telegraph circle diameter in tiles (radius = half). */
-  aoeDiameterTiles: 4,
-  /** Circle radius in world px (4-tile diameter → 2-tile radius). */
-  aoeRadius: 2 * 32,
+  aoeDiameterTiles: 5,
+  /** Circle radius in world px (5-tile diameter → 2.5-tile radius). */
+  aoeRadius: (5 * 32) / 2,
   damage: 70,
   blockCost: 3,
   /** Heavy but not slam-tier; enough to stagger resist-3 kits. */
   stagger: 3,
-  windup: 1.2,
+  windup: 0.35,
   active: 0.16,
   recovery: 0.7,
   cooldown: 5,
 };
 
-/** World offset from ogre centre to overhead AoE centre along facing. */
-export function ogreOverheadAoeOffset(ogreRadius: number): number {
-  return ogreRadius + OGRE_OVERHEAD.aoeRadius;
+/**
+ * World offset from ogre centre to overhead AoE centre along facing.
+ * Equals `aoeRadius` so the circle's rear edge passes through the ogre centre.
+ */
+export function ogreOverheadAoeOffset(_ogreRadius: number): number {
+  return OGRE_OVERHEAD.aoeRadius;
 }
