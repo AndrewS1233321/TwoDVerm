@@ -605,15 +605,19 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
             ? () => applyOgreClaw(world, e, a)
             : () => applyOgreGroundSlam(world, e, a);
 
-    // Pummel / claw track the target during wind-up; slam / overhead keep facing locked.
-    if (
-      (isPummel || isClaw) &&
+    // Pummel keeps chasing the target through the whole combo; claw tracks in wind-up only.
+    // Slam / overhead keep facing locked on the telegraph.
+    if (isPummel && target && target.state !== "dead" && target.invisT <= 0) {
+      faceToward(e, target.x, target.y, 1.4, dt);
+      moveToward(world, e, target.x, target.y, 1, dt);
+    } else if (
+      isClaw &&
       a.phase === "windup" &&
       target &&
       target.state !== "dead" &&
       target.invisT <= 0
     ) {
-      faceToward(e, target.x, target.y, isClaw ? 0.8 : 1.2, dt);
+      faceToward(e, target.x, target.y, 0.8, dt);
     }
 
     const done = advanceAttack(a, dt, apply);

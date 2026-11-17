@@ -408,8 +408,8 @@ export function ogreOverheadAoeOffset(_ogreRadius: number): number {
 export const OGRE_PUMMEL = {
   /** Centre-to-centre range to begin the combo. */
   triggerRange: 80,
-  /** Semi-circle radius from ogre centre (6 tiles). */
-  radius: 6 * 32,
+  /** Semi-circle radius from ogre centre (5 tiles). */
+  radius: 5 * 32,
   /** Front semi-circle width. */
   arc: deg(180),
   damage: 15,

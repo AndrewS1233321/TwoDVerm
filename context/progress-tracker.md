@@ -27,8 +27,9 @@ Update this file after every meaningful implementation change.
   AoE (5-tile diameter, rear edge on ogre centre) with red ground glow +
   white impact flash, 70 dmg / blockCost 3 / stagger 3, hits other rats,
   5s CD.
-  (4) `ogre_pummel`: hero within 80px, 3-hit front semi-circle (6-tile
-  radius) with 0.3s wind-up each, 15 dmg / blockCost 1 per swipe, 6s CD.
+  (4) `ogre_pummel`: hero within 80px, 3-hit front semi-circle (5-tile
+  radius) with 0.3s wind-up each, chases while comboing, 15 dmg /
+  blockCost 1 per swipe, 6s CD.
   (5) `ogre_claw`: hero within 40px, 0.7s wind-up, 110° × 5-tile cone,
   30 dmg / blockCost 2 / minor stagger, 1s CD. Chase-only while waiting.
   `ogre2` keeps archived kit.
