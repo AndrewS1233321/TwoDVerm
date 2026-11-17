@@ -203,6 +203,8 @@ export interface Enemy {
   grabbedId: string;
   shotT: number;
   lastDamagerId: string;
+  /** Cumulative damage dealt to this enemy by each hero id (Rat Ogre threat). */
+  damageTakenFrom: Map<string, number>;
   /** Seconds since any hero was near; used to despawn stragglers far behind. */
   lonelyT: number;
   /** Swings left in the current melee flurry (AttackDef.chain). */

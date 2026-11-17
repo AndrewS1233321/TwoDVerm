@@ -111,6 +111,7 @@ export function damageEnemy(world: World, hero: Hero | null, enemy: Enemy, hit: 
   if (!hidden) enemy.aggro = true;
   if (hero) {
     if (!hidden) enemy.lastDamagerId = hero.id;
+    enemy.damageTakenFrom.set(hero.id, (enemy.damageTakenFrom.get(hero.id) ?? 0) + dmg);
     hero.damageDealt += dmg;
   }
   world.emit({

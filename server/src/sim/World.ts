@@ -524,6 +524,7 @@ export class World {
       grabbedId: "",
       shotT: 0,
       lastDamagerId: "",
+      damageTakenFrom: new Map(),
       lonelyT: 0,
       chainLeft: 0,
       monkOpened: false,

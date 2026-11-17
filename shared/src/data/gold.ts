@@ -28,6 +28,7 @@ export const GOLD_DROPS: Record<EnemyId, GoldDropTable> = {
   warplockJezzail: { chance: 0.75, min: 8, max: 15 },
   sackRat: { chance: 1, min: 30, max: 60 },
   ogre: { chance: 1, min: 100, max: 200 },
+  ogre2: { chance: 1, min: 100, max: 200 },
   stormfiend: { chance: 1, min: 100, max: 200 },
   fanatic: { chance: 0.05, ...MOB_AMOUNT },
   raider: { chance: 0.1, ...MOB_AMOUNT },

@@ -389,8 +389,8 @@ const RAT_LOOKS: Partial<Record<EnemyId, RatLook>> = {
 };
 
 function drawEnemy(scene: Phaser.Scene, g: G, id: EnemyId): void {
-  if (id === "ogre") {
-    drawOgre(scene, g);
+  if (id === "ogre" || id === "ogre2") {
+    drawOgre(scene, g, id);
     return;
   }
   if (id === "stormfiend") {
@@ -568,8 +568,8 @@ function drawDummy(
   finish(scene, g, enemyTextureKey(id), w, h);
 }
 
-function drawOgre(scene: Phaser.Scene, g: G): void {
-  const R = ENEMIES.ogre.radius * TEX_SCALE;
+function drawOgre(scene: Phaser.Scene, g: G, id: "ogre" | "ogre2" = "ogre"): void {
+  const R = ENEMIES[id].radius * TEX_SCALE;
   const size = R * 3.4;
   const cx = size / 2;
   const cy = size / 2;
@@ -600,7 +600,7 @@ function drawOgre(scene: Phaser.Scene, g: G): void {
   g.fillStyle(0xff2a1a);
   g.fillCircle(cx + R * 0.6, cy - R * 0.13, R * 0.06);
   g.fillCircle(cx + R * 0.6, cy + R * 0.13, R * 0.06);
-  finish(scene, g, enemyTextureKey("ogre"), size, size);
+  finish(scene, g, enemyTextureKey(id), size, size);
 }
 
 /** Stormfiend: Rat Ogre bulk with warpfire tanks strapped to each arm. */

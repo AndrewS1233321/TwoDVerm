@@ -135,18 +135,25 @@ function shouldAggro(world: World, e: Enemy): boolean {
 
 type ChaseTarget = { x: number; y: number; radius: number; kind: "hero" | "king" };
 
+function isRatOgre(e: Enemy): boolean {
+  return e.def.id === "ogre" || e.def.id === "ogre2";
+}
+
 /**
  * Chase destination for melee. In Castle Defence, pick whichever of the
  * current hero target and the king is closer; otherwise chase the hero.
+ * Rat Ogres always chase their hero target (top damager), never the king.
  */
 function chasePos(world: World, e: Enemy, hero: Hero | undefined): ChaseTarget | null {
+  const heroPos = hero
+    ? { x: hero.x, y: hero.y, radius: hero.radius, kind: "hero" as const }
+    : null;
+  if (isRatOgre(e) && heroPos) return heroPos;
+
   const king =
     world.mode === "castle" && world.king && world.king.hp > 0
       ? { x: world.king.x, y: world.king.y, radius: world.king.radius, kind: "king" as const }
       : null;
-  const heroPos = hero
-    ? { x: hero.x, y: hero.y, radius: hero.radius, kind: "hero" as const }
-    : null;
   if (king && heroPos) {
     const dHero = dist(e.x, e.y, heroPos.x, heroPos.y);
     const dKing = dist(e.x, e.y, king.x, king.y);
@@ -177,9 +184,28 @@ function pickTarget(world: World, e: Enemy): string {
   if (e.def.behavior === "hooker" || e.def.behavior === "runner") return pickIsolatedHero(world, e);
   const current = world.heroes.get(e.targetId);
   if (current && current.def.ult === "impenetrable" && current.ultActiveT > 0) return current.id;
+  if (isRatOgre(e)) return pickTopDamager(world, e);
   if (e.def.behavior === "boss" && e.lastDamagerId && world.rng() < 0.3 && validTarget(world, e.lastDamagerId)) {
     return e.lastDamagerId;
   }
+  return pickClosestHero(world, e);
+}
+
+/** Hero who has dealt the most damage to this enemy; falls back to closest. */
+function pickTopDamager(world: World, e: Enemy): string {
+  let best = "";
+  let bestDmg = -1;
+  for (const [id, dmg] of e.damageTakenFrom) {
+    if (!validTarget(world, id)) continue;
+    if (dmg > bestDmg) {
+      bestDmg = dmg;
+      best = id;
+    }
+  }
+  return best || pickClosestHero(world, e);
+}
+
+function pickClosestHero(world: World, e: Enemy): string {
   let best = "";
   let bestScore = Infinity;
   for (const h of world.heroes.values()) {

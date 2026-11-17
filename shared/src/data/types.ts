@@ -136,6 +136,7 @@ export type CombatEnemyId =
   | "warpfire"
   | "sackRat"
   | "ogre"
+  | "ogre2"
   | "stormfiend"
   | "warplockJezzail"
   | "fanatic"

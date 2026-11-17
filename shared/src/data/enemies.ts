@@ -282,6 +282,26 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
       { id: "ogre_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
     ],
   },
+  /** Preserved snapshot of Rat Ogre for A/B tuning; same stats as `ogre` at clone time. */
+  ogre2: {
+    id: "ogre2",
+    name: "Rat Ogre 2",
+    radius: 34,
+    hp: 1400,
+    speed: 180,
+    turnRate: 2.6,
+    armor: UNARMORED,
+    staggerResist: 99,
+    behavior: "boss",
+    large: true,
+    special: false,
+    elite: false,
+    race: "skaven",
+    attacks: [
+      { id: "ogre2_slam", windup: 0.9, active: 0.16, recovery: 0.9, reach: 36, arc: deg(100), damage: 32, cleave: 4, stagger: 3, blockCost: 3, swing: { from: 0.5, to: -0.1, thrust: 12 } },
+      { id: "ogre2_sweep", windup: 0.7, active: 0.2, recovery: 0.8, reach: 52, arc: deg(200), damage: 20, cleave: 4, stagger: 2, blockCost: 2, swing: { from: -1.7, to: 1.7 } },
+    ],
+  },
   stormfiend: {
     id: "stormfiend",
     name: "Stormfiend",
@@ -560,6 +580,7 @@ export const COMBAT_ENEMY_IDS: CombatEnemyId[] = [
   "warplockJezzail",
   "ogre",
   "stormfiend",
+  // `ogre2` is an archived clone — spawn by id when needed; omit from mission race pools.
   "fanatic",
   "raider",
   "bulwark",
