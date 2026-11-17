@@ -25,9 +25,9 @@ Update this file after every meaningful implementation change.
   96px knockback on first hero hit; allies take 15 dmg + 6-tile shove +
   forced stagger; blur trail + red frontal glow; 20s CD; target locked
   mid-charge.
-  (3) `ogre_overhead`: hero within 2 tiles, 0.42s wind-up, front circle
-  AoE (4.5-tile / 144px diameter, rear edge on ogre centre) with red ground glow +
-  white impact flash, 70 dmg / blockCost 3 / stagger 3, hits other rats,
+  (3) `ogre_overhead`: hero within 2 tiles, 0.5s wind-up, front circle
+  AoE (4-tile / 128px diameter, rear edge on ogre centre) with red ground glow +
+  white impact flash, 70 dmg / blockCost 5 / stagger 3, hits other rats,
   5s CD.
   (4) `ogre_pummel`: hero within 80px, 3-hit front semi-circle (5-tile
   radius) with 0.3s wind-up each, chases while comboing, 15 dmg /
