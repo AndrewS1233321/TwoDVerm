@@ -3,6 +3,7 @@ import {
   circularExitPortal,
   DECOR_COBBLE,
   DECOR_FOREST,
+  DECOR_GRASS,
   DECOR_MINE,
   DECOR_SEWER,
   TILE_FLOOR,
@@ -190,7 +191,7 @@ export class LevelRenderer {
           }
           g.fillStyle(0x4f7a3a, 0.12);
           if (r > 0.7) g.fillCircle(x + T * r, y + T * (1 - r), 6);
-        } else if (decor === DECOR_FOREST) {
+        } else if (decor === DECOR_FOREST || decor === DECOR_GRASS) {
           // Lush mossy clearing — layered greens with soft grass flecks.
           g.fillStyle(shade(0x2a4a28, 0.95 + r * 0.2));
           g.fillRect(x, y, T, T);

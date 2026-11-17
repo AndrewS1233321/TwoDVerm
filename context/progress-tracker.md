@@ -13,10 +13,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-- **Castle Defence mode (unit 18)**: lobby mode with moated keep map
-  (`TILE_WATER`, bridges L/top/R, king 5000 HP, merchant). Keep has
-  three wide (6-tile) openings — left, top/middle, right — so the
-  courtyard connects to the outer approaches. Data-driven waves 1–5
+- **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
+  in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
+  grassy fields (`DECOR_GRASS`, depth = 50% castle width), king 5000 HP
+  + merchant inside (no water in the courtyard). Data-driven waves 1–5
   (top path only); next wave waits for clear then `delayAfterPrev`;
   HUD wave timer + king bar; mid-mission shop; win on last wave clear
   / lose if king dies. Spec `context/specs/18-castle-defence.md`.

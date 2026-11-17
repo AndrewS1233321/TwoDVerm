@@ -14,6 +14,8 @@ export const DECOR_SEWER = 2;
 export const DECOR_FOREST = 3;
 /** Mine / quarry dirt: crumbling rock walls, tracks, lanterns, debris props. */
 export const DECOR_MINE = 4;
+/** Open grassy field (Castle Defence outer grounds). Same look as forest floor, without forest wall tint. */
+export const DECOR_GRASS = 5;
 
 /** ASCII digit → combat enemy for testing-zone summon pads. */
 export const SUMMON_PAD_MARKERS: Record<string, EnemyId> = {
@@ -196,6 +198,7 @@ export function parseLevel(rows: readonly string[]): Level {
       switch (ch) {
         case ",": decor[i] = DECOR_COBBLE; break;
         case "_": decor[i] = DECOR_SEWER; break;
+        case ";": decor[i] = DECOR_GRASS; break;
         case "E": level.endZone.add(i); break;
         case "H": level.holdZone.add(i); break;
         case "T": level.bossTrigger.add(i); break;

@@ -7,10 +7,12 @@ waves. Win when the last wave is cleared; lose if the king dies.
 
 ## Map
 
-- Rectangle keep with king (5000 HP) at centre and a merchant inside.
-- Water moat (`~` → impassable `TILE_WATER`) with bridges left, right, and top.
-- Keep walls have three wide (≈6-tile) openings so the courtyard
-  connects to the left, top/middle, and right approaches.
+- Rectangular keep with king (5000 HP) at centre and a merchant inside.
+  Keep interior is solid floor (no water inside the walls).
+- Full water moat (`~` → impassable `TILE_WATER`) around the keep;
+  only crossable via three large (6-tile) bridges: left, top/middle, right.
+- Outside the moat: grassy fields (`;` → `DECOR_GRASS`) whose depth is
+  50% of the castle width on each side.
 - v1 waves spawn only from the **top** bridge approach (`h` markers).
 
 ## Waves
