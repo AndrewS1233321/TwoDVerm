@@ -222,6 +222,11 @@ export class CreatureView {
       oy = (Math.random() - 0.5) * 2;
     }
     this.root.setPosition(info.x + ox, info.y + oy).setRotation(rot).setScale(scale);
+    // Heroes are depth 12; raise Gutter Runner above them while pouncing / pinned.
+    if (this.opts.kind === "enemy") {
+      const onHero = info.state === "leap" || info.state === "pin";
+      this.root.setDepth(onHero ? 13 : 10);
+    }
     this.shadow.setPosition(info.x + 2, info.y + 3);
     this.label?.setPosition(info.x, info.y - r - 6);
 
