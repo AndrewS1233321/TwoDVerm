@@ -457,11 +457,15 @@ function nearestHeroInOverheadRange(world: World, e: Enemy): Hero | null {
   return best;
 }
 
-/** Front-circle overhead smash hits (heroes in the telegraph circle). */
+/** Front-circle overhead smash: heroes and other rats in the telegraph circle. */
 function applyOgreOverhead(world: World, e: Enemy, a: ActiveAttack): void {
-  if (a.hitsLeft <= 0) return;
   const c = ogreOverheadCentre(e);
   const r = OGRE_OVERHEAD.aoeRadius;
+  if (!a.hit.has("__flash__")) {
+    a.hit.add("__flash__");
+    world.emit({ t: "groundflash", x: c.x, y: c.y, radius: r });
+  }
+  if (a.hitsLeft <= 0) return;
 
   for (const h of world.heroes.values()) {
     if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
@@ -476,6 +480,21 @@ function applyOgreOverhead(world: World, e: Enemy, a: ActiveAttack): void {
     });
     a.hit.add(h.id);
     if (result !== "dodged") a.hitsLeft--;
+  }
+
+  for (const other of world.enemies.values()) {
+    if (a.hitsLeft <= 0) break;
+    if (other.id === e.id || a.hit.has(other.id)) continue;
+    if (other.def.id === "merchant" || other.def.behavior === "dummy") continue;
+    if (dist(c.x, c.y, other.x, other.y) > r) continue;
+    a.hit.add(other.id);
+    a.hitsLeft--;
+    damageEnemy(world, null, other, {
+      damage: OGRE_OVERHEAD.damage,
+      stagger: OGRE_OVERHEAD.stagger,
+      srcX: e.x,
+      srcY: e.y,
+    });
   }
 }
 

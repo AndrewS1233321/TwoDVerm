@@ -170,4 +170,20 @@ export class Effects {
       onComplete: () => g.destroy(),
     });
   }
+
+  /** White ground disc at impact (Rat Ogre overhead). */
+  groundFlash(x: number, y: number, radius: number): void {
+    const g = this.scene.add.graphics().setDepth(7);
+    g.fillStyle(0xffffff, 0.55);
+    g.fillCircle(x, y, radius);
+    g.lineStyle(3, 0xffffff, 0.95);
+    g.strokeCircle(x, y, radius);
+    this.scene.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 220,
+      ease: "Cubic.easeOut",
+      onComplete: () => g.destroy(),
+    });
+  }
 }

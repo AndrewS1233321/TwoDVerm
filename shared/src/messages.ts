@@ -104,6 +104,8 @@ export type FxEvent =
   | { t: "setpiece"; kind: "cannon" | "breach" | "bell" | "hammer"; x: number; y: number }
   /** Brief white flash of an attack arc (Plague Monk dash strikes). */
   | { t: "slashflash"; x: number; y: number; facing: number; reach: number; arc: number }
+  /** Brief white ground disc (Rat Ogre overhead impact). */
+  | { t: "groundflash"; x: number; y: number; radius: number }
   | { t: "announce"; text: string; kind: "horde" | "event" | "boss" | "info" | "special" };
 
 export function sanitizeInput(raw: unknown): InputMessage | null {
