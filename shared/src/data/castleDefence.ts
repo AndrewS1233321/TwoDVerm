@@ -165,6 +165,8 @@ export const CASTLE_DEFENCE_WAVES: readonly CastleWaveDef[] = [
 
 export const CASTLE_KING_HP = 5000;
 export const CASTLE_KING_RADIUS = 18;
+/** GP granted to each living hero when a wave is cleared. */
+export const CASTLE_WAVE_GOLD = 25;
 
 function playerKey(players: number): 1 | 2 | 3 | 4 {
   const p = Math.max(1, Math.round(players));

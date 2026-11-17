@@ -2,6 +2,7 @@ import {
   CASTLE_DEFENCE_WAVES,
   CASTLE_KING_HP,
   CASTLE_KING_RADIUS,
+  CASTLE_WAVE_GOLD,
   resolveCastleWaveSpawns,
   type CastleWavePath,
   type Point,
@@ -54,6 +55,7 @@ export class CastleDefenceDirector {
 
     if (this.waveActive && this.waveEnemyIds.size === 0) {
       this.waveActive = false;
+      this.grantWaveGold(world);
       if (this.waveIndex >= CASTLE_DEFENCE_WAVES.length) {
         this.won = true;
         world.phase = "victory";
@@ -86,6 +88,23 @@ export class CastleDefenceDirector {
   private pruneDead(world: World): void {
     for (const id of [...this.waveEnemyIds]) {
       if (!world.enemies.has(id)) this.waveEnemyIds.delete(id);
+    }
+  }
+
+  /** Each living hero gets a flat CASTLE_WAVE_GOLD (not split). */
+  private grantWaveGold(world: World): void {
+    let granted = 0;
+    for (const hero of world.heroes.values()) {
+      if (hero.state === "dead") continue;
+      hero.gold += CASTLE_WAVE_GOLD;
+      granted++;
+    }
+    if (granted > 0) {
+      world.emit({
+        t: "announce",
+        text: `+${CASTLE_WAVE_GOLD} GP each`,
+        kind: "info",
+      });
     }
   }
 

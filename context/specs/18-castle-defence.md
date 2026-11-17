@@ -44,6 +44,11 @@ start), `paths`, `kind` (`standard` | `miniboss` | `boss`), and
 Enemies use normal hero pick logic, then chase whichever is closer —
 that hero or the king. Melee hits can damage either.
 
+## Rewards
+
+Each living hero gains `CASTLE_WAVE_GOLD` (25 GP) when a wave is cleared
+(flat per player, not split from a shared pool).
+
 ## Merchant
 
 Shop allowed during `playing` in this mode when near the merchant.
