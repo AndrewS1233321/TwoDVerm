@@ -34,6 +34,11 @@ start), `paths`, `kind` (`standard` | `miniboss` | `boss`), and
 2. Slaves 6 + clanrats 4, delay 30s after wave 1 start.
 3–5. Placeholder escalating slave/clanrat mixes.
 
+## Targeting
+
+Enemies use normal hero pick logic, then chase whichever is closer —
+that hero or the king. Melee hits can damage either.
+
 ## Merchant
 
 Shop allowed during `playing` in this mode when near the merchant.

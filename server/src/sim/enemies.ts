@@ -133,13 +133,26 @@ function shouldAggro(world: World, e: Enemy): boolean {
   return false;
 }
 
-/** Chase destination: castle king when defending, else the picked hero. */
-function chasePos(world: World, hero: Hero | undefined): { x: number; y: number; radius: number } | null {
-  if (world.mode === "castle" && world.king && world.king.hp > 0) {
-    return { x: world.king.x, y: world.king.y, radius: world.king.radius };
+type ChaseTarget = { x: number; y: number; radius: number; kind: "hero" | "king" };
+
+/**
+ * Chase destination for melee. In Castle Defence, pick whichever of the
+ * current hero target and the king is closer; otherwise chase the hero.
+ */
+function chasePos(world: World, e: Enemy, hero: Hero | undefined): ChaseTarget | null {
+  const king =
+    world.mode === "castle" && world.king && world.king.hp > 0
+      ? { x: world.king.x, y: world.king.y, radius: world.king.radius, kind: "king" as const }
+      : null;
+  const heroPos = hero
+    ? { x: hero.x, y: hero.y, radius: hero.radius, kind: "hero" as const }
+    : null;
+  if (king && heroPos) {
+    const dHero = dist(e.x, e.y, heroPos.x, heroPos.y);
+    const dKing = dist(e.x, e.y, king.x, king.y);
+    return dKing < dHero ? king : heroPos;
   }
-  if (!hero) return null;
-  return { x: hero.x, y: hero.y, radius: hero.radius };
+  return king ?? heroPos;
 }
 
 function alert(world: World, source: Enemy): void {
@@ -242,7 +255,7 @@ function flurryTuning(e: Enemy): { windup: number; openerHits: number; followHit
 }
 
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
-  const chase = chasePos(world, target);
+  const chase = chasePos(world, e, target);
   if (e.state === "attack" && e.attack) {
     const a = e.attack;
     const flurry = flurryTuning(e);
@@ -257,7 +270,9 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     const done = advanceAttack(a, dt, () => enemyMeleeHits(world, e, a));
     if (!flurry) applyLunge(world, e, a, dt);
     if (done) {
-      if (e.chainLeft > 0 && target && target.state !== "dead" && target.state !== "downed") {
+      const heroOk = target && target.state !== "dead" && target.state !== "downed";
+      const kingOk = chase?.kind === "king" && !!world.king && world.king.hp > 0;
+      if (e.chainLeft > 0 && (heroOk || kingOk)) {
         e.chainLeft--;
         e.attack = newAttack(flurry ? flurrySwing(a.def, e.chainLeft, flurry.windup) : chainSwing(a.def, e.chainLeft, true), "enemy");
         e.actionSeq++;
