@@ -11,6 +11,8 @@ Update this file after every meaningful implementation change.
 - Playtest Castle Defence (waves, king HP, mid-mission shop) alongside
   Default / Testing / Wastes; tune wave table from feedback.
 - Continue Rat Ogre ability rewrite (priorities 1–5 shipped).
+- Melee chase stop-on-contact: `moveToward` skips walking when already
+  overlapping the chase target (still turns); reduces ogre/hero shove.
 
 ## Completed
 

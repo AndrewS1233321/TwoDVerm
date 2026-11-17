@@ -256,8 +256,24 @@ function pickIsolatedHero(world: World, e: Enemy): string {
   return best;
 }
 
-/** Walks towards a point: directly when close and visible, otherwise along the flow field. */
-function moveToward(world: World, e: Enemy, tx: number, ty: number, speedMul: number, dt: number): void {
+/**
+ * Walks towards a point: directly when close and visible, otherwise along the flow field.
+ * If `targetRadius` is set and this enemy already overlaps that body, skip walking
+ * (callers may still turn). Stops chase-shove without special per-enemy rules.
+ */
+function moveToward(
+  world: World,
+  e: Enemy,
+  tx: number,
+  ty: number,
+  speedMul: number,
+  dt: number,
+  targetRadius?: number,
+): void {
+  if (targetRadius !== undefined) {
+    const gap = dist(e.x, e.y, tx, ty) - e.radius - targetRadius;
+    if (gap <= 0) return;
+  }
   let gx = tx;
   let gy = ty;
   const d = dist(e.x, e.y, tx, ty);
@@ -620,7 +636,7 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
     // Slam / overhead keep facing locked on the telegraph.
     if (isPummel && target && target.state !== "dead" && target.invisT <= 0) {
       faceToward(e, target.x, target.y, 1.4, dt);
-      moveToward(world, e, target.x, target.y, 1, dt);
+      moveToward(world, e, target.x, target.y, 1, dt, target.radius);
     } else if (
       isClaw &&
       a.phase === "windup" &&
@@ -763,7 +779,7 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
   const chase = chasePos(world, e, target);
   if (!chase) return;
   faceToward(e, chase.x, chase.y, 1, dt);
-  moveToward(world, e, chase.x, chase.y, 1, dt);
+  moveToward(world, e, chase.x, chase.y, 1, dt, chase.radius);
 }
 
 function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
@@ -774,7 +790,7 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     if (chase) {
       if (flurry) {
         faceToward(e, chase.x, chase.y, 1.6, dt);
-        moveToward(world, e, chase.x, chase.y, flurry.chaseSpeedMul, dt);
+        moveToward(world, e, chase.x, chase.y, flurry.chaseSpeedMul, dt, chase.radius);
       } else if (a.phase === "windup") {
         faceToward(e, chase.x, chase.y, 0.5, dt);
       }
@@ -824,7 +840,7 @@ function updateMelee(world: World, e: Enemy, target: Hero | undefined, dt: numbe
     }
     return;
   }
-  moveToward(world, e, chase.x, chase.y, 1, dt);
+  moveToward(world, e, chase.x, chase.y, 1, dt, chase.radius);
 }
 
 /** Flurry swings: follow-ups wind up fast and every swing but the last recovers quickly. */
@@ -956,7 +972,7 @@ function updateWarpfire(world: World, e: Enemy, target: Hero | undefined, dt: nu
     world.emit({ t: "announce", text: "Warpfire Thrower!", kind: "special" });
     return;
   }
-  moveToward(world, e, target.x, target.y, 1, dt);
+  moveToward(world, e, target.x, target.y, 1, dt, target.radius);
 }
 
 /** Rat Ogre melee, plus warpfire bursts at heroes who keep their distance. */
@@ -1030,7 +1046,7 @@ function updateRunner(world: World, e: Enemy, target: Hero | undefined, dt: numb
         e.actionSeq++;
         return;
       }
-      moveToward(world, e, target.x, target.y, 1, dt);
+      moveToward(world, e, target.x, target.y, 1, dt, target.radius);
     }
   }
 }
@@ -1230,7 +1246,7 @@ function updateGunner(world: World, e: Enemy, target: Hero | undefined, dt: numb
         world.emit({ t: "announce", text: "Ratling Gunner!", kind: "special" });
         return;
       }
-      moveToward(world, e, target.x, target.y, 1, dt);
+      moveToward(world, e, target.x, target.y, 1, dt, target.radius);
   }
 }
 
@@ -1307,7 +1323,7 @@ function updateJezzail(world: World, e: Enemy, target: Hero | undefined, dt: num
         }
         return;
       }
-      moveToward(world, e, target.x, target.y, 1, dt);
+      moveToward(world, e, target.x, target.y, 1, dt, target.radius);
   }
 }
 
@@ -1390,7 +1406,7 @@ function updateGas(world: World, e: Enemy, target: Hero | undefined, dt: number)
     e.actionSeq++;
     return;
   }
-  if (d > GAS.throwRangeMin + 60) moveToward(world, e, target.x, target.y, 1, dt);
+  if (d > GAS.throwRangeMin + 60) moveToward(world, e, target.x, target.y, 1, dt, target.radius);
   else faceToward(e, target.x, target.y, 1, dt);
 }
 
@@ -1432,7 +1448,7 @@ function updateHooker(world: World, e: Enemy, target: Hero | undefined, dt: numb
     e.actionSeq++;
     return;
   }
-  moveToward(world, e, target.x, target.y, 1, dt);
+  moveToward(world, e, target.x, target.y, 1, dt, target.radius);
 }
 
 function grab(world: World, e: Enemy, hero: Hero): void {
@@ -1538,7 +1554,7 @@ function updateLifeleech(world: World, e: Enemy, target: Hero | undefined, dt: n
     // Keep some distance while reloading.
     const d = dist(e.x, e.y, target.x, target.y);
     if (d < 140) fleeFrom(world, e, target.x, target.y, dt);
-    else if (d > 260) moveToward(world, e, target.x, target.y, 0.6, dt);
+    else if (d > 260) moveToward(world, e, target.x, target.y, 0.6, dt, target.radius);
     return;
   }
   if (tryTeleportNear(world, e, target, LIFEECH.teleportRange)) {
@@ -1551,7 +1567,7 @@ function updateLifeleech(world: World, e: Enemy, target: Hero | undefined, dt: n
     }
     return;
   }
-  moveToward(world, e, target.x, target.y, 0.8, dt);
+  moveToward(world, e, target.x, target.y, 0.8, dt, target.radius);
 }
 
 function updateLifeleechDrain(world: World, e: Enemy, dt: number): void {
@@ -1643,7 +1659,7 @@ function updateBlightstormer(world: World, e: Enemy, target: Hero | undefined, d
     return;
   }
   if (d < BLIGHTSTORM.castMinRange) fleeFrom(world, e, target.x, target.y, dt);
-  else moveToward(world, e, target.x, target.y, 0.85, dt);
+  else moveToward(world, e, target.x, target.y, 0.85, dt, target.radius);
 }
 
 function updateChaosSpawn(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
