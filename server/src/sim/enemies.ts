@@ -16,8 +16,10 @@ import {
   raycastWalls,
   MONK,
   OGRE_CHARGE,
+  OGRE_CLAW,
   OGRE_GROUND_SLAM,
   OGRE_OVERHEAD,
+  OGRE_PUMMEL,
   ogreOverheadAoeOffset,
   RUNNER,
   SACK_RAT,
@@ -47,6 +49,8 @@ export function updateEnemy(world: World, e: Enemy, dt: number): void {
   e.cooldown -= dt;
   e.fireCd -= dt;
   e.overheadCd -= dt;
+  e.pummelCd -= dt;
+  e.clawCd -= dt;
   applyKnockback(world, e, dt);
 
   // Test dummies never chase or attack; they only take hits.
@@ -498,26 +502,140 @@ function applyOgreOverhead(world: World, e: Enemy, a: ActiveAttack): void {
   }
 }
 
+/** Front semi-circle swipe from the ogre centre (pummeling combo hit). */
+function applyOgrePummel(world: World, e: Enemy, a: ActiveAttack): void {
+  if (a.hitsLeft <= 0) return;
+  const half = OGRE_PUMMEL.arc / 2;
+  const r = OGRE_PUMMEL.radius;
+
+  for (const h of world.heroes.values()) {
+    if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d > r) continue;
+    const toHero = angleTo(e.x, e.y, h.x, h.y);
+    if (Math.abs(angleDiff(e.facing, toHero)) > half) continue;
+    const result = strikeHero(world, h, {
+      damage: OGRE_PUMMEL.damage,
+      stagger: OGRE_PUMMEL.stagger,
+      blockCost: OGRE_PUMMEL.blockCost,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
+    a.hit.add(h.id);
+    if (result !== "dodged") a.hitsLeft--;
+  }
+}
+
+function nearestHeroInPummelRange(world: World, e: Enemy): Hero | null {
+  let best: Hero | null = null;
+  let bestD = Infinity;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.invisT > 0) continue;
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d > OGRE_PUMMEL.triggerRange) continue;
+    if (d < bestD) {
+      bestD = d;
+      best = h;
+    }
+  }
+  return best;
+}
+
+/** Standard front cone claw from the ogre centre. */
+function applyOgreClaw(world: World, e: Enemy, a: ActiveAttack): void {
+  if (a.hitsLeft <= 0) return;
+  const half = OGRE_CLAW.arc / 2;
+  const r = OGRE_CLAW.radius;
+
+  for (const h of world.heroes.values()) {
+    if (a.hit.has(h.id) || h.state === "dead" || h.invisT > 0) continue;
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d > r) continue;
+    const toHero = angleTo(e.x, e.y, h.x, h.y);
+    if (Math.abs(angleDiff(e.facing, toHero)) > half) continue;
+    const result = strikeHero(world, h, {
+      damage: OGRE_CLAW.damage,
+      stagger: OGRE_CLAW.stagger,
+      blockCost: OGRE_CLAW.blockCost,
+      srcX: e.x,
+      srcY: e.y,
+      srcId: e.id,
+    });
+    a.hit.add(h.id);
+    if (result !== "dodged") a.hitsLeft--;
+  }
+}
+
+function nearestHeroInClawRange(world: World, e: Enemy): Hero | null {
+  let best: Hero | null = null;
+  let bestD = Infinity;
+  for (const h of world.heroes.values()) {
+    if (h.state === "dead" || h.invisT > 0) continue;
+    const d = dist(e.x, e.y, h.x, h.y);
+    if (d > OGRE_CLAW.triggerRange) continue;
+    if (d < bestD) {
+      bestD = d;
+      best = h;
+    }
+  }
+  return best;
+}
+
 /**
  * Rat Ogre AI: ability priority list (more entries later).
  * 1) Ground slam — rear 160° / 70px, off slam CD.
  * 2) Charge — no heroes within 340px, off charge CD; locks preferred target.
  * 3) Overhead — hero within 2 tiles, off overhead CD; front circle smash.
+ * 4) Pummeling swipes — hero within 80px, off pummel CD; 3-hit front semi-circle.
+ * 5) Standard claw — hero within 40px, off claw CD; front cone.
  * Otherwise chase only (no legacy melee).
  */
 function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: number): void {
   if (e.state === "attack" && e.attack) {
     const a = e.attack;
+    const isPummel = a.def.id === "ogre_pummel";
+    const isClaw = a.def.id === "ogre_claw";
     const apply =
       a.def.id === "ogre_overhead"
         ? () => applyOgreOverhead(world, e, a)
-        : () => applyOgreGroundSlam(world, e, a);
-    // Facing is locked during slam / overhead so the red telegraph matches the hit.
+        : isPummel
+          ? () => applyOgrePummel(world, e, a)
+          : isClaw
+            ? () => applyOgreClaw(world, e, a)
+            : () => applyOgreGroundSlam(world, e, a);
+
+    // Pummel / claw track the target during wind-up; slam / overhead keep facing locked.
+    if (
+      (isPummel || isClaw) &&
+      a.phase === "windup" &&
+      target &&
+      target.state !== "dead" &&
+      target.invisT <= 0
+    ) {
+      faceToward(e, target.x, target.y, isClaw ? 0.8 : 1.2, dt);
+    }
+
     const done = advanceAttack(a, dt, apply);
     if (done) {
+      if (isPummel && e.chainLeft > 0) {
+        e.chainLeft--;
+        const pummel = e.def.attacks.find((at) => at.id === "ogre_pummel");
+        if (pummel) {
+          // Alternate swipe direction for read on each hit of the combo.
+          const swingDir = e.chainLeft % 2 === 0 ? 1 : -1;
+          e.attack = newAttack(
+            { ...pummel, swing: { from: -1.4 * swingDir, to: 1.4 * swingDir } },
+            "enemy",
+          );
+          e.actionSeq++;
+          return;
+        }
+      }
       e.attack = null;
       e.state = "chase";
       e.stateT = 0;
+      e.chainLeft = 0;
     }
     return;
   }
@@ -593,6 +711,36 @@ function updateRatOgre(world: World, e: Enemy, target: Hero | undefined, dt: num
       e.actionSeq++;
       e.chainLeft = 0;
       e.overheadCd = OGRE_OVERHEAD.cooldown;
+      return;
+    }
+  }
+
+  // Priority 4: pummeling swipes when a hero is within 80px.
+  if (e.pummelCd <= 0) {
+    const near = nearestHeroInPummelRange(world, e);
+    const pummel = e.def.attacks.find((at) => at.id === "ogre_pummel");
+    if (near && pummel) {
+      e.facing = angleTo(e.x, e.y, near.x, near.y);
+      e.attack = newAttack(pummel, "enemy");
+      e.state = "attack";
+      e.actionSeq++;
+      e.chainLeft = OGRE_PUMMEL.hits - 1;
+      e.pummelCd = OGRE_PUMMEL.cooldown;
+      return;
+    }
+  }
+
+  // Priority 5: standard claw when a hero is within 40px.
+  if (e.clawCd <= 0) {
+    const near = nearestHeroInClawRange(world, e);
+    const claw = e.def.attacks.find((at) => at.id === "ogre_claw");
+    if (near && claw) {
+      e.facing = angleTo(e.x, e.y, near.x, near.y);
+      e.attack = newAttack(claw, "enemy");
+      e.state = "attack";
+      e.actionSeq++;
+      e.chainLeft = 0;
+      e.clawCd = OGRE_CLAW.cooldown;
       return;
     }
   }

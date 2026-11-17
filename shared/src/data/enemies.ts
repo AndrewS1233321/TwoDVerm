@@ -1,5 +1,5 @@
 import { deg } from "../math";
-import { OGRE_GROUND_SLAM, OGRE_OVERHEAD } from "../tuning";
+import { OGRE_CLAW, OGRE_GROUND_SLAM, OGRE_OVERHEAD, OGRE_PUMMEL } from "../tuning";
 import { dummyArmorLoadout, UNARMORED, type ArmorLevel } from "./armor";
 import type { CombatEnemyId, DummyEnemyId, EnemyDef, EnemyId } from "./types";
 
@@ -307,6 +307,35 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
         stagger: OGRE_OVERHEAD.stagger,
         blockCost: OGRE_OVERHEAD.blockCost,
         swing: { from: 1.1, to: -0.35, thrust: 10 },
+      },
+      // Priority-4 pummeling swipes — 3-hit front semi-circle combo.
+      {
+        id: "ogre_pummel",
+        windup: OGRE_PUMMEL.windup,
+        active: OGRE_PUMMEL.active,
+        recovery: OGRE_PUMMEL.recovery,
+        reach: OGRE_PUMMEL.radius,
+        arc: OGRE_PUMMEL.arc,
+        damage: OGRE_PUMMEL.damage,
+        cleave: 99,
+        stagger: OGRE_PUMMEL.stagger,
+        blockCost: OGRE_PUMMEL.blockCost,
+        chain: OGRE_PUMMEL.hits,
+        swing: { from: -1.4, to: 1.4 },
+      },
+      // Priority-5 standard claw — front cone; resolved in updateRatOgre.
+      {
+        id: "ogre_claw",
+        windup: OGRE_CLAW.windup,
+        active: OGRE_CLAW.active,
+        recovery: OGRE_CLAW.recovery,
+        reach: OGRE_CLAW.radius,
+        arc: OGRE_CLAW.arc,
+        damage: OGRE_CLAW.damage,
+        cleave: 99,
+        stagger: OGRE_CLAW.stagger,
+        blockCost: OGRE_CLAW.blockCost,
+        swing: { from: -0.9, to: 0.9, thrust: 8 },
       },
     ],
   },

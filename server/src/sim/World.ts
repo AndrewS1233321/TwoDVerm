@@ -532,6 +532,8 @@ export class World {
       escapeT: 0,
       fireCd: 0,
       overheadCd: 0,
+      pummelCd: 0,
+      clawCd: 0,
       chargeDist: 0,
       chargeHit: new Set(),
     };

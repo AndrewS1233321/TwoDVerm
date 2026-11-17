@@ -10,12 +10,11 @@ Update this file after every meaningful implementation change.
 
 - Playtest Castle Defence (waves, king HP, mid-mission shop) alongside
   Default / Testing / Wastes; tune wave table from feedback.
-- Continue Rat Ogre ability rewrite (priorities 1–3 shipped; further
-  abilities TBD).
+- Continue Rat Ogre ability rewrite (priorities 1–5 shipped).
 
 ## Completed
 
-- **Rat Ogre abilities (priorities 1–3)**: discarded legacy `ogre_slam` /
+- **Rat Ogre abilities (priorities 1–5)**: discarded legacy `ogre_slam` /
   `ogre_sweep`. (1) `ogre_ground_slam`: rear 160° / 70px, 0.3s red
   telegraph (6-tile / 192px AoE), 15 dmg / blockCost 2 / stagger 99,
   6-tile knockback, 12s CD.
@@ -25,8 +24,13 @@ Update this file after every meaningful implementation change.
   forced stagger; blur trail + red frontal glow; 20s CD; target locked
   mid-charge.
   (3) `ogre_overhead`: hero within 2 tiles, 0.35s wind-up, front circle
-  AoE (5-tile diameter, rear edge on ogre centre) with red ground glow,
-  70 dmg / blockCost 3 / stagger 3, 5s CD. Chase-only while waiting.
+  AoE (5-tile diameter, rear edge on ogre centre) with red ground glow +
+  white impact flash, 70 dmg / blockCost 3 / stagger 3, hits other rats,
+  5s CD.
+  (4) `ogre_pummel`: hero within 80px, 3-hit front semi-circle (6-tile
+  radius) with 0.3s wind-up each, 15 dmg / blockCost 1 per swipe, 6s CD.
+  (5) `ogre_claw`: hero within 40px, 0.7s wind-up, 110° × 5-tile cone,
+  30 dmg / blockCost 2 / minor stagger, 1s CD. Chase-only while waiting.
   `ogre2` keeps archived kit.
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer

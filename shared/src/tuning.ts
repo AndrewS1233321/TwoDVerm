@@ -400,3 +400,45 @@ export const OGRE_OVERHEAD = {
 export function ogreOverheadAoeOffset(_ogreRadius: number): number {
   return OGRE_OVERHEAD.aoeRadius;
 }
+
+/**
+ * Rat Ogre pummeling swipes (priority 4): 3-hit front semi-circle combo.
+ * Each swipe originates from the ogre centre toward facing.
+ */
+export const OGRE_PUMMEL = {
+  /** Centre-to-centre range to begin the combo. */
+  triggerRange: 80,
+  /** Semi-circle radius from ogre centre (6 tiles). */
+  radius: 6 * 32,
+  /** Front semi-circle width. */
+  arc: deg(180),
+  damage: 15,
+  blockCost: 1,
+  stagger: 1,
+  windup: 0.3,
+  active: 0.12,
+  recovery: 0.22,
+  hits: 3,
+  cooldown: 6,
+};
+
+/**
+ * Rat Ogre standard claw (priority 5): short-range front cone.
+ * Used when no higher-priority ability can fire.
+ */
+export const OGRE_CLAW = {
+  /** Centre-to-centre range to begin the claw. */
+  triggerRange: 40,
+  /** Cone length from ogre centre (5 tiles). */
+  radius: 5 * 32,
+  /** Cone width. */
+  arc: deg(110),
+  damage: 30,
+  blockCost: 2,
+  /** Minor stagger (same tier as charge). */
+  stagger: 2,
+  windup: 0.7,
+  active: 0.14,
+  recovery: 0.35,
+  cooldown: 1,
+};

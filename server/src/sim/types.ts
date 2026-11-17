@@ -224,6 +224,10 @@ export interface Enemy {
   fireCd: number;
   /** Rat Ogre: seconds until overhead smash is ready again. */
   overheadCd: number;
+  /** Rat Ogre: seconds until pummeling swipes are ready again. */
+  pummelCd: number;
+  /** Rat Ogre: seconds until the standard claw is ready again. */
+  clawCd: number;
   /** Rat Ogre: world px already traveled during the current charge. */
   chargeDist: number;
   /** Ally / hero ids already struck during the current charge. */

@@ -6,8 +6,10 @@ import {
   GUNNER,
   getAttack,
   lerp,
+  OGRE_CLAW,
   OGRE_GROUND_SLAM,
   OGRE_OVERHEAD,
+  OGRE_PUMMEL,
   ogreOverheadAoeOffset,
   RIPOSTE,
   STORMFIEND_FIRE,
@@ -413,6 +415,32 @@ export class CreatureView {
         ground.strokeCircle(cx, cy, radius);
         ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
         ground.strokeCircle(cx, cy, radius * t);
+      } else if (def && info.phase === 1 && info.action === "ogre_pummel") {
+        const t = clamp(elapsed / Math.max(0.01, def.windup), 0, 1);
+        const radius = OGRE_PUMMEL.radius;
+        const half = OGRE_PUMMEL.arc / 2;
+        ground.fillStyle(colors.health, 0.18 + 0.35 * t);
+        ground.slice(info.x, info.y, radius, info.facing - half, info.facing + half, false);
+        ground.fillPath();
+        ground.lineStyle(3, colors.health, 0.55 + 0.45 * t);
+        ground.slice(info.x, info.y, radius, info.facing - half, info.facing + half, false);
+        ground.strokePath();
+        ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
+        ground.slice(info.x, info.y, radius * t, info.facing - half, info.facing + half, false);
+        ground.strokePath();
+      } else if (def && info.phase === 1 && info.action === "ogre_claw") {
+        const t = clamp(elapsed / Math.max(0.01, def.windup), 0, 1);
+        const radius = OGRE_CLAW.radius;
+        const half = OGRE_CLAW.arc / 2;
+        ground.fillStyle(colors.health, 0.18 + 0.35 * t);
+        ground.slice(info.x, info.y, radius, info.facing - half, info.facing + half, false);
+        ground.fillPath();
+        ground.lineStyle(3, colors.health, 0.55 + 0.45 * t);
+        ground.slice(info.x, info.y, radius, info.facing - half, info.facing + half, false);
+        ground.strokePath();
+        ground.lineStyle(2, colors.health, 0.35 + 0.4 * t);
+        ground.slice(info.x, info.y, radius * t, info.facing - half, info.facing + half, false);
+        ground.strokePath();
       } else if (def && info.phase === 1) {
         const t = clamp(elapsed / def.windup, 0, 1);
         const reach = r + def.reach + 6;
