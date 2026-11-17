@@ -15,15 +15,18 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-- **Rat Ogre abilities (priorities 1–2)**: discarded legacy `ogre_slam` /
-  `ogre_sweep`. (1) `ogre_ground_slam`: rear 160° / 70px, 0.3s red 450px
+- **Rat Ogre abilities (priorities 1–3)**: discarded legacy `ogre_slam` /
+  `ogre_sweep`. (1) `ogre_ground_slam`: rear 160° / 70px, 0.3s red
   telegraph (6-tile / 192px AoE), 15 dmg / blockCost 2 / stagger 99,
   6-tile knockback, 12s CD.
   (2) Charge: if no heroes within 340px, rush preferred target up to 150
   tiles at 1.6× speed / 3× turn; 50 dmg / minor stagger / blockCost 3 /
   96px knockback on first hero hit; allies take 15 dmg + 6-tile shove +
   forced stagger; blur trail + red frontal glow; 20s CD; target locked
-  mid-charge. Chase-only while waiting. `ogre2` keeps archived kit.
+  mid-charge.
+  (3) `ogre_overhead`: hero within 2 tiles, 1.2s wind-up, front circle
+  AoE (4-tile diameter) with red ground glow, 70 dmg / blockCost 3 /
+  stagger 3, 5s CD. Chase-only while waiting. `ogre2` keeps archived kit.
 - **Castle Defence mode (unit 18)**: lobby mode with rectangular keep
   in a full moat (`TILE_WATER`), three 6-tile bridges (L/top/R), outer
   grassy fields (`DECOR_GRASS`, depth 36 = 3× original band), king
