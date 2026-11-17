@@ -31,11 +31,13 @@ start), `paths`, `kind` (`standard` | `miniboss` | `boss`), and
   delay has already elapsed, spawn immediately.
 - Wave timer HUD always visible (top-left).
 
-### v1 schedule
+### Wave schedule
 
-1. Slaves only (base 8), delay 30s from start.
-2. Slaves 6 + clanrats 4, delay 30s after wave 1 start.
-3–5. Placeholder escalating slave/clanrat mixes.
+1–4. Horde ramps (slaves / clanrats), top path.
+5. Mini-boss: 2 stormvermin + 5 slaves per player; fixed specials by
+   party size (gas / gutter / gunner — exact counts, not × players).
+6–9. Escalating mixes (shielded rats, hooker, warpfire, etc.).
+10. Boss: 1 Rat Ogre; HP ×1 / ×1.5 / ×2 / ×2.5 for 1–4 players.
 
 ## Targeting
 

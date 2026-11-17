@@ -2,7 +2,7 @@ import {
   CASTLE_DEFENCE_WAVES,
   CASTLE_KING_HP,
   CASTLE_KING_RADIUS,
-  castleWaveEnemyCount,
+  resolveCastleWaveSpawns,
   type CastleWavePath,
   type Point,
 } from "@twodverm/shared";
@@ -102,17 +102,23 @@ export class CastleDefenceDirector {
     }
 
     this.waveEnemyIds.clear();
-    for (const entry of def.composition) {
-      const n = castleWaveEnemyCount(entry.baseCount, def.kind, players);
-      for (let i = 0; i < n; i++) {
-        const at = points[i % points.length]!;
+    const lines = resolveCastleWaveSpawns(def, players);
+    let slot = 0;
+    for (const line of lines) {
+      for (let i = 0; i < line.count; i++) {
+        const at = points[slot++ % points.length]!;
         const e = world.spawnEnemy(
-          entry.type,
+          line.type,
           at.x + (world.rng() - 0.5) * 20,
           at.y + (world.rng() - 0.5) * 20,
           true,
         );
         if (e) {
+          if (line.hpMul !== 1) {
+            const maxHp = Math.max(1, Math.round(e.def.hp * line.hpMul));
+            e.def = { ...e.def, hp: maxHp };
+            e.hp = maxHp;
+          }
           e.aggro = true;
           e.state = "chase";
           this.waveEnemyIds.add(e.id);
@@ -122,7 +128,10 @@ export class CastleDefenceDirector {
 
     this.waveActive = true;
     this.waveIndex++;
-    world.emit({ t: "announce", text: `Wave ${def.id} incoming!`, kind: "horde" });
+    const announceKind = def.kind === "boss" ? "boss" : def.kind === "miniboss" ? "special" : "horde";
+    const label =
+      def.kind === "boss" ? `Boss wave ${def.id}!` : def.kind === "miniboss" ? `Mini-boss wave ${def.id}!` : `Wave ${def.id} incoming!`;
+    world.emit({ t: "announce", text: label, kind: announceKind });
     this.armNextTimer();
   }
 
