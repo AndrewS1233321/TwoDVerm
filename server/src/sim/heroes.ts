@@ -241,12 +241,16 @@ export function heroMoveMods(hero: Hero): MoveMods {
   let speed = hero.stats.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
   if (hero.carryingBarrelId) speed *= barrelCarrySpeedMul(hero.def.id);
   const turnRate = HERO_TURN_RATE * hero.stats.turnRateMul * (HERO_STATE_TURN[key] ?? 1);
+  // Dodge can interrupt attacks / charge / shoot / push / revive. Block stays allowed
+  // alongside dodge. Locked out while staggered, grabbed, downed, or dead.
   const stateAllowsDodge =
     hero.state === "idle" ||
     hero.state === "blocking" ||
     hero.state === "charging" ||
     hero.state === "shooting" ||
-    (hero.state === "attack" && hero.attack?.phase === "recovery");
+    hero.state === "attack" ||
+    hero.state === "pushing" ||
+    hero.state === "reviving";
   return {
     radius: hero.radius,
     speed,
@@ -317,10 +321,25 @@ export function processHeroInputs(world: World, hero: Hero): void {
       hero.iframesT = DODGE.time;
       hero.edges.dodgeStarted = true;
       mods.canDodge = false;
-      if (hero.state === "charging" || hero.state === "attack" || hero.state === "shooting") {
-        hero.state = "idle";
+      // Interrupt everything except block (dodge + block is intentional).
+      if (
+        hero.state === "charging" ||
+        hero.state === "attack" ||
+        hero.state === "shooting" ||
+        hero.state === "pushing" ||
+        hero.state === "reviving"
+      ) {
+        if (hero.state === "reviving") {
+          const target = world.heroes.get(hero.reviveTargetId);
+          if (target) target.reviveT = 0;
+          hero.reviveTargetId = "";
+          hero.reviveT = 0;
+        }
+        hero.state = hero.held.block && !hero.rangedMode && hero.guardBrokenT <= 0 ? "blocking" : "idle";
         hero.attack = null;
         hero.heavyQueued = false;
+        hero.lightBufferT = 0;
+        hero.actionSeq++;
       }
       cancelBowDraw(hero);
       hero.rangedHoldShots = 0;
