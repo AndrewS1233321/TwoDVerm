@@ -382,10 +382,10 @@ export const OGRE_CHARGE = {
 export const OGRE_OVERHEAD = {
   /** Centre-to-centre range to begin the overhead (2 tiles). */
   triggerRange: 2 * 32,
-  /** Hit / telegraph circle radius in tiles. */
-  aoeRadiusTiles: 4.5,
-  /** Circle radius in world px (4.5 tiles). */
-  aoeRadius: 4.5 * 32,
+  /** Hit / telegraph circle diameter in tiles. */
+  aoeDiameterTiles: 4.5,
+  /** Circle radius in world px (4.5-tile diameter → 72px). */
+  aoeRadius: (4.5 * 32) / 2,
   damage: 70,
   blockCost: 3,
   /** Heavy but not slam-tier; enough to stagger resist-3 kits. */

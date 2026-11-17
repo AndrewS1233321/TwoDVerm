@@ -24,7 +24,7 @@ Update this file after every meaningful implementation change.
   forced stagger; blur trail + red frontal glow; 20s CD; target locked
   mid-charge.
   (3) `ogre_overhead`: hero within 2 tiles, 0.42s wind-up, front circle
-  AoE (4.5-tile radius, rear edge on ogre centre) with red ground glow +
+  AoE (4.5-tile / 144px diameter, rear edge on ogre centre) with red ground glow +
   white impact flash, 70 dmg / blockCost 3 / stagger 3, hits other rats,
   5s CD.
   (4) `ogre_pummel`: hero within 80px, 3-hit front semi-circle (5-tile
