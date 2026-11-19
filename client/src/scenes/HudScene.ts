@@ -16,6 +16,8 @@ import {
   MERCHANT_EXIT_HOLD,
   OBJECTIVE_INTERACT_RANGE,
   parseLevelProps,
+  parsePerks,
+  SILVER_BULLET,
   WASTES_MERCHANT_LEVEL_ID,
   type EnemyId,
   type ProcObjective,
@@ -124,6 +126,7 @@ export class HudScene extends Phaser.Scene {
     this.drawPrompt(me, W, H);
     this.drawOffscreen(me);
     this.drawPrecisionCrosshair(me);
+    this.drawSilverBulletCrosshair(me);
     const t = this.texts;
     t.info!
       .setPosition(W - 12, 10)
@@ -138,6 +141,7 @@ export class HudScene extends Phaser.Scene {
 
   /** Screen-space reticle glued to the cursor while ranged + RMB. */
   private drawPrecisionCrosshair(me: PlayerView): void {
+    if (this.game_.silverBulletAiming(me)) return;
     if (!this.game_.precisionAiming(me)) return;
     const { x, y } = this.game_.aimScreen;
     const g = this.g;
@@ -151,6 +155,27 @@ export class HudScene extends Phaser.Scene {
     g.lineBetween(x, y + 6, x, y + 18);
     g.fillStyle(colors.accent, 0.95);
     g.fillCircle(x, y, 2);
+  }
+
+  /** Silver-glowing precision reticle while Silver Bullet ult is aiming. */
+  private drawSilverBulletCrosshair(me: PlayerView): void {
+    if (!this.game_.silverBulletAiming(me)) return;
+    const { x, y } = this.game_.aimScreen;
+    const g = this.g;
+    const pulse = 0.7 + 0.3 * Math.sin(performance.now() * 0.014);
+    const silver = 0xd8dee8;
+    const glow = 0xf2f6fc;
+    g.lineStyle(4, silver, 0.35 * pulse);
+    g.strokeCircle(x, y, 16);
+    g.lineStyle(2, glow, pulse);
+    g.strokeCircle(x, y, 12);
+    g.lineStyle(2, silver, pulse);
+    g.lineBetween(x - 20, y, x - 7, y);
+    g.lineBetween(x + 7, y, x + 20, y);
+    g.lineBetween(x, y - 20, x, y - 7);
+    g.lineBetween(x, y + 7, x, y + 20);
+    g.fillStyle(glow, 0.95);
+    g.fillCircle(x, y, 2.5);
   }
 
   private drawSelf(me: PlayerView, W: number, H: number): void {
@@ -217,20 +242,27 @@ export class HudScene extends Phaser.Scene {
 
     const ux = bx + bw - 20;
     const uy = dodgeY;
+    const owned = parsePerks(me.perks);
+    const silverUlt = owned.has("silver_bullet") && def.ult === "dash";
+    const ultMax = silverUlt ? SILVER_BULLET.cooldown : def.ultCooldown;
+    const ultName = silverUlt ? SILVER_BULLET.ultName : def.ultName;
     const ultReady = me.ultCooldown <= 0;
     g.fillStyle(0x000000, 0.6);
     g.fillCircle(ux, uy, 18);
-    if (ultReady) {
+    if (me.silverBulletAiming) {
+      g.fillStyle(0xd8dee8, 0.55 + 0.35 * Math.sin(performance.now() * 0.01));
+      g.fillCircle(ux, uy, 16);
+    } else if (ultReady) {
       g.fillStyle(colors.accent, 0.6 + 0.3 * Math.sin(performance.now() * 0.006));
       g.fillCircle(ux, uy, 16);
     } else {
-      const frac = 1 - me.ultCooldown / def.ultCooldown;
+      const frac = 1 - me.ultCooldown / ultMax;
       g.fillStyle(colors.accent, 0.5);
       g.slice(ux, uy, 16, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2, false);
       g.fillPath();
     }
-    t.ult!.setPosition(ux, uy).setText(ultReady ? "F" : `${Math.ceil(me.ultCooldown)}`);
-    t.ultName!.setOrigin(1, 0.5).setPosition(ux - 26, uy).setText(def.ultName);
+    t.ult!.setPosition(ux, uy).setText(me.silverBulletAiming ? "F" : ultReady ? "F" : `${Math.ceil(me.ultCooldown)}`);
+    t.ultName!.setOrigin(1, 0.5).setPosition(ux - 26, uy).setText(ultName);
 
     if (me.carryingBarrel) {
       const hold = me.barrelCharge * BARREL.throwMaxHold;

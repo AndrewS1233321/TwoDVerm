@@ -34,6 +34,7 @@ import {
   ELVISH_WRATH,
   elvishWrathShot,
   RIPOSTE,
+  SILVER_BULLET,
   bowDrawDamage,
   RUNNER,
   SHIELD,
@@ -176,6 +177,7 @@ export function createHero(
     riposteReady: false,
     wrathCharging: false,
     wrathChargeT: 0,
+    silverBulletAiming: false,
     noRetreatHit: new Set(),
   };
   return hero;
@@ -240,17 +242,20 @@ export function heroMoveMods(hero: Hero): MoveMods {
     (key === "windup" || key === "active" || key === "recovery" || key === "charging");
   let speed = hero.stats.speed * (daggerFullSpeed ? 1 : (HERO_STATE_SPEED[key] ?? 1));
   if (hero.carryingBarrelId) speed *= barrelCarrySpeedMul(hero.def.id);
+  // Silver Bullet aim: rooted in place, still able to turn toward the cursor.
+  if (hero.silverBulletAiming) speed = 0;
   const turnRate = HERO_TURN_RATE * hero.stats.turnRateMul * (HERO_STATE_TURN[key] ?? 1);
   // Dodge can interrupt attacks / charge / shoot / push / revive. Block stays allowed
   // alongside dodge. Locked out while staggered, grabbed, downed, or dead.
   const stateAllowsDodge =
-    hero.state === "idle" ||
-    hero.state === "blocking" ||
-    hero.state === "charging" ||
-    hero.state === "shooting" ||
-    hero.state === "attack" ||
-    hero.state === "pushing" ||
-    hero.state === "reviving";
+    !hero.silverBulletAiming &&
+    (hero.state === "idle" ||
+      hero.state === "blocking" ||
+      hero.state === "charging" ||
+      hero.state === "shooting" ||
+      hero.state === "attack" ||
+      hero.state === "pushing" ||
+      hero.state === "reviving");
   return {
     radius: hero.radius,
     speed,
@@ -292,7 +297,9 @@ export function processHeroInputs(world: World, hero: Hero): void {
     hero.prevAttackHeld = input.attack;
     if (input.fire) {
       hero.edges.fire = true;
-      if (hero.carryingBarrelId) {
+      if (hero.silverBulletAiming) {
+        // Locked to silver pistol while aiming — no weapon swap.
+      } else if (hero.carryingBarrelId) {
         const barrel = world.barrels.get(hero.carryingBarrelId);
         if (barrel) dropBarrel(world, barrel, hero);
         else {
@@ -410,10 +417,12 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 
   switch (hero.state) {
     case "dead":
+      if (hero.silverBulletAiming) endSilverBulletAim(hero, true);
       hero.respawnT -= dt;
       if (hero.respawnT <= 0) tryRespawn(world, hero);
       return;
     case "downed":
+      if (hero.silverBulletAiming) endSilverBulletAim(hero, true);
       hero.downHp -= DOWNED.bleedPerSec * dt;
       if (hero.downHp <= 0) {
         hero.state = "dead";
@@ -423,6 +432,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       }
       return;
     case "grabbed":
+      if (hero.silverBulletAiming) endSilverBulletAim(hero, true);
       return;
     default:
       break;
@@ -434,6 +444,7 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
 
   if (hero.state === "staggered") {
     cancelBowDraw(hero);
+    if (hero.silverBulletAiming) endSilverBulletAim(hero, true);
     hero.staggerT -= dt;
     if (hero.staggerT <= 0) hero.state = "idle";
     else {
@@ -442,6 +453,12 @@ export function updateHero(world: World, hero: Hero, dt: number): void {
       if (hero.perks.has("old_goat") && hero.dodgeT > 0) oldGoatHits(world, hero);
       return;
     }
+  }
+
+  // Silver Bullet aim: rooted; only LMB fires or F cancels (handled in tryUlt).
+  if (hero.silverBulletAiming) {
+    if (hero.edges.attackPressed) fireSilverBullet(world, hero);
+    return;
   }
 
   // Block cancels attacks, charge, shots, pushes, revive, and barrel throw charge immediately.
@@ -1110,6 +1127,11 @@ function updateWrathCharge(world: World, hero: Hero, dt: number): void {
 }
 
 function tryUlt(world: World, hero: Hero): void {
+  // Silver Bullet: second F cancels the aim state and restores cooldown.
+  if (hero.silverBulletAiming) {
+    endSilverBulletAim(hero, true);
+    return;
+  }
   if (hero.ultCd > 0) return;
   if (hero.state === "dead" || hero.state === "downed" || hero.state === "grabbed") return;
   if (hero.wrathCharging) return;
@@ -1117,6 +1139,12 @@ function tryUlt(world: World, hero: Hero): void {
   // Elvish Wrath: hold to charge, release to fire (see updateWrathCharge).
   if (hero.perks.has("elvish_wrath") && hero.def.ult === "volley") {
     beginWrathCharge(world, hero);
+    return;
+  }
+
+  // Silver Bullet replaces Animosity when owned.
+  if (hero.perks.has("silver_bullet") && hero.def.ult === "dash") {
+    beginSilverBulletAim(world, hero);
     return;
   }
 
@@ -1165,6 +1193,80 @@ function tryUlt(world: World, hero: Hero): void {
       break;
     }
   }
+}
+
+function beginSilverBulletAim(world: World, hero: Hero): void {
+  interruptForUlt(world, hero);
+  // Force melee slot off so the silver pistol is the only weapon shown, then re-equip melee on exit.
+  hero.rangedMode = false;
+  hero.silverBulletAiming = true;
+  hero.ultCd = 0;
+  hero.state = "idle";
+  hero.actionSeq++;
+  world.emit({ t: "ult", id: hero.id, ult: "silver_bullet", x: hero.x, y: hero.y });
+}
+
+/** Exit Silver Bullet aim. `restoreCd` true = cancel (ready again); false = fired or forced end. */
+function endSilverBulletAim(hero: Hero, restoreCd: boolean): void {
+  if (!hero.silverBulletAiming) return;
+  hero.silverBulletAiming = false;
+  hero.rangedMode = false;
+  hero.ultCd = restoreCd ? 0 : SILVER_BULLET.cooldown;
+  if (hero.state === "idle" || hero.state === "shooting") {
+    hero.state = "idle";
+    hero.actionSeq++;
+  }
+}
+
+/**
+ * Hitscan at the cursor like precision aim (no intermediates), with a bright path flash.
+ * One use → 40s cooldown; re-equips melee.
+ */
+function fireSilverBullet(world: World, hero: Hero): void {
+  if (!hero.silverBulletAiming) return;
+  let tx = hero.aimX;
+  let ty = hero.aimY;
+  const angle = Math.atan2(ty - hero.y, tx - hero.x);
+  let reach = dist(hero.x, hero.y, tx, ty);
+  if (reach > SILVER_BULLET.range) {
+    reach = SILVER_BULLET.range;
+    tx = hero.x + Math.cos(angle) * SILVER_BULLET.range;
+    ty = hero.y + Math.sin(angle) * SILVER_BULLET.range;
+  }
+  const clear = raycastWalls(world.level, world.gateOpen, hero.x, hero.y, angle, reach);
+  const hitX = hero.x + Math.cos(angle) * Math.min(reach, clear);
+  const hitY = hero.y + Math.sin(angle) * Math.min(reach, clear);
+  // Path flash + bang via silver tracer (no separate impact — avoids a second gunshot SFX).
+  world.emit({ t: "tracer", x1: hero.x, y1: hero.y, x2: hitX, y2: hitY, kind: "silver" });
+
+  if (clear >= reach - 0.5) {
+    for (const e of world.enemies.values()) {
+      if (dist(tx, ty, e.x, e.y) > PRECISION_SHOT.radius + e.radius) continue;
+      const headDist = e.radius * PRECISION_SHOT.headOffset;
+      const headX = e.x + Math.cos(e.facing) * headDist;
+      const headY = e.y + Math.sin(e.facing) * headDist;
+      const headR = Math.max(PRECISION_SHOT.headRadius, e.radius * PRECISION_SHOT.headRadiusScale);
+      const headshot = dist(tx, ty, headX, headY) <= headR;
+      damageEnemy(world, hero, e, {
+        damage: SILVER_BULLET.damage * (headshot ? PRECISION_SHOT.headDamageMul : 1),
+        stagger: SILVER_BULLET.stagger,
+        armorPierce: SILVER_BULLET.armorPierce,
+        head: headshot,
+        srcX: hero.x,
+        srcY: hero.y,
+      });
+    }
+    for (const b of world.barrels.values()) {
+      if (b.carriedBy || b.flying) continue;
+      if (dist(tx, ty, b.x, b.y) > PRECISION_SHOT.radius + BARREL.radius) continue;
+      damageBarrel(world, b, SILVER_BULLET.damage, hero.id);
+    }
+  }
+
+  endSilverBulletAim(hero, false);
+  hero.state = "shooting";
+  hero.stateT = SHOOT_RECOVERY;
+  hero.actionSeq++;
 }
 
 function dashHits(world: World, hero: Hero): void {

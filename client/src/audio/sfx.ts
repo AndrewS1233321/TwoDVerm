@@ -11,6 +11,7 @@ export type SfxName =
   | "dodge"
   | "push"
   | "gun"
+  | "silverBang"
   | "bullet"
   | "arrow"
   | "squeak"
@@ -141,6 +142,14 @@ const RECIPES: Record<SfxName, (v: Voice) => void> = {
   gun: (v) => {
     hiss(v, "lowpass", 4000, 200, 0.25, 0.8);
     tone(v, "sine", 90, 35, 0.25, 0.8);
+  },
+  /** Silver Bullet ultimate — much louder than a normal gunshot. */
+  silverBang: (v) => {
+    hiss(v, "lowpass", 5000, 80, 0.55, 1);
+    hiss(v, "bandpass", 800, 200, 0.4, 0.7, 1.5);
+    tone(v, "sine", 70, 28, 0.55, 1);
+    tone(v, "square", 55, 30, 0.35, 0.45);
+    tone(v, "triangle", 180, 60, 0.2, 0.35, 0.02);
   },
   bullet: (v) => hiss(v, "highpass", 2500, 1200, 0.04, 0.25),
   arrow: (v) => {

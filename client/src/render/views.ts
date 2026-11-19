@@ -58,6 +58,8 @@ export interface PoseInfo {
   wrathCharging?: boolean;
   /** Kerri Elvish Wrath charge 0–1. */
   wrathCharge?: number;
+  /** Viktor Silver Bullet aim (single silver pistol). */
+  silverBulletAiming?: boolean;
   /** Longbow hip-fire draw 0–1. */
   bowDraw?: number;
   /** Smoke Bomb stealth. Local player stays faintly visible. */
@@ -102,6 +104,7 @@ export class CreatureView {
   private flashUntil = 0;
   private lastInfo: PoseInfo | null = null;
   private showingRanged = false;
+  private showingSilver = false;
   /** Next time (performance.now) a charge motion-blur ghost may spawn. */
   private nextChargeTrailAt = 0;
 
@@ -276,7 +279,7 @@ export class CreatureView {
   }
 
   private animateWeapon(info: PoseInfo, now: number): void {
-    const key = `${info.actionSeq}:${info.phase}:${info.state}:${info.action}:${!!info.rangedMode}`;
+    const key = `${info.actionSeq}:${info.phase}:${info.state}:${info.action}:${!!info.rangedMode}:${!!info.silverBulletAiming}`;
     if (key !== this.animKey) {
       this.animKey = key;
       this.animStart = this.clock;
@@ -286,10 +289,13 @@ export class CreatureView {
       this.animateBodyLunge(info);
       return;
     }
-    const wantRanged = !!info.rangedMode && !!this.opts.rangedStyle;
-    if (wantRanged !== this.showingRanged) {
+    const wantSilver = !!info.silverBulletAiming;
+    const wantRanged = !wantSilver && !!info.rangedMode && !!this.opts.rangedStyle;
+    if (wantSilver !== this.showingSilver || wantRanged !== this.showingRanged) {
+      this.showingSilver = wantSilver;
       this.showingRanged = wantRanged;
-      if (wantRanged) this.setWeaponStyle(this.opts.rangedStyle!, this.opts.rangedStyle === "pistols");
+      if (wantSilver) this.setWeaponStyle("silverPistol", false);
+      else if (wantRanged) this.setWeaponStyle(this.opts.rangedStyle!, this.opts.rangedStyle === "pistols");
       else this.setWeaponStyle(this.opts.weaponStyle!, isDualMeleeStyle(this.opts.weaponStyle));
     }
     const r = this.opts.radius;
@@ -299,7 +305,17 @@ export class CreatureView {
     let hx = hand.x;
     let hy = hand.y;
     const elapsed = (this.clock - this.animStart) / 1000;
-    const def = info.action && !info.rangedMode ? getAttack(info.action) : undefined;
+    const def = info.action && !info.rangedMode && !info.silverBulletAiming ? getAttack(info.action) : undefined;
+
+    if (wantSilver && (info.state === "idle" || info.state === "shooting" || info.state === "blocking")) {
+      angle = info.state === "shooting" ? 0.05 : 0.12;
+      thrust = info.state === "shooting" ? 5 : 2;
+      hx = hand.x;
+      hy = hand.y * 0.35;
+      this.weapon.setPosition(hx + Math.cos(angle) * thrust, hy + Math.sin(angle) * thrust).setRotation(angle).clearTint();
+      this.weapon2?.setVisible(false);
+      return;
+    }
 
     if (info.rangedMode && (info.state === "idle" || info.state === "shooting" || info.state === "blocking")) {
       const draw = clamp(info.bowDraw ?? 0, 0, 1);

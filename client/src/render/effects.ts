@@ -60,6 +60,20 @@ export class Effects {
       this.scene.tweens.add({ targets: g, alpha: 0, duration: 70, onComplete: () => g.destroy() });
       return;
     }
+    if (kind === "silver") {
+      g.lineStyle(7, 0xe8eef8, 0.55);
+      g.lineBetween(x1, y1, x2, y2);
+      g.lineStyle(3, 0xffffff, 1);
+      g.lineBetween(x1, y1, x2, y2);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(x1, y1, 7);
+      g.fillStyle(0xc8d0e0, 0.95);
+      g.fillCircle(x2, y2, 5);
+      this.sparks(x1, y1, 0xe8eef8, 14, 200);
+      this.sparks(x2, y2, 0xffffff, 10, 160);
+      this.scene.tweens.add({ targets: g, alpha: 0, duration: 160, onComplete: () => g.destroy() });
+      return;
+    }
     const color = kind === "bullet" ? 0xffd27a : kind === "arrow" ? 0xe8e0d0 : 0xfff0b0;
     g.lineStyle(kind === "gun" ? 3 : 2, color, 0.9);
     g.lineBetween(x1, y1, x2, y2);

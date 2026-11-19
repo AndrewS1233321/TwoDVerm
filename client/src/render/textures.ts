@@ -33,6 +33,7 @@ export type DrawnWeaponStyle =
   | "longbow"
   | "handgun"
   | "pistols"
+  | "silverPistol"
   | "chaosAxe"
   | "chaosSword";
 
@@ -54,6 +55,8 @@ export const WEAPON_INFO: Record<DrawnWeaponStyle, { length: number; handle: num
   longbow: { length: 36, handle: 4 },
   handgun: { length: 34, handle: 4 },
   pistols: { length: 18, handle: 3 },
+  /** Viktor Silver Bullet ultimate — single silvered pistol. */
+  silverPistol: { length: 22, handle: 3 },
   chaosAxe: { length: 34, handle: 4 },
   chaosSword: { length: 30, handle: 4 },
 };
@@ -930,6 +933,19 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
       g.fillStyle(steel);
       g.fillRect(15 * S, cy - 1.1 * S, 5 * S, 2.2 * S);
       break;
+    case "silverPistol": {
+      const silver = 0xd8dee8;
+      const silverDark = 0x9aa3b0;
+      g.fillStyle(0x2a2e36);
+      g.fillRect(0, cy - 1.4 * S, 7 * S, 2.8 * S);
+      g.fillStyle(silverDark);
+      g.fillRect(6 * S, cy - 2.4 * S, 12 * S, 4.8 * S);
+      g.fillStyle(silver);
+      g.fillRect(18 * S, cy - 1.2 * S, 6 * S, 2.4 * S);
+      g.fillStyle(0xf2f6fc);
+      g.fillRect(8 * S, cy - 1.6 * S, 3 * S, 1.2 * S);
+      break;
+    }
   }
   finish(scene, g, weaponTextureKey(style), w, h);
 }

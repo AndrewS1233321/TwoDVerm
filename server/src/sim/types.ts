@@ -153,6 +153,8 @@ export interface Hero extends MoveBody {
   wrathCharging: boolean;
   /** Seconds F has been held while charging (0–ELVISH_WRATH.maxHold). */
   wrathChargeT: number;
+  /** Silver Bullet: rooted aim state with silver pistol (replaces Animosity). */
+  silverBulletAiming: boolean;
   /** Enemies already body-checked during the current No retreating dodge. */
   noRetreatHit: Set<string>;
 }

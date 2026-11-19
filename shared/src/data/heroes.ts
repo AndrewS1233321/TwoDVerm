@@ -71,7 +71,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     ranged: PISTOLS,
     ult: "dash",
     ultName: "Animosity",
-    ultCooldown: 40,
+    ultCooldown: 50,
     description: "Precise armour-piercing rapier lunges. Ult dashes through the horde.",
   },
 };

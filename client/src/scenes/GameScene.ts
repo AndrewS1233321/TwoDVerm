@@ -323,6 +323,13 @@ export class GameScene extends Phaser.Scene {
     return this.controls.enabled && this.controls.rightDown();
   }
 
+  /** True while local Viktor is in Silver Bullet aim state. */
+  silverBulletAiming(me: PlayerView | undefined): boolean {
+    if (!me?.silverBulletAiming) return false;
+    if (me.state === "dead" || me.state === "downed" || me.state === "grabbed") return false;
+    return true;
+  }
+
   get aimScreen(): { x: number; y: number } {
     return { x: this.controls.screenX, y: this.controls.screenY };
   }
@@ -448,6 +455,7 @@ export class GameScene extends Phaser.Scene {
       riposteStrike: p.riposteStrike,
       wrathCharging: p.wrathCharging,
       wrathCharge: p.wrathCharge,
+      silverBulletAiming: p.silverBulletAiming,
       bowDraw: p.bowDraw,
       hidden: p.invisT > 0,
     };
@@ -797,9 +805,15 @@ export class GameScene extends Phaser.Scene {
         case "tracer":
           this.effects.tracer(e.x1, e.y1, e.x2, e.y2, e.kind);
           this.sfxAt(
-            e.kind === "bullet" ? "bullet" : e.kind === "arrow" ? "arrow" : "gun",
+            e.kind === "silver"
+              ? "silverBang"
+              : e.kind === "bullet"
+                ? "bullet"
+                : e.kind === "arrow"
+                  ? "arrow"
+                  : "gun",
             { x: e.x1, y: e.y1 },
-            e.kind === "jezzail" ? 1 : e.kind === "bullet" ? 0.4 : 0.8,
+            e.kind === "silver" ? 1.35 : e.kind === "jezzail" ? 1 : e.kind === "bullet" ? 0.4 : 0.8,
           );
           break;
         case "impact":

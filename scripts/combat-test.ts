@@ -20,9 +20,11 @@ import {
   elvishWrathShot,
   VOLLEY,
   RIPOSTE,
+  SILVER_BULLET,
   SMOKE_BOMB,
   smokeCloudRadius,
   bowDrawDamage,
+  PRECISION_SHOT,
   type ArmorLoadout,
   type ArmorSetDef,
   type ArmorSetId,
@@ -546,6 +548,79 @@ function attackIds(world: World, hero: Hero, pattern: Array<{ hold: number; wait
   buy.world.phase = "merchant";
   buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
   check("Viktor can buy Riposte for 50 GP", buy.world.buyPerk(buy.hero.id, "riposte") && buy.hero.perks.has("riposte") && buy.hero.gold === 0);
+}
+
+// Viktor Silver Bullet: replaces Animosity with a rooted high-AP aim shot.
+{
+  const offered = perksOfferedFor("hunter", new Set()).map((p) => p.id);
+  check("Merchant offers Viktor Silver Bullet", offered.includes("silver_bullet"));
+  check("Silver Bullet is not offered to Markus", perksOfferedFor("soldier", new Set()).every((p) => p.id !== "silver_bullet"));
+
+  const buy = setup("hunter");
+  buy.hero.gold = SILVER_BULLET.cost;
+  buy.world.phase = "merchant";
+  buy.world.spawnEnemy("merchant", buy.hero.x + 10, buy.hero.y, false);
+  check(
+    "Viktor can buy Silver Bullet for 25 GP",
+    buy.world.buyPerk(buy.hero.id, "silver_bullet") && buy.hero.perks.has("silver_bullet") && buy.hero.gold === 0,
+  );
+
+  const { world, hero } = setup("hunter");
+  hero.perks.add("silver_bullet");
+  hero.ultCd = 0;
+  hero.x = 200;
+  hero.y = 200;
+  tick(world, hero, { ult: true, aimX: hero.x + 80, aimY: hero.y });
+  check("Silver Bullet enters aim state instead of Animosity dash", hero.silverBulletAiming && hero.dodgeT <= 0 && hero.ultCd === 0);
+  check("Silver Bullet roots Viktor", heroMoveMods(hero).speed === 0 && !heroMoveMods(hero).canDodge);
+
+  // Cancel with F restores cooldown.
+  tick(world, hero, { ult: false, aimX: hero.x + 80, aimY: hero.y });
+  tick(world, hero, { ult: true, aimX: hero.x + 80, aimY: hero.y });
+  check("Canceling Silver Bullet restores cooldown", !hero.silverBulletAiming && hero.ultCd === 0);
+
+  // Fire deals 350 (body) then goes on 40s CD; melee re-equipped.
+  // Fresh setup at spawn (open space); face the rat toward Viktor for a front hit.
+  const { world: wFire, hero: hFire } = setup("hunter");
+  hFire.perks.add("silver_bullet");
+  hFire.ultCd = 0;
+  tick(wFire, hFire, { ult: true, aimX: hFire.x + 60, aimY: hFire.y });
+  const target = dummy(wFire, hFire.x + 60, hFire.y, Math.PI);
+  target.x = hFire.x + 60;
+  target.y = hFire.y;
+  target.facing = Math.PI;
+  target.state = "staggered";
+  target.stateT = 99;
+  target.def = { ...target.def, speed: 0 };
+  const hp0 = target.hp;
+  const fx = tick(wFire, hFire, { attack: true, aimX: target.x, aimY: target.y });
+  check("Silver Bullet body shot deals 350", target.hp === hp0 - SILVER_BULLET.damage, `hp ${hp0} -> ${target.hp}`);
+  check("Silver Bullet starts 40s cooldown after firing", !hFire.silverBulletAiming && hFire.ultCd === SILVER_BULLET.cooldown);
+  check("Silver Bullet re-equips melee after the shot", !hFire.rangedMode);
+  check("Silver Bullet draws a silver path flash", fx.some((f) => f.t === "tracer" && f.kind === "silver"));
+
+  // Headshot deals double (aim at the forward head hotspot; front hit so no backstab mul).
+  const { world: w2, hero: h2 } = setup("hunter");
+  h2.perks.add("silver_bullet");
+  h2.ultCd = 0;
+  tick(w2, h2, { ult: true, aimX: h2.x + 60, aimY: h2.y });
+  const headTarget = dummy(w2, h2.x + 60, h2.y, Math.PI);
+  headTarget.x = h2.x + 60;
+  headTarget.y = h2.y;
+  headTarget.facing = Math.PI;
+  headTarget.state = "staggered";
+  headTarget.stateT = 99;
+  headTarget.def = { ...headTarget.def, speed: 0 };
+  const headDist = headTarget.radius * PRECISION_SHOT.headOffset;
+  const hx = headTarget.x + Math.cos(headTarget.facing) * headDist;
+  const hy = headTarget.y + Math.sin(headTarget.facing) * headDist;
+  const hpHead = headTarget.hp;
+  tick(w2, h2, { attack: true, aimX: hx, aimY: hy });
+  check(
+    "Silver Bullet headshot deals 700",
+    headTarget.hp === hpHead - SILVER_BULLET.damage * PRECISION_SHOT.headDamageMul,
+    `hp ${hpHead} -> ${headTarget.hp}`,
+  );
 }
 
 // Markus No retreating: dodge body-checks stagger harder near the end of the dash.

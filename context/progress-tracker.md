@@ -16,6 +16,12 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Viktor Silver Bullet perk**: merchant perk at 25 GP replaces
+  Animosity. F roots Viktor with a silver-glow crosshair and a single
+  silver pistol; LMB fires one 350-damage hitscan (700 headshot) with
+  armour pierce 3, path flash (`tracer` kind `silver`), and a loud
+  bang; F again cancels and restores cooldown. After a fired shot,
+  40s cooldown and melee re-equipped. Constants in `SILVER_BULLET`.
 - **Rat Ogre abilities (priorities 1–5)**: discarded legacy `ogre_slam` /
   `ogre_sweep`. (1) `ogre_ground_slam`: rear 160° / 70px, 0.3s red
   telegraph (6-tile / 192px AoE), 15 dmg / blockCost 2 / stagger 99,
@@ -243,11 +249,14 @@ Update this file after every meaningful implementation change.
   every 0.5s adds +2 arrows and +25 range (max 4s, purple flash +
   rapid glow); release fires with the same targeting as the base
   volley. Without the perk, F still fires the base 3-arrow volley
-  instantly. Viktor's **Riposte**
+  instantly.   Viktor's **Riposte**
   — after a player dodge (not Animosity), the next melee attack has
   1.5× reach and deals a guaranteed critical (`RIPOSTE.critMul`); gold
   arc shows when charged, and the strike draws a white flash along the
-  extended attack path. Markus's **No retreating** — while dodging,
+  extended attack path. Viktor's **Silver Bullet** (25 GP) — replaces
+  Animosity with a rooted silver-pistol aim state; LMB fires a 350 /
+  700 (head) high-AP hitscan with path flash + bang (40s CD); F again
+  cancels with cooldown restored. Markus's **No retreating** — while dodging,
   body-check contacts stagger enemies (no damage); stagger/knockback
   scale up sharply toward the end of the dodge (`noRetreatingWeight`),
   with end contact radius 1.5× his body size. Future: random offer

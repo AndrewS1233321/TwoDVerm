@@ -76,6 +76,8 @@ export interface PlayerView {
   wrathCharging: boolean;
   /** Kerri Elvish Wrath charge 0–1. */
   wrathCharge: number;
+  /** Viktor Silver Bullet: rooted aim state. */
+  silverBulletAiming: boolean;
   /** Longbow hip-fire draw 0–1. */
   bowDraw: number;
   /** Seconds of Smoke Bomb stealth remaining. */

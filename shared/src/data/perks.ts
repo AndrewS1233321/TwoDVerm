@@ -5,6 +5,7 @@ export type PerkId =
   | "smoke_bomb"
   | "elvish_wrath"
   | "riposte"
+  | "silver_bullet"
   | "no_retreating"
   | "old_goat";
 
@@ -87,6 +88,21 @@ export const RIPOSTE = {
 } as const;
 
 /**
+ * Viktor: replaces Animosity. F enters a rooted aim state with a silver pistol;
+ * LMB fires one high-AP hitscan (cancel with F restores cooldown).
+ */
+export const SILVER_BULLET = {
+  cost: 25,
+  cooldown: 40,
+  damage: 350,
+  /** Strips three armor levels (heavy → none). */
+  armorPierce: 3,
+  stagger: 3,
+  range: 900,
+  ultName: "Silver Bullet",
+} as const;
+
+/**
  * Markus: dodge body-checks stagger enemies. Strength scales with how far
  * through the dodge the contact happens (weak at the start, heavy at the end).
  * End-of-dodge contact radius is `radiusMulMax` × his body radius.
@@ -151,6 +167,14 @@ export const PERKS: Record<PerkId, PerkDef> = {
     name: "Riposte",
     description: "After a dodge, your next melee attack has 1.5× reach and is a guaranteed critical hit. Does not trigger from your ultimate.",
     cost: PERK_COST,
+    heroIds: ["hunter"],
+  },
+  silver_bullet: {
+    id: "silver_bullet",
+    name: "Silver Bullet",
+    description:
+      "Replaces Animosity. Press F to root yourself and aim with a silver pistol; left-click fires a 350-damage high armour-piercing shot (700 on a headshot). Press F again to cancel with no cooldown. One shot, then 40s cooldown.",
+    cost: SILVER_BULLET.cost,
     heroIds: ["hunter"],
   },
   no_retreating: {
