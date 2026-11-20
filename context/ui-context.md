@@ -60,6 +60,9 @@ Until web fonts are added, use `Georgia, serif` for titles and
 - Kerri: long trailing green cloak, blonde hair, visible pointy ears on
   the sides, leather straps over the torso.
 - Markus: mercenary with large metal pauldrons on both shoulders.
+- Viktor: white shirt under black leather, tricorne with a white feather
+  curved toward his back; rapier has an ornate gold guard that winds
+  partly up the blade.
 - Skaven looks (code-drawn in `client/src/render/textures.ts`):
   slave / clanrat / stormvermin as before; shield variants carry a round
   or tower shield; Plague Monk wears a ragged green robe; Gutter Runner

@@ -130,8 +130,8 @@ function finish(scene: Phaser.Scene, g: G, key: string, w: number, h: number): v
 function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   const def = HEROES[id];
   const R = def.radius * TEX_SCALE;
-  // Kerri's cloak / ears and Markus's pauldrons need extra canvas.
-  const pad = id === "ranger" || id === "soldier" ? 22 : 12;
+  // Kerri cloak, Markus pauldrons, and Viktor's tricorne / feather need extra canvas.
+  const pad = id === "ranger" || id === "soldier" || id === "hunter" ? 22 : 12;
   const size = R * 2 + pad * TEX_SCALE;
   const cx = size / 2;
   const cy = size / 2;
@@ -301,16 +301,99 @@ function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
       g.fillTriangle(cx - R * 0.05, cy - R * 0.4, cx + R * 0.1, cy - R * 0.4, cx - R * 0.2, cy - R * 0.95);
       g.fillTriangle(cx - R * 0.05, cy + R * 0.4, cx + R * 0.1, cy + R * 0.4, cx - R * 0.2, cy + R * 0.95);
       break;
-    case "hunter":
-      g.fillStyle(0x1b1b1f);
-      g.fillCircle(cx + R * 0.05, cy, R * 0.78);
-      g.fillStyle(0x2a2a30);
-      g.fillCircle(cx + R * 0.05, cy, R * 0.42);
-      g.lineStyle(TEX_SCALE * 1.6, color, 1);
-      g.strokeCircle(cx + R * 0.05, cy, R * 0.44);
-      g.fillStyle(0xd9b44a);
-      g.fillRect(cx + R * 0.42, cy - R * 0.08, R * 0.12, R * 0.16);
+    case "hunter": {
+      const leather = 0x1a1a1e;
+      const leatherMid = 0x2c2c32;
+      const shirt = 0xf2eee6;
+      const shirtShade = 0xd8d2c6;
+      const brim = 0x141418;
+      const brimLite = 0x3a3a42;
+      const feather = 0xf4f0e6;
+      const featherTip = 0xffffff;
+
+      // Black leather coat / straps trailing slightly behind.
+      g.fillStyle(leather, 1);
+      g.fillEllipse(cx - R * 0.2, cy, R * 1.1, R * 1.35);
+      g.fillStyle(leatherMid, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.7);
+      // White shirt under the leather.
+      g.fillStyle(shirtShade, 1);
+      g.fillCircle(cx + R * 0.12, cy, R * 0.48);
+      g.fillStyle(shirt, 1);
+      g.fillCircle(cx + R * 0.18, cy, R * 0.38);
+      // Leather straps / vest over the shirt.
+      g.fillStyle(leather, 1);
+      g.fillRect(cx - R * 0.05, cy - R * 0.42, R * 0.18, R * 0.84);
+      g.fillRect(cx + R * 0.05, cy - R * 0.12, R * 0.42, R * 0.24);
+      g.lineStyle(TEX_SCALE * 1.3, color, 0.85);
+      g.strokeCircle(cx + R * 0.02, cy, R * 0.72);
+      g.fillStyle(0xd9b44a, 1);
+      g.fillRect(cx + R * 0.32, cy - R * 0.07, R * 0.12, R * 0.14);
+
+      // Small leather shoulder pads (±Y).
+      const drawLeatherPad = (side: 1 | -1) => {
+        const py = cy + side * R * 0.58;
+        g.fillStyle(leather, 1);
+        g.fillEllipse(cx + R * 0.05, py, R * 0.42, R * 0.28);
+        g.fillStyle(leatherMid, 1);
+        g.fillEllipse(cx + R * 0.08, py - side * R * 0.04, R * 0.3, R * 0.18);
+        g.fillStyle(0x3d2a18, 1);
+        g.fillCircle(cx - R * 0.05, py - side * R * 0.02, R * 0.045);
+        g.fillCircle(cx + R * 0.18, py - side * R * 0.03, R * 0.04);
+      };
+      drawLeatherPad(-1);
+      drawLeatherPad(1);
+
+      // Face toward +X.
+      g.fillStyle(skin, 1);
+      g.fillCircle(cx + R * 0.45, cy, R * 0.22);
+
+      // Tricorne — three cocked brim points (forward + two sides), crown on top.
+      g.fillStyle(brim, 1);
+      g.fillTriangle(
+        cx + R * 0.95,
+        cy,
+        cx - R * 0.15,
+        cy - R * 0.85,
+        cx - R * 0.15,
+        cy + R * 0.85,
+      );
+      g.fillStyle(brimLite, 1);
+      g.fillTriangle(
+        cx + R * 0.72,
+        cy,
+        cx + R * 0.05,
+        cy - R * 0.55,
+        cx + R * 0.05,
+        cy + R * 0.55,
+      );
+      g.fillStyle(leatherMid, 1);
+      g.fillEllipse(cx + R * 0.18, cy, R * 0.38, R * 0.34);
+      g.fillStyle(brim, 1);
+      // Side cock folds.
+      g.fillTriangle(cx + R * 0.2, cy - R * 0.35, cx - R * 0.05, cy - R * 0.95, cx + R * 0.45, cy - R * 0.55);
+      g.fillTriangle(cx + R * 0.2, cy + R * 0.35, cx - R * 0.05, cy + R * 0.95, cx + R * 0.45, cy + R * 0.55);
+      // Forward cock tip.
+      g.fillTriangle(cx + R * 0.55, cy - R * 0.18, cx + R * 0.55, cy + R * 0.18, cx + R * 1.05, cy);
+      g.lineStyle(TEX_SCALE * 1.1, 0xd9b44a, 0.9);
+      g.lineBetween(cx + R * 0.15, cy - R * 0.4, cx + R * 0.55, cy - R * 0.12);
+      g.lineBetween(cx + R * 0.15, cy + R * 0.4, cx + R * 0.55, cy + R * 0.12);
+
+      // Curved white plume sweeping toward his back (−X), not out to the side.
+      for (let i = 0; i < 7; i++) {
+        const t = i / 6;
+        // Ease from hat crown back behind the shoulders with a gentle arc.
+        const px = cx + R * (0.05 - 1.05 * t - 0.15 * t * t);
+        const py = cy - R * (0.35 + 0.55 * Math.sin(t * Math.PI) * (1 - t * 0.35));
+        const w = R * (0.2 - t * 0.1);
+        const h = R * (0.15 - t * 0.05);
+        g.fillStyle(i % 2 === 0 ? feather : featherTip, 0.94 - t * 0.1);
+        g.fillEllipse(px, py, w, h);
+      }
+      g.fillStyle(featherTip, 0.95);
+      g.fillEllipse(cx - R * 1.15, cy - R * 0.12, R * 0.11, R * 0.09);
       break;
+    }
   }
   finish(scene, g, heroTextureKey(id), size, size);
 }
@@ -948,15 +1031,52 @@ function drawWeapon(scene: Phaser.Scene, g: G, style: DrawnWeaponStyle): void {
       g.lineStyle(S, 0x4a4f56, 1);
       g.strokeRect(24 * S, cy - 7 * S, 11 * S, 14 * S);
       break;
-    case "rapier":
-      g.fillStyle(wood);
-      g.fillRect(0, cy - 1.2 * S, 6 * S, 2.4 * S);
-      g.lineStyle(S * 1.2, 0xd9b44a, 1);
-      g.strokeCircle(7 * S, cy, 3.8 * S);
+    case "rapier": {
+      const gold = 0xd9b44a;
+      const goldLite = 0xf0d27a;
+      const goldDark = 0xa67c2a;
+      // Ornate grip.
+      g.fillStyle(0x3d2a18);
+      g.fillRect(0, cy - 1.3 * S, 7 * S, 2.6 * S);
+      g.fillStyle(goldDark);
+      g.fillRect(1 * S, cy - 0.5 * S, 5 * S, 1 * S);
+      // Swept / cup guard — not a plain circle.
+      g.fillStyle(gold, 1);
+      g.fillEllipse(8.5 * S, cy, 7 * S, 5.2 * S);
+      g.fillStyle(goldDark, 1);
+      g.fillEllipse(8.5 * S, cy, 4.5 * S, 3.2 * S);
+      g.fillStyle(goldLite, 0.95);
+      g.fillEllipse(7.2 * S, cy - 1.2 * S, 2.2 * S, 1.4 * S);
+      // Gold knuckle-bow / quillon arms.
+      g.fillStyle(gold, 1);
+      g.fillTriangle(6 * S, cy - 1.2 * S, 11 * S, cy - 4.2 * S, 9 * S, cy - 0.4 * S);
+      g.fillTriangle(6 * S, cy + 1.2 * S, 11 * S, cy + 4.2 * S, 9 * S, cy + 0.4 * S);
+      // Guard winds further up the blade in a gold spiral ribbon.
+      g.lineStyle(S * 1.5, gold, 1);
+      g.beginPath();
+      g.moveTo(11 * S, cy + 1.6 * S);
+      g.lineTo(14 * S, cy - 1.4 * S);
+      g.lineTo(17 * S, cy + 1.2 * S);
+      g.lineTo(20 * S, cy - 1.0 * S);
+      g.lineTo(23 * S, cy + 0.7 * S);
+      g.strokePath();
+      g.lineStyle(S * 0.8, goldLite, 0.9);
+      g.beginPath();
+      g.moveTo(11.5 * S, cy + 1.2 * S);
+      g.lineTo(14.5 * S, cy - 1.0 * S);
+      g.lineTo(17.5 * S, cy + 0.9 * S);
+      g.lineTo(20.5 * S, cy - 0.7 * S);
+      g.lineTo(23 * S, cy + 0.4 * S);
+      g.strokePath();
+      // Thin needle blade — same width all the way, sharp point.
+      const bladeW = 0.7 * S;
       g.fillStyle(steel);
-      g.fillRect(8 * S, cy - 0.9 * S, 40 * S, 1.8 * S);
-      g.fillTriangle(48 * S, cy - 0.9 * S, 48 * S, cy + 0.9 * S, 50 * S, cy);
+      g.fillRect(12 * S, cy - bladeW / 2, 35 * S, bladeW);
+      g.fillTriangle(47 * S, cy - bladeW / 2, 47 * S, cy + bladeW / 2, 50 * S, cy);
+      g.lineStyle(S * 0.35, 0xe8eef4, 0.85);
+      g.lineBetween(12.5 * S, cy, 48.5 * S, cy);
       break;
+    }
     case "ratblade":
       g.fillStyle(0x3d3128);
       g.fillRect(0, cy - 1.2 * S, 5 * S, 2.4 * S);

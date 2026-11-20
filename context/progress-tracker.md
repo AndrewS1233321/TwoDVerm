@@ -16,6 +16,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Viktor sprite refresh**: Viktor’s body sprite now has a tricorne
+  with a long white feather; his rapier texture uses an ornate gold
+  guard that winds further up the blade (no plain circle hilt).
 - **Markus sprite refresh**: Markus’s code-drawn sprite now uses the
   improved look with large metal pauldrons. Temporary Markus 2 hero
   removed.
