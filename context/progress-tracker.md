@@ -16,6 +16,10 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Kerri 2 hero**: fifth playable hero (`ranger2`), identical kit to
+  Kerri (daggers, longbow, Trueflight Volley, Smoke Bomb / Elvish Wrath
+  perks, same stats). Distinct code-drawn sprite: long green cloak,
+  blonde hair, pointy elf ears, leather chest straps.
 - **Viktor Silver Bullet perk**: merchant perk at 25 GP replaces
   Animosity. F roots Viktor with a silver-glow crosshair and a single
   silver pistol; LMB fires one 350-damage hitscan (700 headshot) with

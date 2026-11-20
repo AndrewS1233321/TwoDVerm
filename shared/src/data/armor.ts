@@ -75,7 +75,12 @@ export interface ArmorTradeoffs {
   staminaMul?: number;
 }
 
-export type ArmorSetId = "markusDefault" | "kerriDefault" | "bardinDefault" | "viktorDefault";
+export type ArmorSetId =
+  | "markusDefault"
+  | "kerriDefault"
+  | "kerri2Default"
+  | "bardinDefault"
+  | "viktorDefault";
 
 /** A full set of hero armor. Heroes always wear exactly one set; buying another replaces it. */
 export interface ArmorSetDef {
@@ -107,6 +112,15 @@ export const ARMOR_SETS: Record<ArmorSetId, ArmorSetDef> = {
     tradeoffs: {},
     description: "Starting kit.",
   },
+  kerri2Default: {
+    id: "kerri2Default",
+    name: "Kerri 2 Default",
+    hero: "ranger2",
+    cost: 0,
+    loadout: UNARMORED,
+    tradeoffs: {},
+    description: "Starting kit.",
+  },
   bardinDefault: {
     id: "bardinDefault",
     name: "Bardin Default",
@@ -132,10 +146,10 @@ export const ARMOR_SET_IDS = Object.keys(ARMOR_SETS) as ArmorSetId[];
 export const DEFAULT_ARMOR_SET: Record<HeroId, ArmorSetId> = {
   soldier: "markusDefault",
   ranger: "kerriDefault",
+  ranger2: "kerri2Default",
   dwarf: "bardinDefault",
   hunter: "viktorDefault",
 };
-
 export function isArmorSetId(v: unknown): v is ArmorSetId {
   return typeof v === "string" && v in ARMOR_SETS;
 }

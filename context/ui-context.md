@@ -37,6 +37,7 @@ elsewhere.
 | ------------ | -------------- | --------- |
 | Soldier      | `heroSoldier`  | `#3d6fb6` |
 | Elf ranger   | `heroRanger`   | `#4f9a4a` |
+| Kerri 2      | (same green)   | `#4f9a4a` |
 | Dwarf        | `heroDwarf`    | `#c4782f` |
 | Witch hunter | `heroHunter`   | `#8a3fa0` |
 
@@ -57,6 +58,9 @@ Until web fonts are added, use `Georgia, serif` for titles and
 - Sprite size matches the creature's `radius` from `shared/` data.
 - Weapons are separate sprites that swing through their attack arc.
 - Animation uses tweens: swing arcs, flashes, squash-and-stretch.
+- Kerri 2 (`ranger2`): long trailing green cloak, blonde hair, visible
+  pointy ears on the sides, leather straps over the torso; same combat
+  kit as Kerri.
 - Skaven looks (code-drawn in `client/src/render/textures.ts`):
   slave / clanrat / stormvermin as before; shield variants carry a round
   or tower shield; Plague Monk wears a ragged green robe; Gutter Runner

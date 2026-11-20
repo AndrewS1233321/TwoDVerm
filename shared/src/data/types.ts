@@ -90,7 +90,7 @@ export interface RangedDef {
 
 export type UltId = "rally" | "volley" | "impenetrable" | "dash";
 
-export type HeroId = "soldier" | "ranger" | "dwarf" | "hunter";
+export type HeroId = "soldier" | "ranger" | "ranger2" | "dwarf" | "hunter";
 
 export interface HeroDef {
   id: HeroId;

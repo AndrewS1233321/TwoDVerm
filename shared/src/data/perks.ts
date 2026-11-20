@@ -152,7 +152,7 @@ export const PERKS: Record<PerkId, PerkDef> = {
     name: "Smoke Bomb",
     description: "Dodging drops smoke that briefly staggers enemies. When the dodge ends you vanish for 1.5s, and enemies stop chasing you.",
     cost: PERK_COST,
-    heroIds: ["ranger"],
+    heroIds: ["ranger", "ranger2"],
   },
   elvish_wrath: {
     id: "elvish_wrath",
@@ -160,7 +160,7 @@ export const PERKS: Record<PerkId, PerkDef> = {
     description:
       "Hold F to charge Trueflight Volley: every 0.5s adds +2 arrows and +25 range (max 4s). Release to fire. Without this perk, F still fires the base volley instantly.",
     cost: PERK_COST,
-    heroIds: ["ranger"],
+    heroIds: ["ranger", "ranger2"],
   },
   riposte: {
     id: "riposte",

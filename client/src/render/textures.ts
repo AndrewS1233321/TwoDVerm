@@ -130,7 +130,9 @@ function finish(scene: Phaser.Scene, g: G, key: string, w: number, h: number): v
 function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   const def = HEROES[id];
   const R = def.radius * TEX_SCALE;
-  const size = R * 2 + 12 * TEX_SCALE;
+  // Kerri 2's cloak / ears need a little extra canvas so they are not clipped.
+  const pad = id === "ranger2" ? 22 : 12;
+  const size = R * 2 + pad * TEX_SCALE;
   const cx = size / 2;
   const cy = size / 2;
   const color = toColorNumber(def.color);
@@ -165,6 +167,101 @@ function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
       g.fillStyle(0xd8c27a);
       g.fillTriangle(cx - R * 0.1, cy - R * 0.5, cx - R * 0.6, cy - R * 0.75, cx - R * 0.25, cy - R * 0.25);
       break;
+    case "ranger2": {
+      // Long cloak trails behind (−X). Layered greens read as fabric folds.
+      const cloakDeep = 0x1e4a22;
+      const cloakMid = 0x2f6b34;
+      const cloakLite = 0x3f8644;
+      const blonde = 0xe8c86a;
+      const blondeDark = 0xc4a045;
+      const leather = 0x6b4530;
+      const leatherLite = 0x8a5a3a;
+
+      g.fillStyle(cloakDeep, 1);
+      g.fillEllipse(cx - R * 0.55, cy, R * 1.55, R * 1.85);
+      g.fillStyle(cloakMid, 1);
+      g.fillEllipse(cx - R * 0.35, cy, R * 1.25, R * 1.55);
+      g.fillStyle(cloakLite, 0.85);
+      g.fillTriangle(cx - R * 1.15, cy - R * 0.55, cx - R * 0.35, cy - R * 0.2, cx - R * 0.95, cy);
+      g.fillTriangle(cx - R * 1.15, cy + R * 0.55, cx - R * 0.35, cy + R * 0.2, cx - R * 0.95, cy);
+      g.fillTriangle(cx - R * 1.35, cy, cx - R * 0.5, cy - R * 0.15, cx - R * 0.5, cy + R * 0.15);
+
+      // Long blonde hair over the cloak / shoulders.
+      g.fillStyle(blondeDark, 1);
+      g.fillEllipse(cx - R * 0.15, cy, R * 0.95, R * 1.15);
+      g.fillStyle(blonde, 1);
+      g.fillEllipse(cx - R * 0.05, cy - R * 0.08, R * 0.72, R * 0.95);
+      g.fillEllipse(cx - R * 0.05, cy + R * 0.08, R * 0.72, R * 0.95);
+      g.fillTriangle(cx - R * 0.9, cy - R * 0.35, cx - R * 0.15, cy - R * 0.55, cx - R * 0.2, cy - R * 0.1);
+      g.fillTriangle(cx - R * 0.9, cy + R * 0.35, cx - R * 0.15, cy + R * 0.55, cx - R * 0.2, cy + R * 0.1);
+      g.fillTriangle(cx - R * 1.05, cy, cx - R * 0.25, cy - R * 0.2, cx - R * 0.25, cy + R * 0.2);
+
+      // Torso / garment.
+      g.fillStyle(cloakMid, 1);
+      g.fillCircle(cx + R * 0.05, cy, R * 0.62);
+      g.lineStyle(TEX_SCALE * 1.1, cloakDeep, 0.7);
+      g.strokeCircle(cx + R * 0.05, cy, R * 0.62);
+
+      // Leather straps across the chest.
+      g.lineStyle(TEX_SCALE * 2.2, leather, 1);
+      g.lineBetween(cx - R * 0.25, cy - R * 0.45, cx + R * 0.45, cy + R * 0.35);
+      g.lineBetween(cx - R * 0.25, cy + R * 0.45, cx + R * 0.45, cy - R * 0.35);
+      g.lineStyle(TEX_SCALE * 1.1, leatherLite, 0.9);
+      g.lineBetween(cx - R * 0.22, cy - R * 0.42, cx + R * 0.42, cy + R * 0.32);
+      g.lineBetween(cx - R * 0.22, cy + R * 0.42, cx + R * 0.42, cy - R * 0.32);
+      g.fillStyle(leather, 1);
+      g.fillCircle(cx + R * 0.08, cy, R * 0.1);
+      g.fillStyle(0xd9b44a, 1);
+      g.fillCircle(cx + R * 0.08, cy, R * 0.045);
+
+      // Face / head toward +X (facing).
+      g.fillStyle(skin, 1);
+      g.fillCircle(cx + R * 0.42, cy, R * 0.28);
+      g.fillStyle(blonde, 1);
+      g.fillEllipse(cx + R * 0.28, cy, R * 0.22, R * 0.34);
+
+      // Pointy elf ears — stick out sideways so they read clearly top-down.
+      g.fillStyle(skin, 1);
+      g.fillTriangle(
+        cx + R * 0.32,
+        cy - R * 0.22,
+        cx + R * 0.55,
+        cy - R * 0.18,
+        cx + R * 0.28,
+        cy - R * 0.72,
+      );
+      g.fillTriangle(
+        cx + R * 0.32,
+        cy + R * 0.22,
+        cx + R * 0.55,
+        cy + R * 0.18,
+        cx + R * 0.28,
+        cy + R * 0.72,
+      );
+      g.fillStyle(blonde, 0.85);
+      g.fillTriangle(
+        cx + R * 0.34,
+        cy - R * 0.24,
+        cx + R * 0.48,
+        cy - R * 0.2,
+        cx + R * 0.3,
+        cy - R * 0.55,
+      );
+      g.fillTriangle(
+        cx + R * 0.34,
+        cy + R * 0.24,
+        cx + R * 0.48,
+        cy + R * 0.2,
+        cx + R * 0.3,
+        cy + R * 0.55,
+      );
+
+      // Hood peak of the long cloak over the back of the head.
+      g.fillStyle(cloakLite, 1);
+      g.fillTriangle(cx + R * 0.15, cy - R * 0.35, cx - R * 0.15, cy - R * 0.55, cx + R * 0.05, cy - R * 0.05);
+      g.fillTriangle(cx + R * 0.15, cy + R * 0.35, cx - R * 0.15, cy + R * 0.55, cx + R * 0.05, cy + R * 0.05);
+      break;
+    }
     case "dwarf":
       g.fillStyle(0xd9893a);
       g.fillTriangle(cx + R * 0.2, cy - R * 0.42, cx + R * 0.2, cy + R * 0.42, cx + R * 1.0, cy);
