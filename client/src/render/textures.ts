@@ -130,8 +130,8 @@ function finish(scene: Phaser.Scene, g: G, key: string, w: number, h: number): v
 function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   const def = HEROES[id];
   const R = def.radius * TEX_SCALE;
-  // Kerri's cloak / ears and Markus 2's pauldrons need extra canvas.
-  const pad = id === "ranger" || id === "soldier2" ? 22 : 12;
+  // Kerri's cloak / ears and Markus's pauldrons need extra canvas.
+  const pad = id === "ranger" || id === "soldier" ? 22 : 12;
   const size = R * 2 + pad * TEX_SCALE;
   const cx = size / 2;
   const cy = size / 2;
@@ -150,16 +150,8 @@ function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   g.fillCircle(cx + R * 0.35, cy - R * 0.55, R * 0.18);
 
   switch (id) {
-    case "soldier":
-      g.fillStyle(0x9aa3ad);
-      g.fillCircle(cx + R * 0.12, cy, R * 0.5);
-      g.fillStyle(0xc23b22);
-      g.fillRect(cx - R * 0.45, cy - R * 0.09, R * 0.8, R * 0.18);
-      g.fillStyle(0x2b2f35);
-      g.fillRect(cx + R * 0.45, cy - R * 0.25, R * 0.1, R * 0.5);
-      break;
-    case "soldier2": {
-      // Same mercenary read as Markus, with oversized metal pauldrons on both shoulders (±Y).
+    case "soldier": {
+      // Mercenary with oversized metal pauldrons on both shoulders (±Y).
       const steel = 0xb8c0c8;
       const steelMid = 0x8a949e;
       const steelDark = 0x4a525a;

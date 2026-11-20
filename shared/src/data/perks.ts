@@ -182,7 +182,7 @@ export const PERKS: Record<PerkId, PerkDef> = {
     name: "No retreating",
     description: "While dodging, enemies you barge into are staggered. Hits late in the dodge stagger much harder than hits at the start.",
     cost: PERK_COST,
-    heroIds: ["soldier", "soldier2"],
+    heroIds: ["soldier"],
   },
 };
 

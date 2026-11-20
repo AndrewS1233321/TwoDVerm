@@ -16,9 +16,9 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-- **Markus 2 hero**: fifth playable hero (`soldier2`), identical kit to
-  Markus (greatsword / sword-and-shield, repeater, Rallying Cry, No
-  retreating). Distinct sprite with large metal pauldrons.
+- **Markus sprite refresh**: Markus’s code-drawn sprite now uses the
+  improved look with large metal pauldrons. Temporary Markus 2 hero
+  removed.
 - **Kerri sprite refresh**: Kerri’s code-drawn sprite now uses the
   improved look (long green cloak, blonde hair, pointy elf ears,
   leather chest straps). Temporary Kerri 2 hero removed.

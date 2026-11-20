@@ -75,12 +75,7 @@ export interface ArmorTradeoffs {
   staminaMul?: number;
 }
 
-export type ArmorSetId =
-  | "markusDefault"
-  | "markus2Default"
-  | "kerriDefault"
-  | "bardinDefault"
-  | "viktorDefault";
+export type ArmorSetId = "markusDefault" | "kerriDefault" | "bardinDefault" | "viktorDefault";
 
 /** A full set of hero armor. Heroes always wear exactly one set; buying another replaces it. */
 export interface ArmorSetDef {
@@ -98,15 +93,6 @@ export const ARMOR_SETS: Record<ArmorSetId, ArmorSetDef> = {
     id: "markusDefault",
     name: "Markus Default",
     hero: "soldier",
-    cost: 0,
-    loadout: UNARMORED,
-    tradeoffs: {},
-    description: "Starting kit.",
-  },
-  markus2Default: {
-    id: "markus2Default",
-    name: "Markus 2 Default",
-    hero: "soldier2",
     cost: 0,
     loadout: UNARMORED,
     tradeoffs: {},
@@ -145,7 +131,6 @@ export const ARMOR_SET_IDS = Object.keys(ARMOR_SETS) as ArmorSetId[];
 
 export const DEFAULT_ARMOR_SET: Record<HeroId, ArmorSetId> = {
   soldier: "markusDefault",
-  soldier2: "markus2Default",
   ranger: "kerriDefault",
   dwarf: "bardinDefault",
   hunter: "viktorDefault",

@@ -20,24 +20,6 @@ export const HEROES: Record<HeroId, HeroDef> = {
     ultCooldown: 50,
     description: "Wide cleaving sword sweeps. Ult staggers nearby rats and heals allies.",
   },
-  soldier2: {
-    id: "soldier2",
-    name: "Markus 2",
-    title: "Mercenary",
-    color: "#3d6fb6",
-    radius: 14,
-    hp: 150,
-    stamina: 4,
-    dodges: 2,
-    speed: 170,
-    staggerResist: 2,
-    weapon: GREATSWORD,
-    ranged: REPEATER,
-    ult: "rally",
-    ultName: "Rallying Cry",
-    ultCooldown: 50,
-    description: "Wide cleaving sword sweeps. Ult staggers nearby rats and heals allies.",
-  },
   ranger: {
     id: "ranger",
     name: "Kerri",
@@ -94,7 +76,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
   },
 };
 
-export const HERO_IDS: HeroId[] = ["soldier", "soldier2", "ranger", "dwarf", "hunter"];
+export const HERO_IDS: HeroId[] = ["soldier", "ranger", "dwarf", "hunter"];
 
 export function isHeroId(v: unknown): v is HeroId {
   return typeof v === "string" && (HERO_IDS as string[]).includes(v);
