@@ -32,7 +32,7 @@ import {
   type ShopItemId,
   type ShopWeaponId,
 } from "@twodverm/shared";
-import type { GameStateView } from "../net/types";
+import type { GameStateView, PlayerView } from "../net/types";
 import { getSettings, updateSettings } from "../settings";
 
 export interface OverlayHandlers {
@@ -68,7 +68,33 @@ const WEAPON_ICON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
   <rect x="10" y="50" width="14" height="6" rx="1" fill="#8a6a40" transform="rotate(-45 17 53)" />
 </svg>`;
 
+const DMG_ICON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="10" fill="#f2c14e" />
+  <circle cx="32" cy="32" r="6" fill="#fff3c4" />
+  <path d="M32 6 L36 22 L32 18 L28 22 Z" fill="#e85d04" />
+  <path d="M32 58 L28 42 L32 46 L36 42 Z" fill="#e85d04" />
+  <path d="M6 32 L22 28 L18 32 L22 36 Z" fill="#f48c06" />
+  <path d="M58 32 L42 36 L46 32 L42 28 Z" fill="#f48c06" />
+  <path d="M14 14 L26 24 L22 22 L24 26 Z" fill="#dc2f02" />
+  <path d="M50 14 L40 26 L42 22 L38 24 Z" fill="#dc2f02" />
+  <path d="M14 50 L26 40 L22 42 L24 38 Z" fill="#dc2f02" />
+  <path d="M50 50 L38 40 L42 42 L40 38 Z" fill="#dc2f02" />
+</svg>`;
+
+const ARMOR_ICON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <path d="M32 8 L52 16 V30 C52 44 42 52 32 56 C22 52 12 44 12 30 V16 Z" fill="#3a3632" stroke="#c9a14a" stroke-width="3" />
+  <path d="M22 28 H42 V40 H22 Z" fill="#5a5248" />
+  <path d="M32 16 V48" fill="none" stroke="#8a8070" stroke-width="2" />
+</svg>`;
+
 type ScreenId = "menu" | "lobby" | "expedition" | "results" | "pause" | "settings" | "shop";
+
+/** Currently highlighted shop catalog entry (details + BUY live in the info panel). */
+type ShopSelection =
+  | { kind: "dmg" }
+  | { kind: "perk"; id: PerkId }
+  | { kind: "armor"; id: ArmorSetId }
+  | { kind: "weapon"; id: ShopWeaponId };
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const e = document.getElementById(id);
@@ -84,6 +110,8 @@ export class Overlay {
   private inRoom = false;
   private paused = false;
   private shopOpen = false;
+  private shopSelection: ShopSelection | null = null;
+  private shopCatalogSignature = "";
   private busy = false;
   private signature = "";
   private toastTimer = 0;
@@ -132,22 +160,12 @@ export class Overlay {
     el("pause-settings-btn").onclick = () => this.openSettings();
     el("settings-close-btn").onclick = () => el("settings").classList.remove("show");
     el("shop-close-btn").onclick = () => this.closeShop();
-    el("shop-buy-dmg").onclick = () => this.h.onBuyShopItem("dmg_up");
-    el("shop-perks").onclick = (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-perk]");
-      const id = btn?.dataset.perk;
-      if (btn && !btn.disabled && id) this.h.onBuyPerk(id as PerkId);
+    el("shop-grid").onclick = (e) => {
+      const tile = (e.target as HTMLElement).closest<HTMLButtonElement>("button.shop-tile[data-shop-kind]");
+      if (!tile) return;
+      this.selectShopTile(tile);
     };
-    el("shop-armor").onclick = (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-armor]");
-      const id = btn?.dataset.armor;
-      if (btn && !btn.disabled && id) this.h.onBuyArmorSet(id as ArmorSetId);
-    };
-    el("shop-weapons").onclick = (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-weapon]");
-      const id = btn?.dataset.weapon;
-      if (btn && !btn.disabled && id) this.h.onBuyWeapon(id as ShopWeaponId);
-    };
+    el("shop-buy-btn").onclick = () => this.buySelectedShopItem();
     this.bindSettings();
 
     window.addEventListener("keydown", (e) => {
@@ -163,9 +181,8 @@ export class Overlay {
     const castlePlay = this.lastState?.gameMode === "castle" && this.currentPhase === "playing";
     if (this.currentPhase !== "merchant" && !castlePlay) return;
     this.shopOpen = true;
-    this.perkSignature = "";
-    this.armorSignature = "";
-    this.weaponSignature = "";
+    this.shopSelection = null;
+    this.shopCatalogSignature = "";
     el("shop").classList.add("show");
     this.h.onPauseChange(true);
     this.refreshShop();
@@ -174,6 +191,7 @@ export class Overlay {
   closeShop(): void {
     if (!this.shopOpen) return;
     this.shopOpen = false;
+    this.shopSelection = null;
     el("shop").classList.remove("show");
     if (!this.paused) this.h.onPauseChange(false);
   }
@@ -267,136 +285,272 @@ export class Overlay {
     if (!this.shopOpen || !this.lastState) return;
     const me = this.lastState.players.get(this.localId);
     const gold = me?.gold ?? 0;
-    const stacks = me?.dmgUpStacks ?? 0;
-    const item = SHOP_ITEMS.dmg_up;
     el("shop-gold").textContent = `${gold} GP`;
-    el("shop-dmg-stacks").textContent = `Stacks: ${stacks}`;
-    const buy = el<HTMLButtonElement>("shop-buy-dmg");
-    buy.disabled = gold < item.cost;
-    buy.textContent = gold < item.cost ? "Need gold" : "Buy";
-    this.renderShopWeapons(
-      me?.heroId ?? "",
-      me?.primaryWeaponId ?? "",
-      me?.secondaryWeaponId ?? "",
+    this.renderShopCatalog(me);
+    this.renderShopInfo(me);
+  }
+
+  private selectShopTile(tile: HTMLButtonElement): void {
+    const kind = tile.dataset.shopKind;
+    const id = tile.dataset.shopId ?? "";
+    if (kind === "dmg") this.shopSelection = { kind: "dmg" };
+    else if (kind === "perk" && id) this.shopSelection = { kind: "perk", id: id as PerkId };
+    else if (kind === "armor" && id) this.shopSelection = { kind: "armor", id: id as ArmorSetId };
+    else if (kind === "weapon" && id) this.shopSelection = { kind: "weapon", id: id as ShopWeaponId };
+    else return;
+    this.refreshShop();
+  }
+
+  private buySelectedShopItem(): void {
+    const sel = this.shopSelection;
+    if (!sel) return;
+    if (sel.kind === "dmg") this.h.onBuyShopItem("dmg_up");
+    else if (sel.kind === "perk") this.h.onBuyPerk(sel.id);
+    else if (sel.kind === "armor") this.h.onBuyArmorSet(sel.id);
+    else if (sel.kind === "weapon") this.h.onBuyWeapon(sel.id);
+  }
+
+  private selectionKey(sel: ShopSelection | null): string {
+    if (!sel) return "";
+    if (sel.kind === "dmg") return "dmg";
+    return `${sel.kind}:${sel.id}`;
+  }
+
+  private shopTileHtml(opts: {
+    kind: ShopSelection["kind"];
+    id: string;
+    name: string;
+    icon: string;
+    owned?: boolean;
+    selected: boolean;
+  }): string {
+    const classes = ["shop-tile"];
+    if (opts.owned) classes.push("owned");
+    if (opts.selected) classes.push("selected");
+    const idAttr = opts.kind === "dmg" ? "" : ` data-shop-id="${opts.id}"`;
+    return `<button type="button" class="${classes.join(" ")}" data-shop-kind="${opts.kind}"${idAttr} aria-pressed="${opts.selected ? "true" : "false"}">
+      <div class="shop-tile-icon" aria-hidden="true">${opts.icon}</div>
+      <p class="shop-tile-name">${escapeHtml(opts.name)}</p>
+    </button>`;
+  }
+
+  /** Equal-sized catalog tiles: abilities, perks, weapons, and armour. */
+  private renderShopCatalog(me: PlayerView | undefined): void {
+    const heroId = me?.heroId ?? "";
+    const gold = me?.gold ?? 0;
+    const stacks = me?.dmgUpStacks ?? 0;
+    const perksRaw = me?.perks ?? "";
+    const ownedPerks = parsePerks(perksRaw);
+    const offered = new Set(perksOfferedFor(heroId, ownedPerks).map((p) => p.id));
+    const perks = perksForHero(heroId).filter((p) => ownedPerks.has(p.id) || offered.has(p.id));
+    const weapons = weaponsForHero(heroId);
+    const armor = armorSetsForHero(heroId);
+    const primaryId = me?.primaryWeaponId ?? "";
+    const secondaryId = me?.secondaryWeaponId ?? "";
+    const armorId = me?.armorSetId ?? "";
+    // Drop selection if that entry left the catalog.
+    const prior = this.shopSelection;
+    if (prior?.kind === "perk" && !perks.some((p) => p.id === prior.id)) this.shopSelection = null;
+    else if (prior?.kind === "weapon" && !weapons.some((w) => w.id === prior.id)) this.shopSelection = null;
+    else if (prior?.kind === "armor" && !armor.some((s) => s.id === prior.id)) this.shopSelection = null;
+
+    const selKey = this.selectionKey(this.shopSelection);
+    const sig = [
+      heroId,
       gold,
+      stacks,
+      perksRaw,
+      primaryId,
+      secondaryId,
+      armorId,
+      selKey,
+      perks.map((p) => p.id).join(","),
+      weapons.map((w) => w.id).join(","),
+      armor.map((s) => s.id).join(","),
+    ].join("|");
+    if (sig === this.shopCatalogSignature) return;
+    this.shopCatalogSignature = sig;
+
+    const tiles: string[] = [];
+    const dmg = SHOP_ITEMS.dmg_up;
+    tiles.push(
+      this.shopTileHtml({
+        kind: "dmg",
+        id: dmg.id,
+        name: dmg.name,
+        icon: DMG_ICON,
+        selected: selKey === "dmg",
+      }),
     );
-    this.renderShopPerks(me?.heroId ?? "", me?.perks ?? "", gold);
-    this.renderShopArmor(me?.heroId ?? "", me?.armorSetId ?? "", gold);
+    for (const p of perks) {
+      tiles.push(
+        this.shopTileHtml({
+          kind: "perk",
+          id: p.id,
+          name: p.name,
+          icon: PERK_ICON,
+          owned: ownedPerks.has(p.id),
+          selected: selKey === `perk:${p.id}`,
+        }),
+      );
+    }
+    for (const w of weapons) {
+      const equipped = w.slot === "primary" ? w.id === primaryId : w.id === secondaryId;
+      tiles.push(
+        this.shopTileHtml({
+          kind: "weapon",
+          id: w.id,
+          name: w.name,
+          icon: WEAPON_ICON,
+          owned: equipped,
+          selected: selKey === `weapon:${w.id}`,
+        }),
+      );
+    }
+    for (const s of armor) {
+      tiles.push(
+        this.shopTileHtml({
+          kind: "armor",
+          id: s.id,
+          name: s.name,
+          icon: ARMOR_ICON,
+          owned: s.id === armorId,
+          selected: selKey === `armor:${s.id}`,
+        }),
+      );
+    }
+    const box = el("shop-grid");
+    box.innerHTML = tiles.length > 0 ? tiles.join("") : `<div class="shop-empty">Nothing for sale</div>`;
   }
 
-  private weaponSignature = "";
+  private renderShopInfo(me: PlayerView | undefined): void {
+    const body = el("shop-info-body");
+    const costEl = el("shop-info-cost");
+    const statusEl = el("shop-info-status");
+    const buy = el<HTMLButtonElement>("shop-buy-btn");
+    const gold = me?.gold ?? 0;
+    const sel = this.shopSelection;
 
-  /** Hero-bound primary/secondary kits; Equipped still allows re-buy for 100 GP. */
-  private renderShopWeapons(
-    heroId: string,
-    primaryId: string,
-    secondaryId: string,
-    gold: number,
-  ): void {
-    const listed = weaponsForHero(heroId);
-    const sig = `${heroId}|${primaryId}|${secondaryId}|${listed.map((w) => `${w.id}:${gold >= w.cost}`).join(",")}`;
-    if (sig === this.weaponSignature) return;
-    this.weaponSignature = sig;
-    const box = el("shop-weapons");
-    if (listed.length === 0) {
-      box.innerHTML = `<div class="shop-empty">No weapons available</div>`;
+    const hideBuy = () => {
+      costEl.hidden = true;
+      statusEl.hidden = true;
+      buy.hidden = true;
+      buy.disabled = true;
+    };
+
+    if (!sel) {
+      body.innerHTML = `<p class="shop-info-placeholder">Select an ability or perk to see its details.</p>`;
+      hideBuy();
       return;
     }
-    box.innerHTML = listed
-      .map((w) => {
-        const isEquipped = w.slot === "primary" ? w.id === primaryId : w.id === secondaryId;
-        const afford = gold >= w.cost;
-        const slotLabel = w.slot === "primary" ? "Primary" : "Secondary";
-        const desc =
-          w.slot === "primary"
-            ? "Melee kit. Buying replaces your current primary weapon."
-            : "Ranged kit. Buying replaces your current secondary weapon.";
-        return `<div class="shop-item${isEquipped ? " owned" : ""}">
-          <div class="shop-item-icon" aria-hidden="true">${WEAPON_ICON}</div>
-          <div>
-            <div class="shop-weapon-slot">${slotLabel}</div>
-            <div class="shop-item-name">${escapeHtml(w.name)}</div>
-            <p class="shop-item-desc">${desc}</p>
-          </div>
-          <div class="shop-item-buy">
-            ${isEquipped ? `<div class="shop-item-owned">Equipped</div>` : ""}
-            <div class="shop-item-cost">${w.cost} GP</div>
-            <button class="primary" data-weapon="${w.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>
-          </div>
-        </div>`;
-      })
-      .join("");
-  }
 
-  private armorSignature = "";
-
-  /** Full armor sets for this hero; the worn set shows as Equipped. */
-  private renderShopArmor(heroId: string, equipped: string, gold: number): void {
-    const sets = armorSetsForHero(heroId);
-    const sig = `${heroId}|${equipped}|${sets.map((s) => `${s.id}:${gold >= s.cost}`).join(",")}`;
-    if (sig === this.armorSignature) return;
-    this.armorSignature = sig;
-    const box = el("shop-armor");
-    if (sets.length === 0) {
-      box.innerHTML = `<div class="shop-empty">No armour available</div>`;
+    if (sel.kind === "dmg") {
+      const item = SHOP_ITEMS.dmg_up;
+      const stacks = me?.dmgUpStacks ?? 0;
+      body.innerHTML = `
+        <div class="shop-info-kind">Ability</div>
+        <h3 class="shop-info-name">${escapeHtml(item.name)}</h3>
+        <p class="shop-info-desc">${escapeHtml(item.description)}</p>
+        <p class="shop-info-meta"><b>Stacks owned</b> ${stacks}</p>`;
+      costEl.hidden = false;
+      costEl.textContent = `${item.cost} GP`;
+      statusEl.hidden = true;
+      buy.hidden = false;
+      buy.disabled = gold < item.cost;
+      buy.textContent = gold < item.cost ? "Need gold" : "Buy";
       return;
     }
-    box.innerHTML = sets
-      .map((s) => {
-        const isEquipped = s.id === equipped;
-        const afford = gold >= s.cost;
-        const action = isEquipped
-          ? `<div class="shop-item-owned">Equipped</div>`
-          : `<div class="shop-item-cost">${s.cost} GP</div><button class="primary" data-armor="${s.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>`;
-        const levels = ARMOR_LOCATIONS.map(
-          (loc) => `<span><b>${ARMOR_LOCATION_LABELS[loc]}</b> ${ARMOR_LEVEL_NAMES[s.loadout[loc]]}</span>`,
-        ).join("");
-        const tradeoffs = describeTradeoffs(s.tradeoffs);
-        return `<div class="shop-item${isEquipped ? " owned" : ""}">
-          <div class="shop-item-icon" aria-hidden="true">${PERK_ICON}</div>
-          <div>
-            <div class="shop-item-name">${escapeHtml(s.name)}</div>
-            <div class="shop-armor-levels">${levels}</div>
-            <p class="shop-item-desc">${escapeHtml(tradeoffs ? `${s.description} ${tradeoffs}.` : s.description)}</p>
-          </div>
-          <div class="shop-item-buy">${action}</div>
-        </div>`;
-      })
-      .join("");
-  }
 
-  private perkSignature = "";
-
-  /** Owned perks stay listed as "Owned"; offered perks get a Buy button. */
-  private renderShopPerks(heroId: string, perksRaw: string, gold: number): void {
-    const owned = parsePerks(perksRaw);
-    const offered = new Set(perksOfferedFor(heroId, owned).map((p) => p.id));
-    const listed = perksForHero(heroId).filter((p) => owned.has(p.id) || offered.has(p.id));
-    const sig = `${heroId}|${perksRaw}|${listed.map((p) => `${p.id}:${gold >= p.cost}`).join(",")}`;
-    if (sig === this.perkSignature) return;
-    this.perkSignature = sig;
-    const box = el("shop-perks");
-    if (listed.length === 0) {
-      box.innerHTML = `<div class="shop-empty">No perks available</div>`;
+    if (sel.kind === "perk") {
+      const owned = parsePerks(me?.perks ?? "");
+      const perk = perksForHero(me?.heroId ?? "").find((p) => p.id === sel.id);
+      if (!perk) {
+        body.innerHTML = `<p class="shop-info-placeholder">Select an ability or perk to see its details.</p>`;
+        hideBuy();
+        return;
+      }
+      const isOwned = owned.has(perk.id);
+      body.innerHTML = `
+        <div class="shop-info-kind">Perk</div>
+        <h3 class="shop-info-name">${escapeHtml(perk.name)}</h3>
+        <p class="shop-info-desc">${escapeHtml(perk.description)}</p>`;
+      if (isOwned) {
+        costEl.hidden = true;
+        statusEl.hidden = false;
+        statusEl.textContent = "Owned";
+        buy.hidden = true;
+        buy.disabled = true;
+      } else {
+        costEl.hidden = false;
+        costEl.textContent = `${perk.cost} GP`;
+        statusEl.hidden = true;
+        buy.hidden = false;
+        buy.disabled = gold < perk.cost;
+        buy.textContent = gold < perk.cost ? "Need gold" : "Buy";
+      }
       return;
     }
-    box.innerHTML = listed
-      .map((p) => {
-        const isOwned = owned.has(p.id);
-        const afford = gold >= p.cost;
-        const action = isOwned
-          ? `<div class="shop-item-owned">Owned</div>`
-          : `<div class="shop-item-cost">${p.cost} GP</div><button class="primary" data-perk="${p.id}"${afford ? "" : " disabled"}>${afford ? "Buy" : "Need gold"}</button>`;
-        return `<div class="shop-item shop-perk-card${isOwned ? " owned" : ""}">
-          <div class="shop-item-icon" aria-hidden="true">${PERK_ICON}</div>
-          <div>
-            <div class="shop-item-name">${escapeHtml(p.name)}</div>
-            <p class="shop-item-desc">${escapeHtml(p.description)}</p>
-          </div>
-          <div class="shop-item-buy">${action}</div>
-        </div>`;
-      })
-      .join("");
+
+    if (sel.kind === "weapon") {
+      const weapon = weaponsForHero(me?.heroId ?? "").find((w) => w.id === sel.id);
+      if (!weapon) {
+        body.innerHTML = `<p class="shop-info-placeholder">Select an ability or perk to see its details.</p>`;
+        hideBuy();
+        return;
+      }
+      const equipped =
+        weapon.slot === "primary"
+          ? weapon.id === (me?.primaryWeaponId ?? "")
+          : weapon.id === (me?.secondaryWeaponId ?? "");
+      const slotLabel = weapon.slot === "primary" ? "Primary (melee)" : "Secondary (ranged)";
+      const desc =
+        weapon.slot === "primary"
+          ? "Melee kit. Buying replaces your current primary weapon."
+          : "Ranged kit. Buying replaces your current secondary weapon.";
+      body.innerHTML = `
+        <div class="shop-info-kind">Weapon · ${slotLabel}</div>
+        <h3 class="shop-info-name">${escapeHtml(weapon.name)}</h3>
+        <p class="shop-info-desc">${desc}</p>
+        ${equipped ? `<p class="shop-info-meta"><b>Status</b> Equipped</p>` : ""}`;
+      costEl.hidden = false;
+      costEl.textContent = `${weapon.cost} GP`;
+      statusEl.hidden = true;
+      buy.hidden = false;
+      buy.disabled = gold < weapon.cost;
+      buy.textContent = gold < weapon.cost ? "Need gold" : equipped ? "Buy again" : "Buy";
+      return;
+    }
+
+    const set = armorSetsForHero(me?.heroId ?? "").find((s) => s.id === sel.id);
+    if (!set) {
+      body.innerHTML = `<p class="shop-info-placeholder">Select an ability or perk to see its details.</p>`;
+      hideBuy();
+      return;
+    }
+    const isEquipped = set.id === (me?.armorSetId ?? "");
+    const levels = ARMOR_LOCATIONS.map(
+      (loc) => `<span><b>${ARMOR_LOCATION_LABELS[loc]}</b> ${ARMOR_LEVEL_NAMES[set.loadout[loc]]}</span>`,
+    ).join("");
+    const tradeoffs = describeTradeoffs(set.tradeoffs);
+    body.innerHTML = `
+      <div class="shop-info-kind">Armour</div>
+      <h3 class="shop-info-name">${escapeHtml(set.name)}</h3>
+      <p class="shop-info-desc">${escapeHtml(tradeoffs ? `${set.description} ${tradeoffs}.` : set.description)}</p>
+      <div class="shop-armor-levels">${levels}</div>`;
+    if (isEquipped) {
+      costEl.hidden = true;
+      statusEl.hidden = false;
+      statusEl.textContent = "Equipped";
+      buy.hidden = true;
+      buy.disabled = true;
+    } else {
+      costEl.hidden = false;
+      costEl.textContent = `${set.cost} GP`;
+      statusEl.hidden = true;
+      buy.hidden = false;
+      buy.disabled = gold < set.cost;
+      buy.textContent = gold < set.cost ? "Need gold" : "Buy";
+    }
   }
 
   /** Called on every state patch; only rebuilds the DOM when something visible changed. */

@@ -184,13 +184,15 @@ Update this file after every meaningful implementation change.
   special 50% → 1–5 GP; Rat Ogre 100% → 100–200 GP). Drop is split
   evenly across every hero’s personal purse (remainder distributed);
   gold persists across wastes stops for merchant spending.
-- **Merchant shop UI**: full-screen panel; scrollable body with Close
-  pinned at the bottom; perks in a 4-column grid (row-major, left to
-  right). Armour stays a vertical list below.
+- **Merchant shop UI**: full-screen layout with a ~15% header (title,
+  gold, Close), a left catalog (~2/3 width) of equal square tiles
+  (icon + name) for abilities, perks, weapons and armour, and a right
+  info panel (~1/3) showing the selected item’s details. Purchase is
+  two-step: select a tile, then click Buy in the info panel.
 - **Merchant shop**: E near the merchant opens a buy menu. Item
   `dmg up +10%` costs 50 GP, stackable for the run (+10% all hero
-  damage per stack via `shopDamageMul`); stacks shown under the
-  explosion icon. Economy resets when a new run starts.
+  damage per stack via `shopDamageMul`); stacks shown in the info
+  panel. Economy resets when a new run starts.
 - **Wastes staging hall**: on Start (Gingey Wastes), the party always
   enters the Testing zone as a hub (`enterWastesHub`) — merchant NPC,
   summon pads, dummies — whether or not `devTest` is checked. A green
