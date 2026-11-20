@@ -60,6 +60,8 @@ Until web fonts are added, use `Georgia, serif` for titles and
 - Kerri: long trailing green cloak, blonde hair, visible pointy ears on
   the sides, leather straps over the torso.
 - Markus: mercenary with large metal pauldrons on both shoulders.
+- Bardin: red clothing, orange beard, metal pauldrons, steel helm with
+  large curved horns.
 - Viktor: white shirt under black leather, tricorne with a white feather
   curved toward his back; rapier has an ornate gold guard that winds
   partly up the blade.

@@ -130,8 +130,8 @@ function finish(scene: Phaser.Scene, g: G, key: string, w: number, h: number): v
 function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   const def = HEROES[id];
   const R = def.radius * TEX_SCALE;
-  // Kerri cloak, Markus pauldrons, and Viktor's tricorne / feather need extra canvas.
-  const pad = id === "ranger" || id === "soldier" || id === "hunter" ? 22 : 12;
+  // Extra canvas for cloaks, pauldrons, tricorne/feather, and Bardin's horns.
+  const pad = id === "ranger" || id === "soldier" || id === "hunter" || id === "dwarf" ? 24 : 12;
   const size = R * 2 + pad * TEX_SCALE;
   const cx = size / 2;
   const cy = size / 2;
@@ -292,15 +292,114 @@ function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
       g.fillTriangle(cx + R * 0.15, cy + R * 0.35, cx - R * 0.15, cy + R * 0.55, cx + R * 0.05, cy + R * 0.05);
       break;
     }
-    case "dwarf":
-      g.fillStyle(0xd9893a);
-      g.fillTriangle(cx + R * 0.2, cy - R * 0.42, cx + R * 0.2, cy + R * 0.42, cx + R * 1.0, cy);
-      g.fillStyle(0x8a8f96);
-      g.fillCircle(cx + R * 0.02, cy, R * 0.5);
-      g.fillStyle(0xe8e0d0);
-      g.fillTriangle(cx - R * 0.05, cy - R * 0.4, cx + R * 0.1, cy - R * 0.4, cx - R * 0.2, cy - R * 0.95);
-      g.fillTriangle(cx - R * 0.05, cy + R * 0.4, cx + R * 0.1, cy + R * 0.4, cx - R * 0.2, cy + R * 0.95);
+    case "dwarf": {
+      const red = 0xb3261e;
+      const redDeep = 0x7a1814;
+      const redLite = 0xd4453a;
+      const beard = 0xd9893a;
+      const beardLite = 0xe8a85a;
+      const steel = 0xb8c0c8;
+      const steelMid = 0x8a949e;
+      const steelDark = 0x4a525a;
+      const steelLite = 0xdfe6ec;
+      const horn = 0xe8e0d0;
+      const hornShade = 0xc8bfb0;
+      const hornTip = 0xf7f2e8;
+
+      // Red clothing body.
+      g.fillStyle(redDeep, 1);
+      g.fillEllipse(cx - R * 0.1, cy, R * 1.15, R * 1.4);
+      g.fillStyle(red, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.68);
+      g.fillStyle(redLite, 0.85);
+      g.fillCircle(cx + R * 0.12, cy, R * 0.35);
+      // Belt / buckle detail.
+      g.fillStyle(0x3d2a18, 1);
+      g.fillRect(cx - R * 0.15, cy - R * 0.1, R * 0.55, R * 0.2);
+      g.fillStyle(0xd9b44a, 1);
+      g.fillRect(cx + R * 0.05, cy - R * 0.07, R * 0.16, R * 0.14);
+
+      // Metal pauldrons.
+      const drawPauldron = (side: 1 | -1) => {
+        const py = cy + side * R * 0.72;
+        g.fillStyle(steelDark, 1);
+        g.fillEllipse(cx + R * 0.02, py, R * 0.72, R * 0.52);
+        g.fillStyle(steelMid, 1);
+        g.fillEllipse(cx + R * 0.06, py, R * 0.55, R * 0.38);
+        g.fillStyle(steel, 1);
+        g.fillEllipse(cx + R * 0.1, py - side * R * 0.05, R * 0.38, R * 0.26);
+        g.fillStyle(steelLite, 0.9);
+        g.fillEllipse(cx + R * 0.16, py - side * R * 0.1, R * 0.18, R * 0.1);
+        g.fillStyle(0xd9b44a, 1);
+        g.fillCircle(cx - R * 0.12, py - side * R * 0.02, R * 0.05);
+        g.fillCircle(cx + R * 0.28, py - side * R * 0.06, R * 0.045);
+      };
+      drawPauldron(-1);
+      drawPauldron(1);
+
+      // Orange beard pointing forward (+X).
+      g.fillStyle(beard, 1);
+      g.fillTriangle(cx + R * 0.15, cy - R * 0.48, cx + R * 0.15, cy + R * 0.48, cx + R * 1.05, cy);
+      g.fillStyle(beardLite, 1);
+      g.fillTriangle(cx + R * 0.25, cy - R * 0.28, cx + R * 0.25, cy + R * 0.28, cx + R * 0.85, cy);
+      // Beard strands.
+      g.lineStyle(TEX_SCALE * 0.9, redDeep, 0.35);
+      g.lineBetween(cx + R * 0.3, cy - R * 0.15, cx + R * 0.75, cy - R * 0.05);
+      g.lineBetween(cx + R * 0.3, cy + R * 0.15, cx + R * 0.75, cy + R * 0.05);
+
+      // Steel helmet.
+      g.fillStyle(steelDark, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.52);
+      g.fillStyle(steelMid, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.42);
+      g.fillStyle(steelLite, 0.75);
+      g.fillEllipse(cx + R * 0.08, cy - R * 0.12, R * 0.22, R * 0.14);
+      g.lineStyle(TEX_SCALE * 1.2, steelDark, 1);
+      g.strokeCircle(cx + R * 0.02, cy, R * 0.52);
+      // Visor slit.
+      g.fillStyle(0x1a1a1e, 1);
+      g.fillRect(cx + R * 0.28, cy - R * 0.12, R * 0.14, R * 0.24);
+
+      // Large curved horns — grow back/out then curl.
+      const drawHorn = (side: 1 | -1) => {
+        const baseX = cx - R * 0.05;
+        const baseY = cy + side * R * 0.32;
+        // Thick base ridge on the helm.
+        g.fillStyle(hornShade, 1);
+        g.fillEllipse(baseX, baseY, R * 0.22, R * 0.18);
+        // Curved horn as overlapping ovals along an arc toward back (−X) and out (±Y).
+        for (let i = 0; i < 8; i++) {
+          const t = i / 7;
+          const angle = side * (0.35 + t * 1.55);
+          const dist = R * (0.2 + t * 0.95);
+          const px = baseX + Math.cos(Math.PI - angle * 0.35) * dist - R * t * 0.55;
+          const py = baseY + Math.sin(angle) * dist * 0.85;
+          const w = R * (0.2 - t * 0.12);
+          const h = R * (0.16 - t * 0.09);
+          g.fillStyle(i < 5 ? horn : hornTip, 1);
+          g.fillEllipse(px, py, w, h);
+          if (i % 2 === 0 && i < 6) {
+            g.fillStyle(hornShade, 0.55);
+            g.fillEllipse(px - R * 0.02, py + side * R * 0.02, w * 0.55, h * 0.55);
+          }
+        }
+        // Sharp tip.
+        g.fillStyle(hornTip, 1);
+        const tipX = baseX - R * 1.05;
+        const tipY = baseY + side * R * 0.95;
+        g.fillTriangle(
+          tipX + R * 0.12,
+          tipY - side * R * 0.08,
+          tipX + R * 0.12,
+          tipY + side * R * 0.08,
+          tipX - R * 0.18,
+          tipY + side * R * 0.02,
+        );
+      };
+      drawHorn(-1);
+      drawHorn(1);
       break;
+    }
     case "hunter": {
       const leather = 0x1a1a1e;
       const leatherMid = 0x2c2c32;

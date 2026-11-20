@@ -16,6 +16,8 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **Bardin sprite refresh**: red clothing, orange beard kept, metal
+  pauldrons, more helm detail, and larger curved horns.
 - **Viktor sprite refresh**: Viktor’s body sprite now has a tricorne
   with a long white feather; his rapier texture uses an ornate gold
   guard that winds further up the blade (no plain circle hilt).
