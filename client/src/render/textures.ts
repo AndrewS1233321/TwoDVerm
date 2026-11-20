@@ -130,8 +130,8 @@ function finish(scene: Phaser.Scene, g: G, key: string, w: number, h: number): v
 function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
   const def = HEROES[id];
   const R = def.radius * TEX_SCALE;
-  // Kerri 2's cloak / ears need a little extra canvas so they are not clipped.
-  const pad = id === "ranger2" ? 22 : 12;
+  // Kerri's cloak / ears and Markus 2's pauldrons need extra canvas.
+  const pad = id === "ranger" || id === "soldier2" ? 22 : 12;
   const size = R * 2 + pad * TEX_SCALE;
   const cx = size / 2;
   const cy = size / 2;
@@ -158,16 +158,54 @@ function drawHero(scene: Phaser.Scene, g: G, id: HeroId): void {
       g.fillStyle(0x2b2f35);
       g.fillRect(cx + R * 0.45, cy - R * 0.25, R * 0.1, R * 0.5);
       break;
-    case "ranger":
-      g.fillStyle(0x2f5e2c);
-      g.fillCircle(cx + R * 0.08, cy, R * 0.52);
-      g.fillTriangle(cx + R * 0.3, cy - R * 0.42, cx + R * 0.3, cy + R * 0.42, cx + R * 0.78, cy);
-      g.fillStyle(skin);
-      g.fillCircle(cx + R * 0.42, cy, R * 0.17);
-      g.fillStyle(0xd8c27a);
-      g.fillTriangle(cx - R * 0.1, cy - R * 0.5, cx - R * 0.6, cy - R * 0.75, cx - R * 0.25, cy - R * 0.25);
+    case "soldier2": {
+      // Same mercenary read as Markus, with oversized metal pauldrons on both shoulders (±Y).
+      const steel = 0xb8c0c8;
+      const steelMid = 0x8a949e;
+      const steelDark = 0x4a525a;
+      const steelLite = 0xdfe6ec;
+
+      g.fillStyle(0x2a3340, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.7);
+      g.fillStyle(color, 1);
+      g.fillCircle(cx + R * 0.02, cy, R * 0.52);
+      g.fillStyle(0xc23b22, 1);
+      g.fillRect(cx - R * 0.4, cy - R * 0.1, R * 0.75, R * 0.2);
+      g.fillStyle(steelMid, 1);
+      g.fillCircle(cx + R * 0.18, cy, R * 0.42);
+      g.fillStyle(steelDark, 1);
+      g.fillRect(cx + R * 0.48, cy - R * 0.22, R * 0.12, R * 0.44);
+
+      // Large metal pauldrons — the main silhouette upgrade.
+      const drawPauldron = (side: 1 | -1) => {
+        const py = cy + side * R * 0.78;
+        g.fillStyle(steelDark, 1);
+        g.fillEllipse(cx + R * 0.02, py, R * 0.95, R * 0.72);
+        g.fillStyle(steelMid, 1);
+        g.fillEllipse(cx + R * 0.06, py, R * 0.78, R * 0.58);
+        g.fillStyle(steel, 1);
+        g.fillEllipse(cx + R * 0.1, py - side * R * 0.06, R * 0.58, R * 0.42);
+        g.fillStyle(steelLite, 0.9);
+        g.fillEllipse(cx + R * 0.18, py - side * R * 0.12, R * 0.28, R * 0.18);
+        // Rivets along the pauldron rim.
+        g.fillStyle(0xd9b44a, 1);
+        g.fillCircle(cx - R * 0.25, py - side * R * 0.05, R * 0.06);
+        g.fillCircle(cx + R * 0.35, py - side * R * 0.08, R * 0.06);
+        g.fillCircle(cx + R * 0.05, py + side * R * 0.28, R * 0.055);
+        // Raised ridge toward the neck.
+        g.lineStyle(TEX_SCALE * 1.4, steelLite, 0.85);
+        g.lineBetween(cx - R * 0.15, py - side * R * 0.15, cx + R * 0.35, py - side * R * 0.2);
+      };
+      drawPauldron(-1);
+      drawPauldron(1);
+
+      // Hands still readable past the pauldrons.
+      g.fillStyle(skin, 1);
+      g.fillCircle(cx + R * 0.55, cy + R * 0.72, R * 0.16);
+      g.fillCircle(cx + R * 0.55, cy - R * 0.72, R * 0.16);
       break;
-    case "ranger2": {
+    }
+    case "ranger": {
       // Long cloak trails behind (−X). Layered greens read as fabric folds.
       const cloakDeep = 0x1e4a22;
       const cloakMid = 0x2f6b34;

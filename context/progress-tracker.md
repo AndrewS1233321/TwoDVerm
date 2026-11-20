@@ -16,10 +16,12 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-- **Kerri 2 hero**: fifth playable hero (`ranger2`), identical kit to
-  Kerri (daggers, longbow, Trueflight Volley, Smoke Bomb / Elvish Wrath
-  perks, same stats). Distinct code-drawn sprite: long green cloak,
-  blonde hair, pointy elf ears, leather chest straps.
+- **Markus 2 hero**: fifth playable hero (`soldier2`), identical kit to
+  Markus (greatsword / sword-and-shield, repeater, Rallying Cry, No
+  retreating). Distinct sprite with large metal pauldrons.
+- **Kerri sprite refresh**: Kerri’s code-drawn sprite now uses the
+  improved look (long green cloak, blonde hair, pointy elf ears,
+  leather chest straps). Temporary Kerri 2 hero removed.
 - **Viktor Silver Bullet perk**: merchant perk at 25 GP replaces
   Animosity. F roots Viktor with a silver-glow crosshair and a single
   silver pistol; LMB fires one 350-damage hitscan (700 headshot) with

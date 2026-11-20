@@ -32,10 +32,11 @@ export type ShopWeaponId =
   | "soldier_greatsword"
   | "soldier_sword_and_shield"
   | "soldier_repeater"
+  | "soldier2_greatsword"
+  | "soldier2_sword_and_shield"
+  | "soldier2_repeater"
   | "ranger_daggers"
   | "ranger_longbow"
-  | "ranger2_daggers"
-  | "ranger2_longbow"
   | "dwarf_hammer"
   | "dwarf_handgun"
   | "hunter_rapier"
@@ -83,6 +84,33 @@ export const SHOP_WEAPONS: Record<ShopWeaponId, ShopWeapon> = {
     mods: { ...ZERO_WEAPON_MODS },
     ranged: REPEATER,
   },
+  soldier2_greatsword: {
+    id: "soldier2_greatsword",
+    hero: "soldier2",
+    slot: "primary",
+    name: "Executioner Greatsword",
+    cost: COST,
+    mods: { ...ZERO_WEAPON_MODS },
+    melee: GREATSWORD,
+  },
+  soldier2_sword_and_shield: {
+    id: "soldier2_sword_and_shield",
+    hero: "soldier2",
+    slot: "primary",
+    name: "Sword and Shield",
+    cost: COST,
+    mods: { ...ZERO_WEAPON_MODS, stamina: 4, staggerResist: 1 },
+    melee: SWORD_AND_SHIELD,
+  },
+  soldier2_repeater: {
+    id: "soldier2_repeater",
+    hero: "soldier2",
+    slot: "secondary",
+    name: "Repeater Handgun",
+    cost: COST,
+    mods: { ...ZERO_WEAPON_MODS },
+    ranged: REPEATER,
+  },
   ranger_daggers: {
     id: "ranger_daggers",
     hero: "ranger",
@@ -95,24 +123,6 @@ export const SHOP_WEAPONS: Record<ShopWeaponId, ShopWeapon> = {
   ranger_longbow: {
     id: "ranger_longbow",
     hero: "ranger",
-    slot: "secondary",
-    name: "Longbow",
-    cost: COST,
-    mods: { ...ZERO_WEAPON_MODS },
-    ranged: LONGBOW,
-  },
-  ranger2_daggers: {
-    id: "ranger2_daggers",
-    hero: "ranger2",
-    slot: "primary",
-    name: "Dual Daggers",
-    cost: COST,
-    mods: { ...ZERO_WEAPON_MODS },
-    melee: DUAL_DAGGERS,
-  },
-  ranger2_longbow: {
-    id: "ranger2_longbow",
-    hero: "ranger2",
     slot: "secondary",
     name: "Longbow",
     cost: COST,
@@ -161,20 +171,19 @@ export const SHOP_WEAPON_IDS = Object.keys(SHOP_WEAPONS) as ShopWeaponId[];
 
 export const DEFAULT_PRIMARY: Record<HeroId, ShopWeaponId> = {
   soldier: "soldier_greatsword",
+  soldier2: "soldier2_greatsword",
   ranger: "ranger_daggers",
-  ranger2: "ranger2_daggers",
   dwarf: "dwarf_hammer",
   hunter: "hunter_rapier",
 };
 
 export const DEFAULT_SECONDARY: Record<HeroId, ShopWeaponId> = {
   soldier: "soldier_repeater",
+  soldier2: "soldier2_repeater",
   ranger: "ranger_longbow",
-  ranger2: "ranger2_longbow",
   dwarf: "dwarf_handgun",
   hunter: "hunter_pistols",
-};
-export function isShopWeaponId(v: unknown): v is ShopWeaponId {
+};export function isShopWeaponId(v: unknown): v is ShopWeaponId {
   return typeof v === "string" && v in SHOP_WEAPONS;
 }
 

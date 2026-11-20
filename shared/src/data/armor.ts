@@ -77,8 +77,8 @@ export interface ArmorTradeoffs {
 
 export type ArmorSetId =
   | "markusDefault"
+  | "markus2Default"
   | "kerriDefault"
-  | "kerri2Default"
   | "bardinDefault"
   | "viktorDefault";
 
@@ -103,19 +103,19 @@ export const ARMOR_SETS: Record<ArmorSetId, ArmorSetDef> = {
     tradeoffs: {},
     description: "Starting kit.",
   },
-  kerriDefault: {
-    id: "kerriDefault",
-    name: "Kerri Default",
-    hero: "ranger",
+  markus2Default: {
+    id: "markus2Default",
+    name: "Markus 2 Default",
+    hero: "soldier2",
     cost: 0,
     loadout: UNARMORED,
     tradeoffs: {},
     description: "Starting kit.",
   },
-  kerri2Default: {
-    id: "kerri2Default",
-    name: "Kerri 2 Default",
-    hero: "ranger2",
+  kerriDefault: {
+    id: "kerriDefault",
+    name: "Kerri Default",
+    hero: "ranger",
     cost: 0,
     loadout: UNARMORED,
     tradeoffs: {},
@@ -145,8 +145,8 @@ export const ARMOR_SET_IDS = Object.keys(ARMOR_SETS) as ArmorSetId[];
 
 export const DEFAULT_ARMOR_SET: Record<HeroId, ArmorSetId> = {
   soldier: "markusDefault",
+  soldier2: "markus2Default",
   ranger: "kerriDefault",
-  ranger2: "kerri2Default",
   dwarf: "bardinDefault",
   hunter: "viktorDefault",
 };
